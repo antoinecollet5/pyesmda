@@ -40,6 +40,9 @@ class ESMDA():
     m_bounds : Union[List[int], None], optional
         Top and bottom bounds on the initial ensemble of N_{e} parameters
         vector. The default is None.
+    save_ensembles_history: bool, optional
+        Whether to save the history predictions and parameters over the assimilations. 
+        The default is False.
 
     References
     ----------
@@ -62,12 +65,15 @@ class ESMDA():
                  forward_model_kwargs: dict = {},
                  n_assimilation: int = 4,
                  alpha: Union[List[int], None] = None,
-                 m_bounds: Union[np.array, None] = None):
+                 m_bounds: Union[np.array, None] = None,
+                 save_ensembles_history: bool = False):
         """Construct method."""
         self.dobs = obs
         self.m_prior = m_init
+        self.save_ensembles_history = save_ensembles_history
         # List of average m values at the end of each assimilation
-        self.m_mean = []
+        self.m_history = []
+        self.d_history = []
         # Initialize d_piror with observation
         # Must be initialized after m_prior because it is used in the
         # @property
@@ -187,8 +193,13 @@ class ESMDA():
         else:
             self._alpha = a
 
+    def m_mean_history(self) -> List[np.ndarray]:
+        return [np.average(m_pred, axis=0) for m_pred in self.m_mean_history]
+
     def solve(self):
         """Solve the optimization problem with ES-MDA algorithm."""
+        if self.save_ensembles_history:
+            self.m_history.append(self.m_prior)  # save m_init
         for assimilation_iteration in range(self.n_assimilation):
             print(f"Assimilation # {assimilation_iteration + 1}")
             self.forecast()
@@ -223,6 +234,8 @@ class ESMDA():
         self.d_pred = self.forward_model(self.m_prior,
                                          *self.forward_model_args,
                                          **self.forward_model_kwargs)
+        if self.save_ensembles_history:
+            self.d_history.append(self.d_pred)
 
     def pertrub(self, assimilation_iteration):
         r"""
@@ -319,5 +332,6 @@ class ESMDA():
         # Update the prior parameter for next iteration
         self.m_prior = m_pred
 
-        # Plotting for change of average of the parameters
-        self.m_mean.append(np.average(m_pred, axis=0))
+        # Saving the parameters history
+        if self.save_ensembles_history:
+            self.m_history.append(m_pred)
