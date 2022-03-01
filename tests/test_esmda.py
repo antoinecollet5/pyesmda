@@ -98,4 +98,4 @@ def test_esmda_exponential_case():
     solveur.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
-    assert np.isclose(solveur.m_mean[-1], np.array([a, b]), rtol=5e-2).all()
+    assert np.isclose(np.average(solveur.m_prior, axis=0), np.array([a, b]), rtol=5e-2).all()
