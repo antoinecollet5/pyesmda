@@ -40,6 +40,9 @@ class ESMDA():
     m_bounds : Union[List[int], None], optional
         Top and bottom bounds on the initial ensemble of N_{e} parameters
         vector. The default is None.
+    save_ensembles_history: bool, optional
+        Whether to save the history predictions and parameters over the assimilations. 
+        The default is False.
 
     References
     ----------
