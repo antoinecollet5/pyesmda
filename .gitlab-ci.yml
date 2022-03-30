@@ -1,6 +1,6 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/python/tags/
-image: python:3.8.5 # defaults to latest
+image: latest # defaults to latest
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -50,7 +50,7 @@ test:
 
 
 flake8:
-  image: python:3.8.5
+  image: latest
   stage: Static Analysis
   allow_failure: true
   script:
