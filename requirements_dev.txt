@@ -1,4 +1,4 @@
-numpy>=1.18
+numpy>=1.21
 
 pip
 bump2version
