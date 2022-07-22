@@ -3,8 +3,126 @@ General test for the Ensemble-Smoother with Mulitple Data Assimilation.
 
 @author: acollet
 """
+from typing import Dict, Any
+from contextlib import contextmanager
+import pytest
 import numpy as np
 from pyesmda import ESMDA
+
+
+@contextmanager
+def does_not_raise():
+    yield
+
+
+def empty_forward_model() -> None:
+    return
+
+
+@pytest.mark.parametrize(
+    "args,kwargs,expected_exception",
+    [
+        (  #  simple construction
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {},
+            does_not_raise(),
+        ),
+        (  #  issue with stdev_d
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10)), empty_forward_model),
+            {},
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"stdev_d must be a square matrix with "
+                    r"same dimensions as the observations vector."
+                )
+            ),
+        ),
+        (  #  issue with stdev_d
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((9, 9)), empty_forward_model),
+            {},
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"stdev_d must be a square matrix with same dimensions "
+                    r"as the observations vector."
+                )
+            ),
+        ),
+        (  #  normal working with n_assimilations
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "n_assimilations": 4,
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "n_assimilations": 4.5,  # Not a valid number of assimilations
+            },
+            pytest.raises(
+                TypeError,
+                match="The number of assimilations must be a positive interger.",
+            ),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "forward_model_args": (22, 45, "bob"),
+                "forward_model_kwargs": {"some_kwargs": "str", "some_other": 98.0},
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "n_assimilations": -1,  # Not a valid number of assimilations
+            },
+            pytest.raises(
+                ValueError, match=r"The number of assimilations must be 1 or more."
+            ),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "m_bounds": np.zeros((10, 2)),
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "m_bounds": np.zeros((3, 7)),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"m_bounds is of size \(3, 7\) while" 
+                    r" it should be of size \(10, 2\)"
+                )
+            ),
+        ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "n_assimilations": 3,
+                "alpha": np.ones(5),
+            },
+            pytest.raises(
+                ValueError, match=r"The length of alpha should match n_assimilations"
+            ),
+        ),
+    ],
+)
+def test_constructor(args, kwargs, expected_exception) -> ESMDA:
+
+    with expected_exception:
+        esmda = ESMDA(*args, **kwargs)
+
+        if "alpha" not in kwargs.keys():
+            for val in esmda.alpha:
+                assert val == 1 / esmda.n_assimilations
 
 
 def exponential(p, x):
@@ -86,7 +204,7 @@ def test_esmda_exponential_case():
     alpha[3] = 2
 
     # Number of assimilations
-    n_assimilation = 4
+    n_assimilations = 4
     solveur = ESMDA(
         obs,
         m_ensemble,
@@ -94,9 +212,10 @@ def test_esmda_exponential_case():
         forward_model,
         forward_model_args=(x,),
         forward_model_kwargs={},
-        n_assimilation=n_assimilation,
+        n_assimilations=n_assimilations,
         alpha=alpha,
         m_bounds=m_bounds,
+        save_ensembles_history=True
     )
     # Call the ES-MDA solver
     solveur.solve()
