@@ -12,7 +12,7 @@ with open('README.rst') as readme_file:
 with open('CHANGELOG.rst') as history_file:
     history = history_file.read()
 
-requirements = ["numpy>=1.18.1"]
+requirements = ["numpy>=1.21"]
 
 setup_requirements = ['pytest-runner', 'wheel', ]
 
