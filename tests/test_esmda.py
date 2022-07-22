@@ -74,8 +74,6 @@ def test_esmda_exponential_case():
 
     # Observation error covariance matrix
     stdev_d = np.diag([1.0] * obs.shape[0])
-    # Parameters error covariance matrix
-    stdev_m = np.multiply([1.0, 0.01] * 1, 1.0)
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -93,7 +91,6 @@ def test_esmda_exponential_case():
         obs,
         m_ensemble,
         stdev_d,
-        stdev_m,
         forward_model,
         forward_model_args=(x,),
         forward_model_kwargs={},
