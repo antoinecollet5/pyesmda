@@ -58,7 +58,7 @@ def forward_model(m_ensemble, x):
 def test_esmda_exponential_case():
     """Test the ES-MDA on a simple syntetic case with two parameters."""
     a = 10.0
-    b = - 0.0020
+    b = -0.0020
     # timesteps
     x = np.arange(500)
     # Noisy signal with predictable noise
@@ -89,13 +89,22 @@ def test_esmda_exponential_case():
 
     # Number of assimilations
     n_assimilation = 4
-    solveur = ESMDA(obs, m_ensemble, stdev_d, stdev_m,
-                    forward_model, forward_model_args=(x,),
-                    forward_model_kwargs={},
-                    n_assimilation=n_assimilation,
-                    alpha=alpha, m_bounds=m_bounds)
+    solveur = ESMDA(
+        obs,
+        m_ensemble,
+        stdev_d,
+        stdev_m,
+        forward_model,
+        forward_model_args=(x,),
+        forward_model_kwargs={},
+        n_assimilation=n_assimilation,
+        alpha=alpha,
+        m_bounds=m_bounds,
+    )
     # Call the ES-MDA solver
     solveur.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
-    assert np.isclose(np.average(solveur.m_prior, axis=0), np.array([a, b]), rtol=5e-2).all()
+    assert np.isclose(
+        np.average(solveur.m_prior, axis=0), np.array([a, b]), rtol=5e-2
+    ).all()
