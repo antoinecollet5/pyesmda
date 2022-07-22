@@ -23,8 +23,6 @@ class ESMDA:
         Initial ensemble of N_{e} parameters vector.
     stdev_d: npt.NDArray[np.float64]
         Standard deviation of the observations.
-    stdev_m: npt.NDArray[np.float64]
-        Standard deviation of the parameters.
     forward_model: callable
         Function calling the non-linear observation model (forward model)
         for all ensemble members and returning the predicted data for
@@ -61,7 +59,6 @@ class ESMDA:
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
         stdev_d: npt.NDArray[np.float64],
-        stdev_m: npt.NDArray[np.float64],
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -83,7 +80,6 @@ class ESMDA:
         self.d_prior: npt.NDArray[np.float64] = np.array([obs] * self.n_ensemble)
         self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
         self.stdev_d = stdev_d
-        self.stdev_m = stdev_m
         self.d_obs_uc: npt.NDArray[np.float64] = np.array([])
         self.cov_md: npt.NDArray[np.float64] = np.array([])
         self.cov_dd: npt.NDArray[np.float64] = np.array([])
@@ -144,20 +140,6 @@ class ESMDA:
                 "dimension as observation vector."
             )
         self._stdev_d = s
-
-    @property
-    def stdev_m(self) -> npt.NDArray[np.float64]:
-        """Get the parameter errors covariance matrix."""
-        return self._stdev_m
-
-    @stdev_m.setter
-    def stdev_m(self, s: npt.NDArray[np.float64]) -> None:
-        """Set the parameter errors covariance matrix."""
-        if s.shape[0] != self.m_dim:
-            raise ValueError(
-                "stdev_m must be of the same " "dimension as the parameter vector."
-            )
-        self._stdev_m = s
 
     @property
     def m_bounds(self) -> npt.NDArray[np.float64]:
