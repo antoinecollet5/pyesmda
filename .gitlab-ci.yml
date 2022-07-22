@@ -36,8 +36,8 @@ stages:
 test:
   stage: Test
   script:
-    - pip install -e .
     - pip install -r requirements_dev.txt
+    - pip install -e .
     - xvfb-run py.test -s --cov=pyesmda --cov-report xml --cov-report html --cov-report term --cov-config=.coveragerc --color=yes
   artifacts:
     paths:
@@ -46,7 +46,7 @@ test:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: ${CI_PROJECT_DIR/coverage.xml
+        path: coverage.xml
     when: always
 
 
@@ -78,6 +78,6 @@ tox:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: ${CI_PROJECT_DIR/coverage.xml
+        path: coverage.xml
     expire_in: 1 week
 
