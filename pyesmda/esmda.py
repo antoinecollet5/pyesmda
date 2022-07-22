@@ -3,11 +3,12 @@ Implement the ES-MDA algorithms.
 
 @author: acollet
 """
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Dict, Sequence, Any, Optional
 import numpy as np
+import numpy.typing as npt
 
 
-class ESMDA():
+class ESMDA:
     """
     Ensemble Smoother with Multiple Data Assimilations.
 
@@ -16,32 +17,32 @@ class ESMDA():
 
     Parameters
     ----------
-    dobs : np.array
+    dobs : npt.NDArray[np.float64]
         Obsevrations vector.
-    m_init : np.array
+    m_init : npt.NDArray[np.float64]
         Initial ensemble of N_{e} parameters vector.
-    stdev_d: np.array
+    stdev_d: npt.NDArray[np.float64]
         Standard deviation of the observations.
-    stdev_m: np.array
+    stdev_m: npt.NDArray[np.float64]
         Standard deviation of the parameters.
     forward_model: callable
         Function calling the non-linear observation model (forward model)
         for all ensemble members and returning the predicted data for
         each ensemble member.
-    forward_model_args: tuple
-        Additional args for the callable forward_model.
-    forward_model_kwargs: dict
-        Additional kwargs for the callable forward_model.
+    forward_model_args: Tuple[Any], optional
+        Additional args for the callable forward_model. The default is None.
+    forward_model_kwargs: Optional[Dict[str, Any]], optional.
+        Additional kwargs for the callable forward_model. The default is None.
     n_assimilation : int, optional
         Number of data assimilations. The default is 4.
-    alpha : Union[List[int], None], optional
+    alpha : Optional[List[int]], optional
         Multiplication factor used to inflate the covariance matrix of the
         measurement errors. The default is None.
-    m_bounds : Union[List[int], None], optional
+    m_bounds : Optional[npt.NDArray[np.float64]], optional
         Top and bottom bounds on the initial ensemble of N_{e} parameters
         vector. The default is None.
     save_ensembles_history: bool, optional
-        Whether to save the history predictions and parameters over the assimilations. 
+        Whether to save the history predictions and parameters over the assimilations.
         The default is False.
 
     References
@@ -55,119 +56,133 @@ class ESMDA():
         2013. 2. 10.2118/163675-MS.
     """
 
-    def __init__(self,
-                 obs: np.array,
-                 m_init: np.array,
-                 stdev_d: np.array,
-                 stdev_m: np.array,
-                 forward_model: Callable,
-                 forward_model_args: tuple = (),
-                 forward_model_kwargs: dict = {},
-                 n_assimilation: int = 4,
-                 alpha: Union[List[int], None] = None,
-                 m_bounds: Union[np.array, None] = None,
-                 save_ensembles_history: bool = False):
+    def __init__(
+        self,
+        obs: npt.NDArray[np.float64],
+        m_init: npt.NDArray[np.float64],
+        stdev_d: npt.NDArray[np.float64],
+        stdev_m: npt.NDArray[np.float64],
+        forward_model: Callable[..., npt.NDArray[np.float64]],
+        forward_model_args: Sequence[Any] = (),
+        forward_model_kwargs: Optional[Dict[str, Any]] = None,
+        n_assimilation: int = 4,
+        alpha: Optional[Union[List[int], npt.NDArray[np.float64]]] = None,
+        m_bounds: Optional[npt.NDArray[np.float64]] = None,
+        save_ensembles_history: bool = False,
+    ) -> None:
         """Construct method."""
-        self.dobs = obs
-        self.m_prior = m_init
-        self.save_ensembles_history = save_ensembles_history
+        self.dobs: npt.NDArray[np.float64] = obs
+        self.m_prior: npt.NDArray[np.float64] = m_init
+        self.save_ensembles_history: bool = save_ensembles_history
         # List of average m values at the end of each assimilation
-        self.m_history = []
+        self.m_history: list[npt.NDArray[np.float64]] = []
         self.d_history = []
         # Initialize d_piror with observation
         # Must be initialized after m_prior because it is used in the
         # @property
-        self.d_prior = np.array([obs] * self.n_ensemble)
-        self.d_pred = np.zeros([self.n_ensemble, self.d_dim])
+        self.d_prior: npt.NDArray[np.float64] = np.array([obs] * self.n_ensemble)
+        self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
         self.stdev_d = stdev_d
         self.stdev_m = stdev_m
-        self.forward_model = forward_model
-        self.forward_model_args = forward_model_args
-        self.forward_model_kwargs = forward_model_kwargs
+        self.d_obs_uc: npt.NDArray[np.float64] = np.array([])
+        self.cov_md: npt.NDArray[np.float64] = np.array([])
+        self.cov_dd: npt.NDArray[np.float64] = np.array([])
+        self.forward_model: Callable = forward_model
+        self.forward_model_args: Sequence[Any] = forward_model_args
+        if forward_model_kwargs is None:
+            forward_model_kwargs: Dict[str, Any] = {}
+        self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self.n_assimilation = n_assimilation
         self.alpha = alpha
         self.m_bounds = m_bounds
 
     @property
-    def n_assimilation(self):
+    def n_assimilation(self) -> int:
         """Return the number of assimilation to perfom."""
         return self._n_assimilation
 
     @n_assimilation.setter
-    def n_assimilation(self, n):
+    def n_assimilation(self, n: int) -> None:
         """Set the number of assimilation to perfom."""
         if type(n) != int:
             raise TypeError("The number of assimilation must be an interger.")
-        elif n < 1:
+        if n < 1:
             raise ValueError("The number of assimilation must be 1 or more.")
         self._n_assimilation = n
 
     @property
-    def n_ensemble(self):
+    def n_ensemble(self) -> int:
         """Return the number of ensemble members."""
         return self.m_prior.shape[0]
 
     @property
-    def m_dim(self):
+    def m_dim(self) -> int:
         """Return the length of the parameters vector."""
         return self.m_prior.shape[1]
 
     @property
-    def d_dim(self):
+    def d_dim(self) -> int:
         """Return the number of forecast data."""
         return len(self.dobs)
 
     @property
-    def stdev_d(self):
+    def stdev_d(self) -> npt.NDArray[np.float64]:
         """Get the observation errors covariance matrix."""
         return self._stdev_d
 
     @stdev_d.setter
-    def stdev_d(self, s):
+    def stdev_d(self, s: npt.NDArray[np.float64]) -> None:
         """Set the observation errors covariance matrix."""
         if s.shape[0] != s.shape[1]:
-            raise ValueError("stdev must be a square matrix with same "
-                             "dimensions as observations vector.")
-        elif s.shape[0] != self.d_dim:
-            raise ValueError("stdev_s must be a square matrix with same "
-                             "dimension as observation vector.")
-        else:
-            self._stdev_d = s
+            raise ValueError(
+                "stdev must be a square matrix with same "
+                "dimensions as observations vector."
+            )
+        if s.shape[0] != self.d_dim:
+            raise ValueError(
+                "stdev_s must be a square matrix with same "
+                "dimension as observation vector."
+            )
+        self._stdev_d = s
 
     @property
-    def stdev_m(self):
+    def stdev_m(self) -> npt.NDArray[np.float64]:
         """Get the parameter errors covariance matrix."""
         return self._stdev_m
 
     @stdev_m.setter
-    def stdev_m(self, s):
+    def stdev_m(self, s: npt.NDArray[np.float64]) -> None:
         """Set the parameter errors covariance matrix."""
         if s.shape[0] != self.m_dim:
-            raise ValueError("stdev_m must be of the same "
-                             "dimension as the parameter vector.")
-        else:
-            self._stdev_m = s
+            raise ValueError(
+                "stdev_m must be of the same " "dimension as the parameter vector."
+            )
+        self._stdev_m = s
 
     @property
-    def m_bounds(self):
+    def m_bounds(self) -> npt.NDArray[np.float64]:
         """Get the parameter errors covariance matrix."""
         return self._m_bounds
 
     @m_bounds.setter
-    def m_bounds(self, mb):
+    def m_bounds(self, mb: npt.NDArray[np.float64]) -> None:
         """Set the parameter errors covariance matrix."""
         if mb is None:
             # In that case, create an array of nan.
-            self._m_bounds = np.empty([self.m_dim, 2])
+            self._m_bounds: npt.NDArray[np.float64] = np.empty(
+                [self.m_dim, 2], dtype=np.float64
+            )
             self._m_bounds[:] = np.nan
         elif mb.shape[0] != self.m_dim:
-            raise ValueError(f"m_bounds is of size {mb.shape} while it"
-                             f"should be of size ({self.m_dim} x 2)")
+            raise ValueError(
+                f"m_bounds is of size {mb.shape} while it"
+                f"should be of size ({self.m_dim} x 2)"
+            )
         else:
             self._m_bounds = mb
 
     @property
-    def alpha(self):
+    def alpha(self) -> Union[List[float], npt.NDArray[np.float64]]:
         r"""
         Get the alpha coefficients used by ES-MDA.
 
@@ -184,19 +199,18 @@ class ESMDA():
         return self._alpha
 
     @alpha.setter
-    def alpha(self, a):
+    def alpha(self, a: Sequence[float]) -> None:
         """Set the alpha coefficients used by ES-MDA."""
         if a is None:
-            self._alpha = np.array([self.n_assimilation] * self.n_assimilation)
+            self._alpha: npt.NDArray[np.float64] = np.array(
+                [1 / self.n_assimilation] * self.n_assimilation, dtype=np.float64
+            )
         elif len(a) != self.n_assimilation:
             raise ValueError("The length of alpha should match n_assimilation")
         else:
-            self._alpha = a
+            self._alpha = np.array(a)
 
-    def m_mean_history(self) -> List[np.ndarray]:
-        return [np.average(m_pred, axis=0) for m_pred in self.m_mean_history]
-
-    def solve(self):
+    def solve(self) -> None:
         """Solve the optimization problem with ES-MDA algorithm."""
         if self.save_ensembles_history:
             self.m_history.append(self.m_prior)  # save m_init
@@ -207,7 +221,7 @@ class ESMDA():
             self.approximate_covariance_matrices()
             self.analyse(assimilation_iteration)
 
-    def forecast(self):
+    def forecast(self) -> None:
         r"""
         Forecast step of ES-MDA.
 
@@ -231,13 +245,13 @@ class ESMDA():
         None.
 
         """
-        self.d_pred = self.forward_model(self.m_prior,
-                                         *self.forward_model_args,
-                                         **self.forward_model_kwargs)
+        self.d_pred = self.forward_model(
+            self.m_prior, *self.forward_model_args, **self.forward_model_kwargs
+        )
         if self.save_ensembles_history:
             self.d_history.append(self.d_pred)
 
-    def pertrub(self, assimilation_iteration):
+    def pertrub(self, assimilation_iteration: int) -> None:
         r"""
         Perturbation of the observation vector step of ES-MDA.
 
@@ -256,15 +270,11 @@ class ESMDA():
         """
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
-            self.d_obs_uc[:, i] = (
-                self.dobs[i]
-                + np.sqrt(self.alpha[assimilation_iteration])
-                * np.random.normal(0, np.abs(self.stdev_d[i, i]),
-                                   self.n_ensemble
-                                   )
-                )
+            self.d_obs_uc[:, i] = self.dobs[i] + np.sqrt(
+                self.alpha[assimilation_iteration]
+            ) * np.random.normal(0, np.abs(self.stdev_d[i, i]), self.n_ensemble)
 
-    def approximate_covariance_matrices(self):
+    def approximate_covariance_matrices(self) -> None:
         """
         Calculate Average and Covariance MD and Covariance DD.
 
@@ -284,8 +294,8 @@ class ESMDA():
         m_average = np.mean(self.m_prior, axis=0)
         d_average = np.mean(self.d_pred, axis=0)
         # Delta with average per ensemble member
-        delta_m = (self.m_prior - m_average)
-        delta_d = (self.d_pred - d_average)
+        delta_m = self.m_prior - m_average
+        delta_d = self.d_pred - d_average
 
         dd_md = 0.0
         dd_dd = 0.0
@@ -297,7 +307,7 @@ class ESMDA():
         self.cov_md = dd_md / (self.n_ensemble - 1.0)
         self.cov_dd = dd_dd / (self.n_ensemble - 1.0)
 
-    def analyse(self, assimilation_iteration):
+    def analyse(self, assimilation_iteration: int) -> None:
         r"""
         Analysis step of the ES-MDA.
 
@@ -316,18 +326,21 @@ class ESMDA():
         m_pred = np.zeros([self.n_ensemble, self.m_dim])
         for j in range(self.n_ensemble):
             tmp_mat = np.matmul(
-                self.cov_md, np.linalg.inv(self.cov_dd
-                                           + self.alpha[assimilation_iteration]
-                                           * self.stdev_d)
+                self.cov_md,
+                np.linalg.inv(
+                    self.cov_dd + self.alpha[assimilation_iteration] * self.stdev_d
+                ),
             )
             tmp_vec = self.d_obs_uc[j, :] - self.d_pred[j, :]
             m_pred[j, :] = self.m_prior[j, :] + np.matmul(tmp_mat, tmp_vec)
 
         # Apply bounds constraints to parameters
-        m_pred = np.where(m_pred < self.m_bounds[:, 0],
-                          self.m_bounds[:, 0], m_pred)  # lower bounds
-        m_pred = np.where(m_pred > self.m_bounds[:, 1],
-                          self.m_bounds[:, 1], m_pred)  # upper bounds
+        m_pred = np.where(
+            m_pred < self.m_bounds[:, 0], self.m_bounds[:, 0], m_pred
+        )  # lower bounds
+        m_pred = np.where(
+            m_pred > self.m_bounds[:, 1], self.m_bounds[:, 1], m_pred
+        )  # upper bounds
 
         # Update the prior parameter for next iteration
         self.m_prior = m_pred
