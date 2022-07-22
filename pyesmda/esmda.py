@@ -31,7 +31,7 @@ class ESMDA:
         Additional args for the callable forward_model. The default is None.
     forward_model_kwargs: Optional[Dict[str, Any]], optional.
         Additional kwargs for the callable forward_model. The default is None.
-    n_assimilation : int, optional
+    n_assimilations : int, optional
         Number of data assimilations. The default is 4.
     alpha : Optional[List[int]], optional
         Multiplication factor used to inflate the covariance matrix of the
@@ -62,7 +62,7 @@ class ESMDA:
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
-        n_assimilation: int = 4,
+        n_assimilations: int = 4,
         alpha: Optional[Union[List[int], npt.NDArray[np.float64]]] = None,
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
@@ -88,23 +88,23 @@ class ESMDA:
         if forward_model_kwargs is None:
             forward_model_kwargs: Dict[str, Any] = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
-        self.n_assimilation = n_assimilation
+        self.n_assimilations = n_assimilations
         self.alpha = alpha
         self.m_bounds = m_bounds
 
     @property
-    def n_assimilation(self) -> int:
-        """Return the number of assimilation to perfom."""
-        return self._n_assimilation
+    def n_assimilations(self) -> int:
+        """Return the number of assimilations to perfom."""
+        return self._n_assimilations
 
-    @n_assimilation.setter
-    def n_assimilation(self, n: int) -> None:
-        """Set the number of assimilation to perfom."""
+    @n_assimilations.setter
+    def n_assimilations(self, n: int) -> None:
+        """Set the number of assimilations to perfom."""
         if type(n) != int:
-            raise TypeError("The number of assimilation must be an interger.")
+            raise TypeError("The number of assimilations must be a positive interger.")
         if n < 1:
-            raise ValueError("The number of assimilation must be 1 or more.")
-        self._n_assimilation = n
+            raise ValueError("The number of assimilations must be 1 or more.")
+        self._n_assimilations = n
 
     @property
     def n_ensemble(self) -> int:
@@ -129,15 +129,15 @@ class ESMDA:
     @stdev_d.setter
     def stdev_d(self, s: npt.NDArray[np.float64]) -> None:
         """Set the observation errors covariance matrix."""
-        if s.shape[0] != s.shape[1]:
+        if len(s.shape) != 2 or s.shape[0] != s.shape[1]:
             raise ValueError(
-                "stdev must be a square matrix with same "
-                "dimensions as observations vector."
+                "stdev_d must be a square matrix with same "
+                "dimensions as the observations vector."
             )
         if s.shape[0] != self.d_dim:
             raise ValueError(
-                "stdev_s must be a square matrix with same "
-                "dimension as observation vector."
+                "stdev_d must be a square matrix with same "
+                "dimensions as the observations vector."
             )
         self._stdev_d = s
 
@@ -157,8 +157,8 @@ class ESMDA:
             self._m_bounds[:] = np.nan
         elif mb.shape[0] != self.m_dim:
             raise ValueError(
-                f"m_bounds is of size {mb.shape} while it"
-                f"should be of size ({self.m_dim} x 2)"
+                f"m_bounds is of size {mb.shape} while it "
+                f"should be of size ({self.m_dim}, 2)"
             )
         else:
             self._m_bounds = mb
@@ -185,10 +185,10 @@ class ESMDA:
         """Set the alpha coefficients used by ES-MDA."""
         if a is None:
             self._alpha: npt.NDArray[np.float64] = np.array(
-                [1 / self.n_assimilation] * self.n_assimilation, dtype=np.float64
+                [1 / self.n_assimilations] * self.n_assimilations, dtype=np.float64
             )
-        elif len(a) != self.n_assimilation:
-            raise ValueError("The length of alpha should match n_assimilation")
+        elif len(a) != self.n_assimilations:
+            raise ValueError("The length of alpha should match n_assimilations")
         else:
             self._alpha = np.array(a)
 
@@ -196,7 +196,7 @@ class ESMDA:
         """Solve the optimization problem with ES-MDA algorithm."""
         if self.save_ensembles_history:
             self.m_history.append(self.m_prior)  # save m_init
-        for assimilation_iteration in range(self.n_assimilation):
+        for assimilation_iteration in range(self.n_assimilations):
             print(f"Assimilation # {assimilation_iteration + 1}")
             self.forecast()
             self.pertrub(assimilation_iteration)
