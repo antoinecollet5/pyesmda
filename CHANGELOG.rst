@@ -5,6 +5,9 @@ Changelog
 0.2.0 (2022-03-06)
 ------------------
 
+* #5 The parameter `n_assimilation` becomes `n_assimilations`.
+* #4 The parameter `stdev_m` is removed.
+* #3 Type hints are now used in the library.
 * #2 Add the possibility to save the history of m and d. This introduces a new knew
   keyword (boolean) for the constructor `save_ensembles_history`. 
   Note that the `m_mean` attribute is depreciated and two new attributes are 
