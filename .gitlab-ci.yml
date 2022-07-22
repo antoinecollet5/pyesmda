@@ -1,6 +1,6 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/python/tags/
-image: python:latest # defaults to latest
+image: python:3.7 # defaults to latest
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -46,7 +46,7 @@ test:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage/cobertura-coverage.xml
     when: always
 
 
@@ -78,6 +78,6 @@ tox:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: coverage.xml
+        path: coverage/cobertura-coverage.xml
     expire_in: 1 week
 
