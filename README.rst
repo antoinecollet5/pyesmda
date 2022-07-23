@@ -19,15 +19,20 @@ pyESMDA
     :target: https://gitlab.com/antoinecollet5/pyesmda/pipelines/
     :alt: Coverage
 
+.. image:: https://app.codacy.com/project/badge/Grade/bc4d1a8a1f574273a053a32d44931c00    
+    :target: https://www.codacy.com/gl/antoinecollet5/pyesmda/dashboard?utm_source=gitlab.com&amp;utm_medium=referral&amp;utm_content=antoinecollet5/pyesmda&amp;utm_campaign=Badge_Grade
+    :alt: codacy
+    
 .. image:: https://readthedocs.org/projects/pyesmda/badge/?version=latest
-        :target: https://pyesmda.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+    :target: https://pyesmda.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: https://img.shields.io/badge/License-MIT license-blue.svg
     :target: https://gitlab.com/antoinecollet5/pyesmda/-/blob/master/LICENSE
 
-
-
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat
+    :target: https://github.com/psf/black
+    :alt: Black
 
 
 Python Ensemble Smoother with Multiple Data Assimilations
@@ -50,4 +55,4 @@ References
   Production and Seismic Data in a Real Field Case Using the Ensemble
   Smoother With Multiple Data Assimilation. Society of Petroleum
   Engineers - SPE Reservoir Simulation Symposium
-  2013. 2. 10.2118/163675-MS.
+  1.    2. 10.2118/163675-MS.
