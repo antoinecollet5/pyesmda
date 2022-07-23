@@ -19,33 +19,35 @@ class ESMDA:
     Attributes
     ----------
     d_dim : int
-        Number of observation values :math:`N_{obs}`, and consequently of predicted values.
+        Number of observation values :math:`N_{obs}`, and consequently of
+        predicted values.
     obs : npt.NDArray[np.float64]
         Obsevrations vector with dimensions (:math:`N_{obs}`).
     cov_d: npt.NDArray[np.float64]
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`).
     d_obs_uc: npt.NDArray[np.float64]
-        Vectors of pertubed observations with dimension (:math:`N_{e}`, :math:`N_{obs}`).
+        Vectors of pertubed observations with dimension
+        (:math:`N_{e}`, :math:`N_{obs}`).
     d_pred: npt.NDArray[np.float64]
         Vectors of predicted values (one for each ensemble member)
         with dimensions (:math:`N_{e}`, :math:`N_{obs}`).
     d_history: List[npt.NDArray[np.float64]]
         List of vectors of predicted values obtained at each assimilation step.
     m_prior:
-        Vectors of parameter values (one vector for each ensemble member) used in the 
+        Vectors of parameter values (one vector for each ensemble member) used in the
         last assimilation step. Dimensions are (:math:`N_{e}`, :math:`N_{m}`).
     m_bounds : npt.NDArray[np.float64]
         Lower and upper bounds for the :math:`N_{m}` parameter values.
-        Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first 
+        Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
         column and upper on the second one.
     m_history: List[npt.NDArray[np.float64]]
         List of successive `m_prior`.
     cov_md: npt.NDArray[np.float64]
         Cross-covariance matrix between the forecast state vector and predicted data.
-        Dimensions are (:math:`N_{m}, N_{obs}`) 
+        Dimensions are (:math:`N_{m}, N_{obs}`)
     cov_dd: npt.NDArray[np.float64]
-        Autocovariance matrix of predicted data. 
+        Autocovariance matrix of predicted data.
         Dimensions are (:math:`N_{obs}, N_{obs}`)
     forward_model: callable
         Function calling the non-linear observation model (forward model)
@@ -63,11 +65,11 @@ class ESMDA:
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     """
-    
+
     __slots__: List[str] = [
-        "obs", 
+        "obs",
         "_cov_d",
-        "d_obs_uc", 
+        "d_obs_uc",
         "d_pred",
         "d_history",
         "m_prior",
@@ -75,13 +77,13 @@ class ESMDA:
         "m_history",
         "cov_md",
         "cov_dd",
-        "forward_model", 
-        "forward_model_args", 
-        "forward_model_kwargs", 
-        "_n_assimilations", 
-        "_alpha", 
-        "save_ensembles_history"
-        ]
+        "forward_model",
+        "forward_model_args",
+        "forward_model_kwargs",
+        "_n_assimilations",
+        "_alpha",
+        "save_ensembles_history",
+    ]
 
     def __init__(
         self,
@@ -97,13 +99,13 @@ class ESMDA:
         save_ensembles_history: bool = False,
     ) -> None:
         """Construct the instance.
-        
+
         Parameters
         ----------
         obs : npt.NDArray[np.float64]
-            Obsevrations vector with dimension :math:`N_{obs}`. 
+            Obsevrations vector with dimension :math:`N_{obs}`.
         m_init : npt.NDArray[np.float64]
-            Initial ensemble of parameters vector with dimensions 
+            Initial ensemble of parameters vector with dimensions
             (:math:`N_{e}`, :math:`N_{m}`).
         cov_d: npt.NDArray[np.float64]
             Covariance matrix of observed data measurement errors with dimensions
@@ -123,17 +125,17 @@ class ESMDA:
             measurement errors. The default is None.
         m_bounds : Optional[npt.NDArray[np.float64]], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
-            Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first 
+            Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
             column and upper on the second one. The default is None.
         save_ensembles_history: bool, optional
-            Whether to save the history predictions and parameters over 
+            Whether to save the history predictions and parameters over
             the assimilations. The default is False.
         """
         self.obs: npt.NDArray[np.float64] = obs
         self.m_prior: npt.NDArray[np.float64] = m_init
         self.save_ensembles_history: bool = save_ensembles_history
         self.m_history: list[npt.NDArray[np.float64]] = []
-        self.d_history: list[npt.NDArray[np.float64]]=[]
+        self.d_history: list[npt.NDArray[np.float64]] = []
         self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
         self.cov_d = cov_d
         self.d_obs_uc: npt.NDArray[np.float64] = np.array([])

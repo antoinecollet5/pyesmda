@@ -21,12 +21,12 @@ def empty_forward_model() -> None:
 @pytest.mark.parametrize(
     "args,kwargs,expected_exception",
     [
-        (  #  simple construction
+        (  # simple construction
             (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
             {},
             does_not_raise(),
         ),
-        (  #  issue with stdev_d
+        (  # issue with stdev_d
             (np.zeros(10), np.zeros((10, 10)), np.zeros((10)), empty_forward_model),
             {},
             pytest.raises(
@@ -37,7 +37,7 @@ def empty_forward_model() -> None:
                 ),
             ),
         ),
-        (  #  issue with stdev_d
+        (  # issue with stdev_d
             (np.zeros(10), np.zeros((10, 10)), np.zeros((9, 9)), empty_forward_model),
             {},
             pytest.raises(
@@ -48,7 +48,7 @@ def empty_forward_model() -> None:
                 ),
             ),
         ),
-        (  #  normal working with n_assimilations
+        (  # normal working with n_assimilations
             (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
             {
                 "n_assimilations": 4,
