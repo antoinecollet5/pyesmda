@@ -11,6 +11,7 @@ Welcome to pyESMDA's documentation!
    installation
    usage
    contributing
+   bibliography
    authors
    changelog
 

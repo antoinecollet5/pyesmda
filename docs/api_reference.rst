@@ -1,6 +1,0 @@
-
-pyesmda
-=============
-
-.. automodule:: pyesmda
-   :members:
