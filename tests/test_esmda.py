@@ -3,7 +3,6 @@ General test for the Ensemble-Smoother with Mulitple Data Assimilation.
 
 @author: acollet
 """
-from typing import Dict, Any
 from contextlib import contextmanager
 import pytest
 import numpy as np
@@ -33,9 +32,9 @@ def empty_forward_model() -> None:
             pytest.raises(
                 ValueError,
                 match=(
-                    r"stdev_d must be a square matrix with "
+                    r"cov_d must be a square matrix with "
                     r"same dimensions as the observations vector."
-                )
+                ),
             ),
         ),
         (  #  issue with stdev_d
@@ -44,9 +43,9 @@ def empty_forward_model() -> None:
             pytest.raises(
                 ValueError,
                 match=(
-                    r"stdev_d must be a square matrix with same dimensions "
+                    r"cov_d must be a square matrix with same dimensions "
                     r"as the observations vector."
-                )
+                ),
             ),
         ),
         (  #  normal working with n_assimilations
@@ -98,9 +97,9 @@ def empty_forward_model() -> None:
             pytest.raises(
                 ValueError,
                 match=(
-                    r"m_bounds is of size \(3, 7\) while" 
+                    r"m_bounds is of size \(3, 7\) while"
                     r" it should be of size \(10, 2\)"
-                )
+                ),
             ),
         ),
         (
@@ -188,10 +187,11 @@ def test_esmda_exponential_case():
     ma = np.random.uniform(low=-10.0, high=50.0, size=n_ensemble)
     # Uniform law for the parameter b ensemble
     mb = np.random.uniform(low=-0.001, high=0.01, size=n_ensemble)
-    m_ensemble = np.stack((ma, mb), axis=1)  # Prior ensemble
+    # Prior ensemble
+    m_ensemble = np.stack((ma, mb), axis=1)
 
     # Observation error covariance matrix
-    stdev_d = np.diag([1.0] * obs.shape[0])
+    cov_d = np.diag([1.0] * obs.shape[0])
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -208,14 +208,14 @@ def test_esmda_exponential_case():
     solveur = ESMDA(
         obs,
         m_ensemble,
-        stdev_d,
+        cov_d,
         forward_model,
         forward_model_args=(x,),
         forward_model_kwargs={},
         n_assimilations=n_assimilations,
         alpha=alpha,
         m_bounds=m_bounds,
-        save_ensembles_history=True
+        save_ensembles_history=True,
     )
     # Call the ES-MDA solver
     solveur.solve()

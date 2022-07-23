@@ -1,0 +1,67 @@
+@book{evensenDataAssimilationEnsemble2007,
+  title = {Data {{Assimilation}} - {{The Ensemble Kalman Filter}}},
+  author = {Evensen, Geir},
+  year = {2007},
+  publisher = {{Springer Berlin Heidelberg}},
+  doi = {10.1007/978-3-642-03711-5},
+  abstract = {Data Assimilation comprehensively covers data assimilation and inverse methods, including both traditional state estimation and parameter estimation. This text and reference focuses on various popular data assimilation methods, such as weak and strong constraint variational methods and ensemble filters and smoothers. It is demonstrated how the different methods can be derived from a common theoretical basis, as well as how they differ and/or are related to each other, and which properties characterize them, using several examples. It presents the mathematical framework and derivations in a way which is common for any discipline where dynamics is merged with measurements. The mathematics level is modest, although it requires knowledge of basic spatial statistics, Bayesian statistics, and calculus of variations. Readers will also appreciate the introduction to the mathematical methods used and detailed derivations, which should be easy to follow, are given throughout the book. The codes used in several of the data assimilation experiments are available on a web page. The focus on ensemble methods, such as the ensemble Kalman filter and smoother, also makes it a solid reference to the derivation, implementation and application of such techniques. Much new material, in particular related to the formulation and solution of combined parameter and state estimation problems and the general properties of the ensemble algorithms, is available here for the first time. The 2nd edition includes a partial rewrite of Chapters 13 an 14, and the Appendix. In addition, there is a completely new Chapter on "Spurious correlations, localization and inflation", and an updated and improved sampling discussion in Chap 11.},
+  isbn = {978-3-642-03710-8},
+  langid = {english},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/WD97BI9N/bwmeta1.element.html}
+}
+% == BibTeX quality report for evensenDataAssimilationEnsemble2007:
+% ? Title looks like it was stored in title-case in Zotero
+% ? unused Library catalog ("https://link.springer.comwww.infona.pl")
+% ? unused Url ("https://link.springer.com/book/10.1007/978-3-642-03711-5")
+
+
+@article{aanonsenEnsembleKalmanFilter2009,
+  title = {The {{Ensemble Kalman Filter}} in {{Reservoir Engineering--a Review}}},
+  author = {Aanonsen, Sigurd and N{\ae}vdal, Geir and Oliver, Dean and Reynolds, Albert and Vall{\`e}s, Brice},
+  year = {2009},
+  month = sep,
+  journal = {SPE Journal - SPE J},
+  volume = {14},
+  pages = {393--412},
+  doi = {10.2118/117274-PA},
+  abstract = {There has been great progress in data assimilation within atmospheric and oceanographic sciences during the last couple of decades. In data assimilation, one aims at merging the information from observations into a numerical model, typically of a geophysical system. A typical example where data assimilation is needed is in weather forecasting. Here, the atmospheric models must take into account the most recent observations of variables such as temperature and atmospheric pressure for better forecasting of the weather in the next time period. A major challenge for these models is that they contain very large numbers of variables.The progress in data assimilation is because of both increased computational power and the introduction of techniques that are capable of handling large amounts of data and more severe nonlinearities. The aim of this paper is to focus on one of these techniques, the ensemble Kalman filter (EnKF). The EnKF has been introduced to petroleum science recently (Lorentzen et al. 2001a) and, in particular, has attracted attention as a promising method for solving the history matching problem. The literature available on the EnKF is now rather overwhelming. We hope that this review will help researchers (and students) working on adapting the EnKF to petroleum applications to find valuable references and ideas, although the number of papers discussing the EnKF is too large to give a complete review. For practitioners, we have cited critical EnKF papers from weather and oceanography. We have also tried to review most of the papers dealing with the EnKF and updating of reservoir models available to the authors by the beginning of 2008.The EnKF is based on the simpler Kalman filter (Kalman 1960). We will start by introducing the Kalman filter. The Kalman filter is an efficient recursive filter that estimates the state of a linear dynamical system from a series of noisy measurements. The Kalman filter is based on a model equation, where the current state of the system is associated with an uncertainty (expressed by a covariance matrix) and an observation equation that relates a linear combination of the states to measurements. The measurements are also associated with uncertainty. The model equations are used to compute a forward step (Eqs. 1 and 2) where the state variables are computed forward in time with the current estimate of the state as initial condition. The observation equations are used in the analysis step (Eqs. 3 through 5) where the estimated value of the state and its uncertainty are corrected to take into account the most recent measurements See, e.g., Cohn (1997), Maybeck (1979), or Stengel (1994) for an introduction to the Kalman filter.},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/JNISZ6SJ/Aanonsen et al. - 2009 - The Ensemble Kalman Filter in Reservoir Engineerin.pdf}
+}
+% == BibTeX quality report for aanonsenEnsembleKalmanFilter2009:
+% ? Title looks like it was stored in title-case in Zotero
+
+@article{emerickEnsembleSmootherMultiple2013,
+  title = {Ensemble Smoother with Multiple Data Assimilation},
+  author = {Emerick, Alexandre A. and Reynolds, Albert C.},
+  year = {2013},
+  month = jun,
+  journal = {Computers \& Geosciences},
+  series = {Ensemble {{Kalman}} Filter for Data Assimilation},
+  volume = {55},
+  pages = {3--15},
+  issn = {0098-3004},
+  doi = {10.1016/j.cageo.2012.03.011},
+  abstract = {In the last decade, ensemble-based methods have been widely investigated and applied for data assimilation of flow problems associated with atmospheric physics and petroleum reservoir history matching. This paper focuses entirely on the reservoir history-matching problem. Among the ensemble-based methods, the ensemble Kalman filter (EnKF) is the most popular for history-matching applications. However, the recurrent simulation restarts required in the EnKF sequential data assimilation process may prevent the use of EnKF when the objective is to incorporate the history matching in an integrated geo-modeling workflow. In this situation, the ensemble smoother (ES) is a viable alternative. However, because ES computes a single global update, it may not result in acceptable data matches; therefore, the development of efficient iterative forms of ES is highly desirable. In this paper, we propose to assimilate the same data multiple times with an inflated measurement error covariance matrix in order to improve the results obtained by ES. This method is motivated by the equivalence between single and multiple data assimilation for the linear-Gaussian case. We test the proposed method for three synthetic reservoir history-matching problems. Our results show that the proposed method provides better data matches than those obtained with standard ES and EnKF, with a computational cost comparable with the computational cost of EnKF.},
+  langid = {english},
+  keywords = {Ensemble Kalman filter,Ensemble smoother,History matching,Multiple data assimilation},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/KLUCNM9T/Emerick and Reynolds - 2013 - Ensemble smoother with multiple data assimilation.pdf;/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/4LNFMI2H/S0098300412000994.html}
+}
+% == BibTeX quality report for emerickEnsembleSmootherMultiple2013:
+% ? unused Library catalog ("ScienceDirect")
+% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0098300412000994")
+
+@inproceedings{emerickHistoryMatchingProductionSeismic2013,
+  title = {History-{{Matching Production}} and {{Seismic Data}} in a {{Real Field Case Using}} the {{Ensemble Smoother With Multiple Data Assimilation}}},
+  booktitle = {Society of {{Petroleum Engineers}} - {{SPE Reservoir Simulation Symposium}} 2013},
+  author = {Emerick, Alexandre and Reynolds, Albert},
+  year = {2013},
+  month = feb,
+  volume = {2},
+  doi = {10.2118/163675-MS},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/I4DUT9GN/Emerick and Reynolds - 2013 - History-Matching Production and Seismic Data in a .pdf}
+}
+% == BibTeX quality report for emerickHistoryMatchingProductionSeismic2013:
+% ? Unsure about the formatting of the booktitle
+% ? Title looks like it was stored in title-case in Zotero
+
+
