@@ -108,7 +108,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'pyESMDA'
 author = pyesmda.__author__
-copyright = '2021-{datetime.datetime.today().year}, {author}'
+copyright = f"2021-{datetime.datetime.today().year}, {author}"
 
 
 # The version info for the project you're documenting, acts as replacement
@@ -176,7 +176,29 @@ html_theme = "pydata_sphinx_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+#
+html_theme_options = {
+    # "google_analytics_id": "UA-140243896-1",
+    "show_prev_next": False,
+    "gitlab_url": "https://gitlab.com/antoinecollet5/pyesmda/",
+    "icon_links": [
+        {
+            "name": "Support",
+            "url": "https://gitlab.com/antoinecollet5/pyesmda/-/issues",
+            "icon": "fa fa-comment fa-fw",
+        },
+        {
+            "name": "Contributing",
+            "url": "https://gitlab.com/antoinecollet5/pyesmda/CONTRIBUTING.rst",
+            "icon": "fa fa-gavel fa-fw",
+        },
+        # {
+        #     "name": "The Paper",
+        #     "url": "https://doi.org/10.21105/joss.01450",
+        #     "icon": "fa fa-file-text fa-fw",
+        # },
+    ],
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -261,7 +283,6 @@ html_static_path = []
 # The name of a javascript file (relative to the configuration directory) that
 # implements a search results scorer. If empty, the default will be used.
 #html_search_scorer = 'scorer.js'
-
 
 # -- Options for HTMLHelp output ---------------------------------------
 
