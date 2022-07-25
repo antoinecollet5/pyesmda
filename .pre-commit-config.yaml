@@ -8,6 +8,8 @@ repos:
   rev: 5.10.1
   hooks:
   - id: isort
+    args: ["--profile", "black", "--filter-files"]
+
 
 - repo: https://gitlab.com/PyCQA/flake8
   rev: 3.9.2
@@ -15,8 +17,8 @@ repos:
   - id: flake8
     additional_dependencies: [
       "flake8-black==0.3.2",
-      "flake8-isort==4.1.1",
-      "flake8-quotes==3.3.1",
+      # "flake8-isort==4.1.1", it causes issues with black
+      # "flake8-quotes==3.3.1", it also causes issues with black
     ]
     
 - repo: https://github.com/codespell-project/codespell
