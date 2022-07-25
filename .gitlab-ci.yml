@@ -11,8 +11,6 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   QT_DEBUG_PLUGINS: 1
   QT_QPA_PLATFORM: offscreen
-  PRE_COMMIT_AUTO_FIX: true
-  PRE_COMMIT_DEDUPLICATE_MR_AND_BRANCH: false
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/reference/pip_install/#caching
