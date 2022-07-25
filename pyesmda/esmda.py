@@ -3,7 +3,8 @@ Implement the ES-MDA algorithms.
 
 @author: acollet
 """
-from typing import List, Union, Callable, Dict, Sequence, Any, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+
 import numpy as np
 import numpy.typing as npt
 
