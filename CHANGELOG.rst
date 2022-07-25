@@ -5,6 +5,8 @@ Changelog
 0.3.0 (To be defined)
 ---------------------
 
+* `!PR11 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/11>`_ Implement the covariance localization. Introduces the 
+  correlation matrices **dd_correlation_matrix** and **md_correlation_matrix**
 * `!PR10 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/10>`_ Implement the parameters auto-covariance inflation.
   Add the estimation of the parameters auto-covariance matrix. The parameter **alpha** becomes **cov_d_inflation_factors**.
 

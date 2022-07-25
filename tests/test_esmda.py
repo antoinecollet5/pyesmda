@@ -16,7 +16,7 @@ def does_not_raise():
     yield
 
 
-def empty_forward_model() -> None:
+def empty_forward_model(*args, **kwargs) -> None:
     return
 
 
@@ -24,41 +24,39 @@ def empty_forward_model() -> None:
     "args,kwargs,expected_exception",
     [
         (  # simple construction
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {},
             does_not_raise(),
         ),
         (  # issue with stdev_d
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((10)), empty_forward_model),
             {},
             pytest.raises(
                 ValueError,
                 match=(
-                    r"cov_d must be a square matrix with "
-                    r"same dimensions as the observations vector."
+                    r"cov_d must be a 2D square matrix with " r"dimensions \(20, 20\)."
                 ),
             ),
         ),
         (  # issue with stdev_d
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((9, 9)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((9, 9)), empty_forward_model),
             {},
             pytest.raises(
                 ValueError,
                 match=(
-                    r"cov_d must be a square matrix with same dimensions "
-                    r"as the observations vector."
+                    r"cov_d must be a 2D square matrix with " r"dimensions \(20, 20\)."
                 ),
             ),
         ),
         (  # normal working with n_assimilations
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "n_assimilations": 4,
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "n_assimilations": 4.5,  # Not a valid number of assimilations
             },
@@ -68,7 +66,7 @@ def empty_forward_model() -> None:
             ),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "forward_model_args": (22, 45, "some_arg"),
                 "forward_model_kwargs": {"some_kwargs": "str", "some_other": 98.0},
@@ -76,7 +74,7 @@ def empty_forward_model() -> None:
             does_not_raise(),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "n_assimilations": -1,  # Not a valid number of assimilations
             },
@@ -85,27 +83,27 @@ def empty_forward_model() -> None:
             ),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "m_bounds": np.zeros((10, 2)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "m_bounds": np.zeros((3, 7)),
             },
             pytest.raises(
                 ValueError,
                 match=(
-                    r"m_bounds is of size \(3, 7\) while"
-                    r" it should be of size \(10, 2\)"
+                    r"m_bounds is of shape \(3, 7\) while"
+                    r" it should be of shape \(10, 2\)"
                 ),
             ),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "n_assimilations": 3,
                 "cov_d_inflation_factors": np.ones(5),
@@ -119,7 +117,7 @@ def empty_forward_model() -> None:
             ),
         ),
         (
-            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
             {
                 "n_assimilations": 3,
                 "cov_mm_inflation_factors": np.ones(5),
@@ -129,6 +127,86 @@ def empty_forward_model() -> None:
                 match=(
                     r"The length of cov_mm_inflation_factors "
                     "should match n_assimilations"
+                ),
+            ),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "dd_correlation_matrix": np.zeros((20, 20)),
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "md_correlation_matrix": np.zeros((10, 20)),
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "dd_correlation_matrix": np.zeros((20, 20)),
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "md_correlation_matrix": np.zeros((10, 20)),
+            },
+            does_not_raise(),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "dd_correlation_matrix": np.zeros((20)),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"dd_correlation_matrix must be a 2D "
+                    r"square matrix with dimensions \(20, 20\)."
+                ),
+            ),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "md_correlation_matrix": np.zeros((10)),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"md_correlation_matrix must be a 2D "
+                    r"matrix with dimensions \(10, 20\)."
+                ),
+            ),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "dd_correlation_matrix": np.zeros((20, 19)),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"dd_correlation_matrix must be a 2D "
+                    r"square matrix with dimensions \(20, 20\)."
+                ),
+            ),
+        ),
+        (
+            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            {
+                "md_correlation_matrix": np.zeros((10, 10)),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"md_correlation_matrix must be a 2D "
+                    r"matrix with dimensions \(10, 20\)."
                 ),
             ),
         ),
@@ -253,6 +331,8 @@ def test_esmda_exponential_case():
         cov_d_inflation_factors=cov_d_inflation_factors,
         cov_mm_inflation_factors=cov_mm_inflation_factors,
         m_bounds=m_bounds,
+        md_correlation_matrix=np.ones((m_ensemble.shape[1], obs.size)),
+        dd_correlation_matrix=np.ones((obs.size, obs.size)),
         save_ensembles_history=True,
     )
     # Call the ES-MDA solver
