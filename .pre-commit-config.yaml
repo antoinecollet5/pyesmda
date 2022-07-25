@@ -8,3 +8,12 @@ repos:
   rev: 5.10.1
   hooks:
   - id: isort
+
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.1.0
+  hooks:
+  - id: codespell
+    args: [
+      "docs tests",
+      "*.py *.rst *.md",
+    ]
