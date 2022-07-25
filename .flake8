@@ -1,5 +1,5 @@
 [flake8]
-exclude = .git,__pycache__,build,dist
+exclude = .git,__pycache__,build,dist,docs 
 ignore =
     # whitespace before ':'
     E203,
