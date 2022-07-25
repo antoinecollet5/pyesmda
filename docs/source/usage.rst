@@ -63,7 +63,7 @@ exponential function are estimated::
 
 
     def test_esmda_exponential_case():
-        """Test the ES-MDA on a simple syntetic case with two parameters."""
+        """Test the ES-MDA on a simple synthetic case with two parameters."""
         a = 10.0
         b = - 0.0020
         # timesteps
