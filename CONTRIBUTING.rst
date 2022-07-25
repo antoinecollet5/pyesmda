@@ -52,7 +52,7 @@ Commit Style
 ~~~~~~~~~~~~
 
 - The project follows `google's trunk based development <https://cloud.google.com/solutions/devops/devops-tech-trunk-based-development>`_ .
-- The features are developped in feature branches and merged in the develop branch. The develop branch is periodically merged in the master branch for official releases.
+- The features are developed in feature branches and merged in the develop branch. The develop branch is periodically merged in the master branch for official releases.
 - The commits follow the following naming conventions:
     + ENH: Enhancements (features)
     + FIX: Bug fixes

@@ -153,14 +153,14 @@ class ESMDA:
 
     @property
     def n_assimilations(self) -> int:
-        """Return the number of assimilations to perfom."""
+        """Return the number of assimilations to perform."""
         return self._n_assimilations
 
     @n_assimilations.setter
     def n_assimilations(self, n: int) -> None:
-        """Set the number of assimilations to perfom."""
+        """Set the number of assimilations to perform."""
         if not isinstance(n, int):
-            raise TypeError("The number of assimilations must be a positive interger.")
+            raise TypeError("The number of assimilations must be a positive integer.")
         if n < 1:
             raise ValueError("The number of assimilations must be 1 or more.")
         self._n_assimilations = n
