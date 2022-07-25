@@ -2,7 +2,10 @@
 Changelog
 ==============
 
-0.2.0 (2022-03-06)
+0.3.0 (TDB)
+------------------
+
+0.2.0 (2022-07-23)
 ------------------
 
 * `!PR6 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/6>`_ The parameter `stdev_d` becomes `cov_d`.
