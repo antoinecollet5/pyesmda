@@ -134,7 +134,7 @@ Ready to contribute? Here's how to set up `pyESMDA` for local development.
       $ cd docs
       $ make html
 
-  The docs will be located in `pyesmda/docs/_build`.
+  The docs will be located in `pyesmda/docs/build`.
 
 
 6. Commit your changes and push your branch to GitLab::
