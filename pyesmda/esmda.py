@@ -3,7 +3,7 @@ Implement the ES-MDA algorithms.
 
 @author: acollet
 """
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -60,9 +60,15 @@ class ESMDA:
         Additional kwargs for the callable forward_model.
     n_assimilations : int
         Number of data assimilations (:math:`N_{a}`).
-    alpha : List[float]
+    cov_d_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
-        measurement errors. Dimensions
+        measurement errors.
+    cov_mm_inflation_factors: List[float]
+        List of factors used to inflate the adjusted parameters covariance among
+        iterations:
+        Each realization of the ensemble at the end of each update step i,
+        is linearly inflated around its mean.
+        See :cite:p:`andersonExploringNeedLocalization2007`.
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     """
@@ -82,7 +88,8 @@ class ESMDA:
         "forward_model_args",
         "forward_model_kwargs",
         "_n_assimilations",
-        "_alpha",
+        "_cov_d_inflation_factors",
+        "_cov_mm_inflation_factors",
         "save_ensembles_history",
     ]
 
@@ -95,7 +102,8 @@ class ESMDA:
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        alpha: Optional[Sequence[float]] = None,
+        cov_d_inflation_factors: Optional[Sequence[float]] = None,
+        cov_mm_inflation_factors: Optional[Sequence[float]] = None,
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
     ) -> None:
@@ -121,9 +129,20 @@ class ESMDA:
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
-        alpha : Optional[Sequence[float]]
+        cov_d_inflation_factors : Optional[Sequence[float]]
             Multiplication factor used to inflate the covariance matrix of the
-            measurement errors. The default is None.
+            measurement errors.
+            Must match the number of data assimilations (:math:`N_{a}`).
+            The default is None.
+        cov_mm_inflation_factors: Optional[Sequence[float]]
+            List of factors used to inflate the adjusted parameters covariance
+            among iterations:
+            Each realization of the ensemble at the end of each update step i,
+            is linearly inflated around its mean.
+            Must match the number of data assimilations (:math:`N_{a}`).
+            See :cite:p:`andersonExploringNeedLocalization2007`.
+            If None, the default is 1.0. at each iteration (no inflation).
+            The default is None.
         m_bounds : Optional[npt.NDArray[np.float64]], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -148,7 +167,8 @@ class ESMDA:
             forward_model_kwargs: Dict[str, Any] = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self.n_assimilations = n_assimilations
-        self.alpha = alpha
+        self.cov_d_inflation_factors = cov_d_inflation_factors
+        self.cov_mm_inflation_factors = cov_mm_inflation_factors
         self.m_bounds = m_bounds
 
     @property
@@ -198,7 +218,35 @@ class ESMDA:
                 "cov_d must be a square matrix with same "
                 "dimensions as the observations vector."
             )
-        self._cov_d = s
+        self._cov_d: npt.NDArray[np.float64] = s
+
+    @property
+    def cov_mm(self) -> npt.NDArray[np.float64]:
+        r"""
+        Get the estimated parameters autocovariance matrix. It is a read-only attribute.
+
+        The covariance matrice :math:`C^{l}_{MM}`
+        is approximated from the ensemble in the standard way of EnKF
+        :cite:p:`evensenDataAssimilationEnsemble2007,aanonsenEnsembleKalmanFilter2009`:
+
+        .. math::
+           C^{l}_{MM} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(m^{l}_{j} -
+           \overline{m^{l}}\right)\left(m^{l}_{j}
+           - \overline{m^{l}} \right)^{T}
+
+        with :math:`\overline{m^{l}}`, the parameters
+        ensemble means, at iteration :math:`l`.
+        """
+        m_average: npt.NDArray[np.float64] = np.mean(self.m_prior, axis=0)
+        # Delta with average per ensemble member
+        delta_m: npt.NDArray[np.float64] = self.m_prior - m_average
+
+        dd_mm: npt.NDArray[np.float64] = np.zeros((self.m_dim, self.m_dim))
+
+        for j in range(self.n_ensemble):
+            dd_mm += np.outer(delta_m[j, :], delta_m[j, :])
+
+        return dd_mm / (self.n_ensemble - 1.0)
 
     @property
     def m_bounds(self) -> npt.NDArray[np.float64]:
@@ -223,9 +271,9 @@ class ESMDA:
             self._m_bounds = mb
 
     @property
-    def alpha(self) -> Union[List[float], npt.NDArray[np.float64]]:
+    def cov_d_inflation_factors(self) -> List[float]:
         r"""
-        Get the alpha coefficients used by ES-MDA.
+        Get the inlfation factors for the covariance matrix of the measurement errors.
 
         Single and multiple data assimilation are equivalent for the
         linear-Gaussian case as long as the factor :math:`\alpha_{l}` used to
@@ -238,19 +286,59 @@ class ESMDA:
         In practise, :math:`\alpha_{l} = N_{a}` is a good choice
         :cite:p:`emerickEnsembleSmootherMultiple2013`.
         """
-        return self._alpha
+        return self._cov_d_inflation_factors
 
-    @alpha.setter
-    def alpha(self, a: Sequence[float]) -> None:
-        """Set the alpha coefficients used by ES-MDA."""
+    @cov_d_inflation_factors.setter
+    def cov_d_inflation_factors(self, a: Sequence[float]) -> None:
+        """Set the inflation factors the covariance matrix of the measurement errors."""
         if a is None:
-            self._alpha: npt.NDArray[np.float64] = np.array(
-                [1 / self.n_assimilations] * self.n_assimilations, dtype=np.float64
-            )
+            self._cov_d_inflation_factors: List[float] = [
+                1 / self.n_assimilations
+            ] * self.n_assimilations
         elif len(a) != self.n_assimilations:
-            raise ValueError("The length of alpha should match n_assimilations")
+            raise ValueError(
+                "The length of cov_d_inflation_factors should match n_assimilations"
+            )
         else:
-            self._alpha = np.array(a)
+            self._cov_d_inflation_factors = list(a)
+
+    @property
+    def cov_mm_inflation_factors(self) -> List[float]:
+        r"""
+        Get the inlfation factors for the adjusted parameters covariance matrix.
+
+        Covariance inflation is a method used to counteract the tendency of ensemble
+        Kalman methods to underestimate the uncertainty because of either undersampling,
+        inbreeding, or spurious correlations
+        :cite:p:`todaroAdvancedTechniquesSolving2021`.
+        The spread of the ensemble is artificially increased before the assimilation
+        of the observations, according to scheme introduced by
+        :cite:`andersonExploringNeedLocalization2007`:
+
+        .. math::
+            m^{l}_{j} \leftarrow r^{l}\left(m^{l}_{j} - \frac{1}{N_{e}}
+            \sum_{j}^{N_{e}}m^{l}_{j}\right) + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l}_{j}
+
+        where :math:`r` is the inflation factor for the assimilation step :math:`l`.
+        """
+        return list(self._cov_mm_inflation_factors)
+
+    @cov_mm_inflation_factors.setter
+    def cov_mm_inflation_factors(self, a: Sequence[float]) -> None:
+        """
+        Set the inflation factors the adjusted parameters covariance matrix.
+
+        If no values have been provided by the user, the default is 1.0. at
+        each iteration (no inflation).
+        """
+        if a is None:
+            self._cov_mm_inflation_factors: List[float] = [1] * self.n_assimilations
+        elif len(a) != self.n_assimilations:
+            raise ValueError(
+                "The length of cov_d_inflation_factors should match n_assimilations"
+            )
+        else:
+            self._cov_mm_inflation_factors = list(a)
 
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA algorithm."""
@@ -303,16 +391,30 @@ class ESMDA:
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
             self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
-                self.alpha[assimilation_iteration]
+                self.cov_d_inflation_factors[assimilation_iteration]
             ) * np.random.normal(0, np.abs(self.cov_d[i, i]), self.n_ensemble)
 
     def _approximate_covariance_matrices(self) -> None:
-        """
-        Calculate Average and Covariance MD and Covariance DD.
+        r"""
+        Approximate the covariance matrices.
 
         The covariance matrices :math:`C^{l}_{MD}` and :math:`C^{l}_{DD}`
         are approximated from the ensemble in the standard way of EnKF
-        :cite:p:`evensenDataAssimilationEnsemble2007,aanonsenEnsembleKalmanFilter2009`.
+        :cite:p:`evensenDataAssimilationEnsemble2007,aanonsenEnsembleKalmanFilter2009`:
+
+        .. math::
+           C^{l}_{MD} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(m^{l}_{j} -
+           \overline{m^{l}}\right)\left(d^{l}_{j}
+           - \overline{d^{l}} \right)^{T}
+
+        .. math::
+           C^{l}_{DD} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(d^{l}_{j}
+           -\overline{d^{l}} \right)\left(d^{l}_{j}
+           - \overline{d^{l}} \right)^{T}
+
+        with :math:`\overline{m^{l}}` and :math:`\overline{d^{l}}`, the
+        the ensemble means, at iteration :math:`l`, of parameters and predictions,
+        respectively.
         """
         # Average of parameters and predictions of the ensemble members
         m_average = np.mean(self.m_prior, axis=0)
@@ -321,8 +423,8 @@ class ESMDA:
         delta_m = self.m_prior - m_average
         delta_d = self.d_pred - d_average
 
-        dd_md = 0.0
-        dd_dd = 0.0
+        dd_md = np.zeros((self.m_dim, self.d_dim))
+        dd_dd = np.zeros((self.d_dim, self.d_dim))
 
         for j in range(self.n_ensemble):
             dd_md += np.outer(delta_m[j, :], delta_d[j, :])
@@ -341,18 +443,32 @@ class ESMDA:
            m^{l+1}_{j} = m^{l}_{j} + C^{l}_{MD}\left(C^{l}_{DD}+\alpha_{l+1}
            C_{D}\right)^{-1} \left(d^{l}_{uc,j} - d^{l}_{j} \right),
            \textrm{for } j=1,2,...,N_{e}.
+
+        The updated parameter values are eventually inflated using
+        (see `cov_mm_inflation_factors`):
+
+        .. math::
+            m^{l}_{j} \leftarrow r^{l}\left(m^{l}_{j} - \frac{1}{N_{e}}
+            \sum_{j}^{N_{e}}m^{l}_{j}\right) + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l}_{j}
         """
         # predicted parameters
-        m_pred = np.zeros([self.n_ensemble, self.m_dim])
+        m_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.m_dim])
         for j in range(self.n_ensemble):
             tmp_mat = np.matmul(
                 self.cov_md,
                 np.linalg.inv(
-                    self.cov_dd + self.alpha[assimilation_iteration] * self.cov_d
+                    self.cov_dd
+                    + self.cov_d_inflation_factors[assimilation_iteration] * self.cov_d
                 ),
             )
             tmp_vec = self.d_obs_uc[j, :] - self.d_pred[j, :]
             m_pred[j, :] = self.m_prior[j, :] + np.matmul(tmp_mat, tmp_vec)
+
+        # Covariance inflation
+        if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
+            m_pred = self._cov_mm_inflation_factors[assimilation_iteration] * (
+                m_pred - np.mean(m_pred, axis=0)
+            ) + np.mean(m_pred, axis=0)
 
         # Apply bounds constraints to parameters
         m_pred = np.where(
