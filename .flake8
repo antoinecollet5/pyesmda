@@ -12,4 +12,6 @@ ignore =
     # ambiguous variable name
     E741,
     # Double quotes found but single quotes preferred
-    Q000,  
+    Q000, 
+    # Black would make changes
+    BLK100,
