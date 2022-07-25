@@ -2,12 +2,17 @@
 # https://hub.docker.com/r/library/python/tags/
 image: python:3.8.5 # defaults to latest
 
+include:
+  - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
+
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   QT_DEBUG_PLUGINS: 1
   QT_QPA_PLATFORM: offscreen
+  PRE_COMMIT_AUTO_FIX: true
+  PRE_COMMIT_DEDUPLICATE_MR_AND_BRANCH: false
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/reference/pip_install/#caching
