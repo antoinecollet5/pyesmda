@@ -46,10 +46,13 @@ class ESMDA:
         List of successive `m_prior`.
     cov_md: npt.NDArray[np.float64]
         Cross-covariance matrix between the forecast state vector and predicted data.
-        Dimensions are (:math:`N_{m}, N_{obs}`)
+        Dimensions are (:math:`N_{m}, N_{obs}`).
     cov_dd: npt.NDArray[np.float64]
         Autocovariance matrix of predicted data.
-        Dimensions are (:math:`N_{obs}, N_{obs}`)
+        Dimensions are (:math:`N_{obs}, N_{obs}`).
+    cov_mm: npt.NDArray[np.float64]
+        Autocovariance matrix of estimated parameters.
+        Dimensions are (:math:`N_{m}, N_{m}`).
     forward_model: callable
         Function calling the non-linear observation model (forward model)
         for all ensemble members and returning the predicted data for
@@ -448,8 +451,9 @@ class ESMDA:
         (see `cov_mm_inflation_factors`):
 
         .. math::
-            m^{l}_{j} \leftarrow r^{l}\left(m^{l}_{j} - \frac{1}{N_{e}}
-            \sum_{j}^{N_{e}}m^{l}_{j}\right) + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l}_{j}
+            m^{l+1}_{j} \leftarrow r^{l+1}\left(m^{l+1}_{j} - \frac{1}{N_{e}}
+            \sum_{j}^{N_{e}}m^{l+1}_{j}\right)
+            + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l+1}_{j}
         """
         # predicted parameters
         m_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.m_dim])
