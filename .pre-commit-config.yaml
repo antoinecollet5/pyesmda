@@ -29,4 +29,8 @@ repos:
       "docs tests",
       "*.py *.rst *.md",
     ]
+    exclude: >
+            (?x)^(
+                bibliopgraphy.bib
+            )$
 
