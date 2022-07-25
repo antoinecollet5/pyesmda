@@ -1,19 +1,3 @@
-@book{evensenDataAssimilationEnsemble2007,
-  title = {Data {{Assimilation}} - {{The Ensemble Kalman Filter}}},
-  author = {Evensen, Geir},
-  year = {2007},
-  publisher = {{Springer Berlin Heidelberg}},
-  doi = {10.1007/978-3-642-03711-5},
-  abstract = {Data Assimilation comprehensively covers data assimilation and inverse methods, including both traditional state estimation and parameter estimation. This text and reference focuses on various popular data assimilation methods, such as weak and strong constraint variational methods and ensemble filters and smoothers. It is demonstrated how the different methods can be derived from a common theoretical basis, as well as how they differ and/or are related to each other, and which properties characterize them, using several examples. It presents the mathematical framework and derivations in a way which is common for any discipline where dynamics is merged with measurements. The mathematics level is modest, although it requires knowledge of basic spatial statistics, Bayesian statistics, and calculus of variations. Readers will also appreciate the introduction to the mathematical methods used and detailed derivations, which should be easy to follow, are given throughout the book. The codes used in several of the data assimilation experiments are available on a web page. The focus on ensemble methods, such as the ensemble Kalman filter and smoother, also makes it a solid reference to the derivation, implementation and application of such techniques. Much new material, in particular related to the formulation and solution of combined parameter and state estimation problems and the general properties of the ensemble algorithms, is available here for the first time. The 2nd edition includes a partial rewrite of Chapters 13 an 14, and the Appendix. In addition, there is a completely new Chapter on "Spurious correlations, localization and inflation", and an updated and improved sampling discussion in Chap 11.},
-  isbn = {978-3-642-03710-8},
-  langid = {english},
-  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/WD97BI9N/bwmeta1.element.html}
-}
-% == BibTeX quality report for evensenDataAssimilationEnsemble2007:
-% ? Title looks like it was stored in title-case in Zotero
-% ? unused Library catalog ("https://link.springer.comwww.infona.pl")
-% ? unused Url ("https://link.springer.com/book/10.1007/978-3-642-03711-5")
-
 
 @article{aanonsenEnsembleKalmanFilter2009,
   title = {The {{Ensemble Kalman Filter}} in {{Reservoir Engineering--a Review}}},
@@ -29,6 +13,27 @@
 }
 % == BibTeX quality report for aanonsenEnsembleKalmanFilter2009:
 % ? Title looks like it was stored in title-case in Zotero
+
+@article{andersonExploringNeedLocalization2007,
+  title = {Exploring the Need for Localization in Ensemble Data Assimilation Using a Hierarchical Ensemble Filter},
+  author = {Anderson, Jeffrey L.},
+  year = {2007},
+  month = jun,
+  journal = {Physica D: Nonlinear Phenomena},
+  series = {Data {{Assimilation}}},
+  volume = {230},
+  number = {1},
+  pages = {99--111},
+  issn = {0167-2789},
+  doi = {10.1016/j.physd.2006.02.011},
+  abstract = {Good performance with small ensemble filters applied to models with many state variables may require `localizing' the impact of an observation to state variables that are `close' to the observation. As a step in developing nearly generic ensemble filter assimilation systems, a method to estimate `localization' functions is presented. Localization is viewed as a means to ameliorate sampling error when small ensembles are used to sample the statistical relation between an observation and a state variable. The impact of spurious sample correlations between an observation and model state variables is estimated using a `hierarchical ensemble filter', where an ensemble of ensemble filters is used to detect sampling error. Hierarchical filters can adapt to a wide array of ensemble sizes and observational error characteristics with only limited heuristic tuning. Hierarchical filters can allow observations to efficiently impact state variables, even when the notion of `distance' between the observation and the state variables cannot be easily defined. For instance, defining the distance between an observation of radar reflectivity from a particular radar and beam angle taken at 1133~GMT and a model temperature variable at 700~hPa 60~km north of the radar beam at 1200~GMT is challenging. The hierarchical filter estimates sampling error from a `group' of ensembles and computes a factor between 0 and 1 to minimize sampling error. An a priori notion of distance is not required. Results are shown in both a low-order model and a simple atmospheric GCM. For low-order models, the hierarchical filter produces `localization' functions that are very similar to those already described in the literature. When observations are more complex or taken at different times from the state specification (in ensemble smoothers for instance), the localization functions become increasingly distinct from those used previously. In the GCM, this complexity reaches a level that suggests that it would be difficult to define efficient localization functions a priori. There is a cost trade-off between running hierarchical filters or running a traditional filter with larger ensemble size. Hierarchical filters can be run for short training periods to develop localization statistics that can be used in a traditional ensemble filter to produce high quality assimilations at reasonable cost, even when the relation between observations and state variables is not well-known a priori. Additional research is needed to determine if it is ever cost-efficient to run hierarchical filters for large data assimilation problems instead of traditional filters with the corresponding total number of ensemble members.},
+  langid = {english},
+  keywords = {Data assimilation,Ensemble filters,Localization,Sampling error},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/39EI9S49/S0167278906002168.html}
+}
+% == BibTeX quality report for andersonExploringNeedLocalization2007:
+% ? unused Library catalog ("ScienceDirect")
+% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0167278906002168")
 
 @article{emerickEnsembleSmootherMultiple2013,
   title = {Ensemble Smoother with Multiple Data Assimilation},
@@ -63,5 +68,44 @@
 % == BibTeX quality report for emerickHistoryMatchingProductionSeismic2013:
 % ? Unsure about the formatting of the booktitle
 % ? Title looks like it was stored in title-case in Zotero
+
+@book{evensenDataAssimilationEnsemble2007,
+  title = {Data {{Assimilation}} - {{The Ensemble Kalman Filter}}},
+  author = {Evensen, Geir},
+  year = {2007},
+  publisher = {{Springer Berlin Heidelberg}},
+  doi = {10.1007/978-3-642-03711-5},
+  abstract = {Data Assimilation comprehensively covers data assimilation and inverse methods, including both traditional state estimation and parameter estimation. This text and reference focuses on various popular data assimilation methods, such as weak and strong constraint variational methods and ensemble filters and smoothers. It is demonstrated how the different methods can be derived from a common theoretical basis, as well as how they differ and/or are related to each other, and which properties characterize them, using several examples. It presents the mathematical framework and derivations in a way which is common for any discipline where dynamics is merged with measurements. The mathematics level is modest, although it requires knowledge of basic spatial statistics, Bayesian statistics, and calculus of variations. Readers will also appreciate the introduction to the mathematical methods used and detailed derivations, which should be easy to follow, are given throughout the book. The codes used in several of the data assimilation experiments are available on a web page. The focus on ensemble methods, such as the ensemble Kalman filter and smoother, also makes it a solid reference to the derivation, implementation and application of such techniques. Much new material, in particular related to the formulation and solution of combined parameter and state estimation problems and the general properties of the ensemble algorithms, is available here for the first time. The 2nd edition includes a partial rewrite of Chapters 13 an 14, and the Appendix. In addition, there is a completely new Chapter on "Spurious correlations, localization and inflation", and an updated and improved sampling discussion in Chap 11.},
+  isbn = {978-3-642-03710-8},
+  langid = {english},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/WD97BI9N/bwmeta1.element.html}
+}
+% == BibTeX quality report for evensenDataAssimilationEnsemble2007:
+% ? Title looks like it was stored in title-case in Zotero
+% ? unused Library catalog ("https://link.springer.comwww.infona.pl")
+% ? unused Url ("https://link.springer.com/book/10.1007/978-3-642-03711-5")
+
+@phdthesis{todaroAdvancedTechniquesSolving2021,
+  type = {{Tesis doctoral}},
+  title = {{Advanced techniques for solving groundwater and surface water problems in the context of inverse methods and climate change.}},
+  author = {Todaro, Valeria},
+  year = {2021},
+  month = may,
+  doi = {10.4995/Thesis/10251/166439},
+  abstract = {[ES] El tema de la investigaci\'on se centra en t\'ecnicas avanzadas para manejar problemas de aguas subterr\'aneas y superficiales relacionados con m\'etodos inversos y cambio clim\'atico. Los filtros de Kalman, con especial atenci\'on en Ensemble Smoother with Multiple Data Assimilation (ES-MDA), se analizan y mejoran para la soluci\'on de diferentes tipos de problemas inversos. En particular, la principal novedad es la aplicaci\'on de estos m\'etodos para la identificaci\'on de series temporales.
+ La primera parte de la tesis, luego de la descripci\'on del m\'etodo, presenta el desarrollo de un software escrito en Python para la aplicaci\'on de la metodolog\'ia propuesta. El software cuenta con un flujo de trabajo flexible que puede adaptarse f\'acilmente para implementar diferentes variantes del filtro de Kalman y ser aplicado para la soluci\'on de varios tipos de problemas. Un paquete de herramientas proporciona varias funcionalidades que permiten de configurar el algoritmo de acuerdo con el problema espec\'ifico analizado.
+ La primera aplicaci\'on se refiere a la soluci\'on del problema inverso de flujo en r\'ios. Este es un procedimiento inverso destinado a estimar el flujo de entrada a un sistema hidr\'aulico en funci\'on de informaci\'on recopilada abajo. El procedimiento se prueba mediante dos ejemplos sint\'eticos y un estudio de caso real; se investiga el impacto de los tama\~nos de los conjuntos y la aplicaci\'on de t\'ecnicas de localizaci\'on e inflaci\'on de covarianzas. Los resultados muestran la capacidad del m\'etodo propuesto de resolver este tipo de problemas; el rendimiento de ES-MDA mejora, especialmente para tama\~nos de conjuntos peque\~nos, cuando se aplican t\'ecnicas de inflaci\'on y localizaci\'on de covarianza.
+ La segunda aplicaci\'on en el campo de las aguas superficiales se refiere a la calibraci\'on de un modelo hidrol\'ogico-hidr\'aulico que simula los mecanismos de formaci\'on de eventos de inundaci\'on. ES-MDA se acopla al modelo num\'erico de forma paralela para la estimaci\'on de los coeficientes de rugosidad e infiltraci\'on en base al conocimiento de un hidrograma de flujo en una secci\'on del dominio. Los resultados de dos casos sint\'eticos y un estudio de caso real demuestran la capacidad del m\'etodo propuesto para calibrar el modelo hidrol\'ogico-hidr\'aulico con un tiempo computacional razonable.
+ En el campo de aguas subterr\'aneas, ES-MDA se aplica por primera vez para identificar simult\'aneamente la ubicaci\'on de la fuente y el historial de liberaci\'on de un contaminante en un acu\'ifero a partir de datos de concentraci\'on detectados en diferentes puntos del dominio. Se realizaron numerosas pruebas para evaluar la influencia de la distribuci\'on espacial y temporal de los datos de concentraci\'on, el n\'umero del conjunto y el uso de t\'ecnicas de localizaci\'on e inflaci\'on; adem\'as, se presenta un nuevo procedimiento para realizar una localizaci\'on iterativa espacio-temporal. La metodolog\'ia se valida mediante un ejemplo anal\'itico y un estudio de caso que utiliza datos obtenidos en el laboratorio mediante una caja de arena. ES-MDA conduce a una buena estimaci\'on de los par\'ametros investigados; una red de monitoreo bien dise\~nada y la aplicaci\'on de correcciones de covarianza mejoran el rendimiento del m\'etodo y ayudan a mitigar el posible problema de no unicidad de la soluci\'on.
+ Otro prop\'osito de la tesis es investigar el efecto del cambio clim\'atico en las aguas subterr\'aneas. Se presenta un modelo simplificado que describe la respuesta de los niveles de agua subterr\'anea a las variables meteorol\'ogicas hasta 2100. Es un enfoque estad\'istico sencillo basado en las correlaciones entre los niveles de agua subterr\'anea y dos \'indices de sequ\'ia que dependen de los datos de precipitaci\'on y temperatura. El m\'etodo se utiliza para evaluar el impacto del cambio clim\'atico en los recursos de agua subterr\'anea en un \'area de estudio ubicada en el norte de Italia utilizando datos hist\'oricos y de modelos clim\'aticos regionales. Los resultados m},
+  copyright = {Reserva de todos los derechos},
+  langid = {Ingl\'es},
+  school = {Universitat Polit\`ecnica de Val\`encia},
+  annotation = {Accepted: 2021-05-17T12:35:44Z},
+  file = {/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/SAZ8FUA6/Todaro - 2021 - Advanced techniques for solving groundwater and su.pdf;/media/acollet/MyPassport/3_DOC_WORK/01_BIBLIO_COURS/storage/6QDVQIYE/166439.html}
+}
+% == BibTeX quality report for todaroAdvancedTechniquesSolving2021:
+% ? unused Library catalog ("riunet.upv.es")
+% ? unused Url ("https://riunet.upv.es/handle/10251/166439")
 
 
