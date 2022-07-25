@@ -118,6 +118,20 @@ def empty_forward_model() -> None:
                 ),
             ),
         ),
+        (
+            (np.zeros(10), np.zeros((10, 10)), np.zeros((10, 10)), empty_forward_model),
+            {
+                "n_assimilations": 3,
+                "cov_mm_inflation_factors": np.ones(5),
+            },
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"The length of cov_mm_inflation_factors "
+                    "should match n_assimilations"
+                ),
+            ),
+        ),
     ],
 )
 def test_constructor(args, kwargs, expected_exception) -> ESMDA:

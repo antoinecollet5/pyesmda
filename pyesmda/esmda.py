@@ -338,7 +338,7 @@ class ESMDA:
             self._cov_mm_inflation_factors: List[float] = [1] * self.n_assimilations
         elif len(a) != self.n_assimilations:
             raise ValueError(
-                "The length of cov_d_inflation_factors should match n_assimilations"
+                "The length of cov_mm_inflation_factors should match n_assimilations"
             )
         else:
             self._cov_mm_inflation_factors = list(a)
