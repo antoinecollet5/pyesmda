@@ -42,11 +42,14 @@ pyESMDA
     :target: https://github.com/psf/black
     :alt: Black
 
+.. image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat
+    :target: https://timothycrosley.github.io/isort
+    :alt: isort
 
 Python Ensemble Smoother with Multiple Data Assimilations
 
 This package is an object-oriented python implementation of the ES-MDA
-algotithm based on the work of Emerick and Reynolds [1-2].
+algorithm based on the work of Emerick and Reynolds [1-2].
 
 * Free software: MIT license
 * Documentation: https://pyesmda.readthedocs.io.
