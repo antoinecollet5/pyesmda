@@ -214,9 +214,9 @@ def test_esmda_exponential_case():
     # Also explained in Torrado 2021 (see her PhD manuscript.)
     cov_d_inflation_geo = 1.2
     cov_d_inflation_factors: list[float] = [1.1]
-    for l in range(1, n_assimilations):
+    for a_step in range(1, n_assimilations):
         cov_d_inflation_factors.append(
-            cov_d_inflation_factors[l - 1] / cov_d_inflation_geo
+            cov_d_inflation_factors[a_step - 1] / cov_d_inflation_geo
         )
     scaling_factor: float = np.sum(1 / np.array(cov_d_inflation_factors))
     cov_d_inflation_factors = [
@@ -249,7 +249,6 @@ def test_esmda_exponential_case():
         np.average(solver.m_prior, axis=0), np.array([a, b]), rtol=5e-2
     ).all()
 
-    a_approx, b_approx = np.average(solver.m_prior, axis=0)
     # Get the uncertainty on the parameters
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
