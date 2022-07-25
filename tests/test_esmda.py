@@ -1,11 +1,13 @@
 """
-General test for the Ensemble-Smoother with Mulitple Data Assimilation.
+General test for the Ensemble-Smoother with Multiple Data Assimilation.
 
 @author: acollet
 """
 from contextlib import contextmanager
-import pytest
+
 import numpy as np
+import pytest
+
 from pyesmda import ESMDA
 
 
@@ -62,7 +64,7 @@ def empty_forward_model() -> None:
             },
             pytest.raises(
                 TypeError,
-                match="The number of assimilations must be a positive interger.",
+                match="The number of assimilations must be a positive integer.",
             ),
         ),
         (
@@ -173,7 +175,7 @@ def forward_model(m_ensemble, x):
 
 
 def test_esmda_exponential_case():
-    """Test the ES-MDA on a simple syntetic case with two parameters."""
+    """Test the ES-MDA on a simple synthetic case with two parameters."""
     a = 10.0
     b = -0.0020
     # timesteps
