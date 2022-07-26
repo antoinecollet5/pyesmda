@@ -6,9 +6,10 @@ Changelog
 ---------------------
 
 * `!PR11 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/11>`_ Implement the covariance localization. Introduces the 
-  correlation matrices **dd_correlation_matrix** and **md_correlation_matrix**
+  correlation matrices **dd_correlation_matrix** and **md_correlation_matrix**.
+  To avoid confusion , **cov_d** has been renamed **cov_obs**.
 * `!PR10 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/10>`_ Implement the parameters auto-covariance inflation.
-  Add the estimation of the parameters auto-covariance matrix. The parameter **alpha** becomes **cov_d_inflation_factors**.
+  Add the estimation of the parameters auto-covariance matrix. The parameter **alpha** becomes **cov_obs_inflation_factors**.
 
 
 0.2.0 (2022-07-23)

@@ -24,7 +24,7 @@ class ESMDA:
         predicted values.
     obs : npt.NDArray[np.float64]
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_d: npt.NDArray[np.float64]
+    cov_obs: npt.NDArray[np.float64]
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`).
     d_obs_uc: npt.NDArray[np.float64]
@@ -47,7 +47,7 @@ class ESMDA:
     cov_md: npt.NDArray[np.float64]
         Cross-covariance matrix between the forecast state vector and predicted data.
         Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_dd: npt.NDArray[np.float64]
+    cov_obsd: npt.NDArray[np.float64]
         Autocovariance matrix of predicted data.
         Dimensions are (:math:`N_{obs}, N_{obs}`).
     cov_mm: npt.NDArray[np.float64]
@@ -63,7 +63,7 @@ class ESMDA:
         Additional kwargs for the callable forward_model.
     n_assimilations : int
         Number of data assimilations (:math:`N_{a}`).
-    cov_d_inflation_factors : List[float]
+    cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
     cov_mm_inflation_factors: List[float]
@@ -91,7 +91,7 @@ class ESMDA:
 
     __slots__: List[str] = [
         "obs",
-        "_cov_d",
+        "_cov_obs",
         "d_obs_uc",
         "d_pred",
         "d_history",
@@ -104,7 +104,7 @@ class ESMDA:
         "forward_model_args",
         "forward_model_kwargs",
         "_n_assimilations",
-        "_cov_d_inflation_factors",
+        "_cov_obs_inflation_factors",
         "_cov_mm_inflation_factors",
         "_dd_correlation_matrix",
         "_md_correlation_matrix",
@@ -115,12 +115,12 @@ class ESMDA:
         self,
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
-        cov_d: npt.NDArray[np.float64],
+        cov_obs: npt.NDArray[np.float64],
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        cov_d_inflation_factors: Optional[Sequence[float]] = None,
+        cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factors: Optional[Sequence[float]] = None,
         dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
         md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
@@ -136,7 +136,7 @@ class ESMDA:
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{e}`, :math:`N_{m}`).
-        cov_d: npt.NDArray[np.float64]
+        cov_obs: npt.NDArray[np.float64]
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`).
         forward_model: callable
@@ -149,7 +149,7 @@ class ESMDA:
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
-        cov_d_inflation_factors : Optional[Sequence[float]]
+        cov_obs_inflation_factors : Optional[Sequence[float]]
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors.
             Must match the number of data assimilations (:math:`N_{a}`).
@@ -192,7 +192,7 @@ class ESMDA:
         self.m_history: list[npt.NDArray[np.float64]] = []
         self.d_history: list[npt.NDArray[np.float64]] = []
         self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
-        self.cov_d = cov_d
+        self.cov_obs = cov_obs
         self.d_obs_uc: npt.NDArray[np.float64] = np.array([])
         self.cov_md: npt.NDArray[np.float64] = np.array([])
         self.cov_dd: npt.NDArray[np.float64] = np.array([])
@@ -202,7 +202,7 @@ class ESMDA:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self.n_assimilations = n_assimilations
-        self.cov_d_inflation_factors = cov_d_inflation_factors
+        self.cov_obs_inflation_factors = cov_obs_inflation_factors
         self.cov_mm_inflation_factors = cov_mm_inflation_factors
         self.dd_correlation_matrix = dd_correlation_matrix
         self.md_correlation_matrix = md_correlation_matrix
@@ -238,19 +238,19 @@ class ESMDA:
         return len(self.obs)
 
     @property
-    def cov_d(self) -> npt.NDArray[np.float64]:
+    def cov_obs(self) -> npt.NDArray[np.float64]:
         """Get the observation errors covariance matrix."""
-        return self._cov_d
+        return self._cov_obs
 
-    @cov_d.setter
-    def cov_d(self, s: npt.NDArray[np.float64]) -> None:
+    @cov_obs.setter
+    def cov_obs(self, s: npt.NDArray[np.float64]) -> None:
         """Set the observation errors covariance matrix."""
         if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
             raise ValueError(
-                "cov_d must be a 2D square matrix with "
+                "cov_obs must be a 2D square matrix with "
                 f"dimensions ({self.d_dim}, {self.d_dim})."
             )
-        self._cov_d: npt.NDArray[np.float64] = s
+        self._cov_obs: npt.NDArray[np.float64] = s
 
     @property
     def cov_mm(self) -> npt.NDArray[np.float64]:
@@ -303,7 +303,7 @@ class ESMDA:
             self._m_bounds = mb
 
     @property
-    def cov_d_inflation_factors(self) -> List[float]:
+    def cov_obs_inflation_factors(self) -> List[float]:
         r"""
         Get the inlfation factors for the covariance matrix of the measurement errors.
 
@@ -318,21 +318,21 @@ class ESMDA:
         In practise, :math:`\alpha_{l} = N_{a}` is a good choice
         :cite:p:`emerickEnsembleSmootherMultiple2013`.
         """
-        return self._cov_d_inflation_factors
+        return self._cov_obs_inflation_factors
 
-    @cov_d_inflation_factors.setter
-    def cov_d_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
+    @cov_obs_inflation_factors.setter
+    def cov_obs_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
         """Set the inflation factors the covariance matrix of the measurement errors."""
         if a is None:
-            self._cov_d_inflation_factors: List[float] = [
+            self._cov_obs_inflation_factors: List[float] = [
                 1 / self.n_assimilations
             ] * self.n_assimilations
         elif len(a) != self.n_assimilations:
             raise ValueError(
-                "The length of cov_d_inflation_factors should match n_assimilations"
+                "The length of cov_obs_inflation_factors should match n_assimilations"
             )
         else:
-            self._cov_d_inflation_factors = list(a)
+            self._cov_obs_inflation_factors = list(a)
 
     @property
     def cov_mm_inflation_factors(self) -> List[float]:
@@ -464,8 +464,8 @@ class ESMDA:
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
             self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
-                self.cov_d_inflation_factors[assimilation_iteration]
-            ) * np.random.normal(0, np.abs(self.cov_d[i, i]), self.n_ensemble)
+                self.cov_obs_inflation_factors[assimilation_iteration]
+            ) * np.random.normal(0, np.abs(self.cov_obs[i, i]), self.n_ensemble)
 
     def _approximate_covariance_matrices(self) -> None:
         r"""
@@ -553,7 +553,8 @@ class ESMDA:
                 self.cov_md,
                 np.linalg.inv(
                     self.cov_dd
-                    + self.cov_d_inflation_factors[assimilation_iteration] * self.cov_d
+                    + self.cov_obs_inflation_factors[assimilation_iteration]
+                    * self.cov_obs
                 ),
             )
             tmp_vec = self.d_obs_uc[j, :] - self.d_pred[j, :]
