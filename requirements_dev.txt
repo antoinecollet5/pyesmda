@@ -13,6 +13,8 @@ pytest-cookies
 flake8
 coverage
 flake8-html
+nbsphinx==0.8.6
+nbsphinx-link
 
 sphinx>=3 # jupyter_sphinx requires sphinx>=2
 nbsphinx

@@ -496,10 +496,10 @@ class ESMDA:
         and cuts off long-range correlations above a specific distance:
 
         .. math::
-           C^{l}_{MD} = \rho_{MD} \odot C^{l}_{MD}
+           \tilde{C}^{l}_{MD} = \rho_{MD} \odot C^{l}_{MD}
 
         .. math::
-           C^{l}_{DD} = \rho_{DD} \odot C^{l}_{DD}
+           \tilde{C}^{l}_{DD} = \rho_{DD} \odot C^{l}_{DD}
 
         with :math:`\odot` the element wise multiplication.
         """
