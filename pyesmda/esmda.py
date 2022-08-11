@@ -9,6 +9,7 @@ import numpy as np
 import numpy.typing as npt
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
+# pylint: disable=C0302 # Too many lines in module
 
 
 class ESMDA:
@@ -443,9 +444,17 @@ class ESMDA:
         for assimilation_iteration in range(self.n_assimilations):
             print(f"Assimilation # {assimilation_iteration + 1}")
             self._forecast()
-            self._pertrub(assimilation_iteration)
+            self._pertrub(self.cov_obs_inflation_factors[assimilation_iteration])
             self._approximate_covariance_matrices()
-            self._analyse(assimilation_iteration)
+            m_pred = self._analyse(
+                self.cov_obs_inflation_factors[assimilation_iteration]
+            )
+            # Update the prior parameter for next iteration
+            self.m_prior = m_pred
+            # Saving the parameters history
+            if self.save_ensembles_history:
+                self.m_history.append(m_pred)
+
         if self.is_forecast_for_last_assimilation:
             self._forecast()
 
@@ -474,7 +483,7 @@ class ESMDA:
         if self.save_ensembles_history:
             self.d_history.append(self.d_pred)
 
-    def _pertrub(self, assimilation_iteration: int) -> None:
+    def _pertrub(self, inflation_factor: float) -> None:
         r"""
         Perturbation of the observation vector step of ES-MDA.
 
@@ -494,7 +503,7 @@ class ESMDA:
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
             self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
-                self.cov_obs_inflation_factors[assimilation_iteration]
+                inflation_factor
             ) * self.rng.normal(0, np.abs(self.cov_obs[i, i]), self.n_ensemble)
 
     def _approximate_covariance_matrices(self) -> None:
@@ -557,7 +566,7 @@ class ESMDA:
         if self.md_correlation_matrix is not None:
             self.cov_md *= self.md_correlation_matrix
 
-    def _analyse(self, assimilation_iteration: int) -> None:
+    def _analyse(self, inflation_factor: float) -> npt.NDArray[np.float64]:
         r"""
         Analysis step of the ES-MDA.
 
@@ -591,18 +600,16 @@ class ESMDA:
             m_pred[j, :] = self.m_prior[j, :] + np.matmul(
                 self.cov_md,
                 np.linalg.solve(
-                    self.cov_dd
-                    + self.cov_obs_inflation_factors[assimilation_iteration]
-                    * self.cov_obs,
+                    self.cov_dd + inflation_factor * self.cov_obs,
                     self.d_obs_uc[j, :] - self.d_pred[j, :],
                 ),
             )
 
         # Covariance inflation
-        if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
-            m_pred = self._cov_mm_inflation_factors[assimilation_iteration] * (
-                m_pred - np.mean(m_pred, axis=0)
-            ) + np.mean(m_pred, axis=0)
+        # if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
+        #     m_pred = inflation_factor * (m_pred - np.mean(m_pred, axis=0)) + np.mean(
+        #         m_pred, axis=0
+        #     )
 
         # Apply bounds constraints to parameters
         m_pred = np.where(
@@ -612,12 +619,7 @@ class ESMDA:
             m_pred > self.m_bounds[:, 1], self.m_bounds[:, 1], m_pred
         )  # upper bounds
 
-        # Update the prior parameter for next iteration
-        self.m_prior = m_pred
-
-        # Saving the parameters history
-        if self.save_ensembles_history:
-            self.m_history.append(m_pred)
+        return m_pred
 
 
 class ESMDA_RS(ESMDA):
@@ -643,6 +645,9 @@ class ESMDA_RS(ESMDA):
     cov_obs: npt.NDArray[np.float64]
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+    cov_m_prior: npt.NDArray[np.float64]
+        Covariance matrix a priori on the adjusted parameters with dimensions
+        (:math:`N_{m}`, :math:`N_{m}`). Also denoted :math:`R`.
     d_obs_uc: npt.NDArray[np.float64]
         Vectors of pertubed observations with dimension
         (:math:`N_{e}`, :math:`N_{obs}`).
@@ -682,7 +687,7 @@ class ESMDA_RS(ESMDA):
         Automatically determined. Initially at 0.
     cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
-        measurement errors.
+        measurement errors. It is determined automatically.
     cov_mm_inflation_factors: List[float]
         List of factors used to inflate the adjusted parameters covariance among
         iterations:
@@ -714,6 +719,7 @@ class ESMDA_RS(ESMDA):
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
+        "cov_m_prior",
         "d_obs_uc",
         "d_pred",
         "d_history",
@@ -740,10 +746,10 @@ class ESMDA_RS(ESMDA):
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
         cov_obs: npt.NDArray[np.float64],
+        cov_m_prior: npt.NDArray[np.float64],
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
-        cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factors: Optional[Sequence[float]] = None,
         dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
         md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
@@ -766,6 +772,9 @@ class ESMDA_RS(ESMDA):
         cov_obs: npt.NDArray[np.float64]
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+        cov_m_prior: npt.NDArray[np.float64]
+            Covariance matrix a priori on the adjusted parameters with dimensions
+            (:math:`N_{m}`, :math:`N_{m}`). Also denoted :math:`R`.
         forward_model: callable
             Function calling the non-linear observation model (forward model)
             for all ensemble members and returning the predicted data for
@@ -774,11 +783,6 @@ class ESMDA_RS(ESMDA):
             Additional args for the callable forward_model. The default is None.
         forward_model_kwargs: Optional[Dict[str, Any]]
             Additional kwargs for the callable forward_model. The default is None.
-        cov_obs_inflation_factors : Optional[Sequence[float]]
-            Multiplication factor used to inflate the covariance matrix of the
-            measurement errors.
-            Must match the number of data assimilations (:math:`N_{a}`).
-            The default is None.
         cov_mm_inflation_factors: Optional[Sequence[float]]
             List of factors used to inflate the adjusted parameters covariance
             among iterations:
@@ -826,6 +830,7 @@ class ESMDA_RS(ESMDA):
         self.d_history: list[npt.NDArray[np.float64]] = []
         self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
         self.cov_obs = cov_obs
+        self.cov_m_prior: npt.NDArray[np.float64] = cov_m_prior
         self.d_obs_uc: npt.NDArray[np.float64] = np.array([])
         self.cov_md: npt.NDArray[np.float64] = np.array([])
         self.cov_dd: npt.NDArray[np.float64] = np.array([])
@@ -835,13 +840,23 @@ class ESMDA_RS(ESMDA):
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self.n_assimilations: int = 0
-        self.cov_obs_inflation_factors = cov_obs_inflation_factors
+        self.cov_obs_inflation_factors = []
         self.cov_mm_inflation_factors = cov_mm_inflation_factors
         self.dd_correlation_matrix = dd_correlation_matrix
         self.md_correlation_matrix = md_correlation_matrix
         self.m_bounds = m_bounds
         self.rng: np.random.Generator = np.random.default_rng(seed)
         self.is_forecast_for_last_assimilation = is_forecast_for_last_assimilation
+
+    @property
+    def n_assimilations(self) -> int:
+        """Return the number of assimilations to perform."""
+        return self._n_assimilations
+
+    @n_assimilations.setter
+    def n_assimilations(self, n: int) -> None:
+        """Set the number of assimilations to perform."""
+        self._n_assimilations = n
 
     @property
     def cov_obs_inflation_factors(self) -> List[float]:
@@ -862,18 +877,9 @@ class ESMDA_RS(ESMDA):
         return self._cov_obs_inflation_factors
 
     @cov_obs_inflation_factors.setter
-    def cov_obs_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
+    def cov_obs_inflation_factors(self, a: List[float]) -> None:
         """Set the inflation factors the covariance matrix of the measurement errors."""
-        if a is None:
-            self._cov_obs_inflation_factors: List[float] = [
-                1 / self.n_assimilations
-            ] * self.n_assimilations
-        elif len(a) != self.n_assimilations:
-            raise ValueError(
-                "The length of cov_obs_inflation_factors should match n_assimilations"
-            )
-        else:
-            self._cov_obs_inflation_factors = list(a)
+        self._cov_obs_inflation_factors = a
 
     @staticmethod
     def compute_ensemble_average_normalized_objective_function(
@@ -912,7 +918,7 @@ class ESMDA_RS(ESMDA):
 
         """
 
-        def member_obj_fun(pred):
+        def member_obj_fun(pred) -> float:
             return ESMDA_RS.compute_normalized_objective_function(pred, obs, cov_obs)
 
         return np.mean(
@@ -956,4 +962,102 @@ class ESMDA_RS(ESMDA):
 
         """
         residuals: npt.NDArray[np.float64] = obs - pred
-        return 1 / (2 * obs.size) * np.dot(residuals.T, np.divide(residuals, cov_obs))
+        # return 1 / (2 * obs.size) * np.dot(residuals.T, np.divide(residuals, cov_obs))
+        return (
+            1
+            / (2 * obs.size)
+            * np.dot(residuals.T, np.linalg.solve(cov_obs, residuals))
+        )
+
+    def solve(self) -> None:
+        """Solve the optimization problem with ES-MDA-RS algorithm."""
+        if self.save_ensembles_history:
+            self.m_history.append(self.m_prior)  # save m_init
+
+        current_inflation_factor: float = 10.0  # to initiate the while
+        while not self._is_unity_reached(current_inflation_factor):
+            self.n_assimilations += 1
+            print(f"Assimilation # {self.n_assimilations}")
+            self._forecast()
+            # Divide per 2, because it is multiplied by 2 as the beginning
+            # of the second while loop
+            current_inflation_factor: float = (
+                self._compute_initial_inflation_factor() / 2
+            )
+            is_valid_parameter_change: bool = False
+            while not is_valid_parameter_change:
+                current_inflation_factor *= 2  # double the inflation (dumping) factor
+                self._pertrub(current_inflation_factor)
+                self._approximate_covariance_matrices()
+                m_pred = self._analyse(current_inflation_factor)
+                is_valid_parameter_change: bool = self._is_valid_parameter_change(
+                    m_pred
+                )
+
+            # If the criteria is reached -> Get exactly one for the sum
+            if self._is_unity_reached(current_inflation_factor):
+                current_inflation_factor = 1 / (
+                    1 - np.sum([1 / a for a in self.cov_obs_inflation_factors])
+                )
+                self._pertrub(current_inflation_factor)
+                self._approximate_covariance_matrices()
+                m_pred = self._analyse(current_inflation_factor)
+                is_valid_parameter_change: bool = self._is_valid_parameter_change(
+                    m_pred
+                )
+
+            self.cov_obs_inflation_factors.append(current_inflation_factor)
+            print(f"- Inflation factor = {current_inflation_factor:.3f}")
+
+            # Update the prior parameter for next iteration
+            self.m_prior = m_pred
+            # Saving the parameters history
+            if self.save_ensembles_history:
+                self.m_history.append(m_pred)
+
+        # Last assimilation
+        if self.is_forecast_for_last_assimilation:
+            self._forecast()
+
+    def _compute_initial_inflation_factor(self) -> float:
+        r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
+        return 0.25 * self.compute_ensemble_average_normalized_objective_function(
+            self.d_pred, self.obs, self.cov_obs
+        )
+
+    def _is_unity_reached(self, current_inflation_factor: float) -> bool:
+        """
+        Whether the sum of the inverse inflation factors is above one.
+
+        It includes all factors up to the current iteration.
+
+        Parameters
+        ----------
+        current_inflation_factor: float
+            Multiplication factor used to inflate the covariance matrix of the
+            measurement errors for the current (last) iteration.
+        """
+        return (
+            np.sum([1 / a for a in self.cov_obs_inflation_factors])
+            + 1 / current_inflation_factor
+            >= 1
+        )
+
+    def _is_valid_parameter_change(self, m_pred: npt.NDArray[np.float64]) -> bool:
+        """Check if all change residuals are below 2 sigma.
+
+        Parameters
+        ----------
+        m_pred : npt.NDArray[np.float64]
+            _description_
+
+        Returns
+        -------
+        bool
+            _description_
+        """
+
+        def is_lower(residuals) -> bool:
+            return np.all(residuals < 2 * np.diag(self.cov_m_prior))
+
+        return np.all(list(map(is_lower, np.abs(m_pred - self.m_prior))))
