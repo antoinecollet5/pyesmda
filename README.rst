@@ -51,11 +51,16 @@ Python Ensemble Smoother with Multiple Data Assimilations
 This package is an object-oriented python implementation of the ES-MDA
 algorithm based on the work of Emerick and Reynolds [1-2].
 
+Thanks to its simple formulation, ES-MDA of Emerick and Reynolds (2012) is perhaps the 
+most used iterative form of the ensemble smoother in geoscience applications.
+
 * Free software: MIT license
 * Documentation: https://pyesmda.readthedocs.io.
 
 The original python implementation was by Muhammad Iffan Hannanu
 (https://github.com/iffanh/Playground).
+
+
 
 References
 ----------
