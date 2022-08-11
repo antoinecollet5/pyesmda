@@ -53,18 +53,18 @@ test:
     when: always
 
 
-
-flake8:
-  image: python:latest
-  stage: Static Analysis
-  allow_failure: true
-  script:
-    - pip install -r requirements_dev.txt
-    - flake8 pyesmda --format=html --htmldir=flake-report --max-line-length 88
-  artifacts:
-    paths:
-      - flake-report
-    when: on_failure
+# This is redundant with the pre-commit hook
+# flake8:
+#   image: python:latest
+#   stage: Static Analysis
+#   allow_failure: true
+#   script:
+#     - pip install -r requirements_dev.txt
+#     - flake8 pyesmda --format=html --htmldir=flake-report --max-line-length 88
+#   artifacts:
+#     paths:
+#       - flake-report
+#     when: on_failure
 
 
 tox:

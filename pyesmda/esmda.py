@@ -10,7 +10,7 @@ import numpy.typing as npt
 
 
 class ESMDA:
-    """
+    r"""
     Ensemble Smoother with Multiple Data Assimilations.
 
     Implement the ES-MDA as proposed by  Emerick, A. A. and A. C. Reynolds
@@ -24,7 +24,7 @@ class ESMDA:
         predicted values.
     obs : npt.NDArray[np.float64]
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_d: npt.NDArray[np.float64]
+    cov_obs: npt.NDArray[np.float64]
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`).
     d_obs_uc: npt.NDArray[np.float64]
@@ -47,7 +47,7 @@ class ESMDA:
     cov_md: npt.NDArray[np.float64]
         Cross-covariance matrix between the forecast state vector and predicted data.
         Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_dd: npt.NDArray[np.float64]
+    cov_obsd: npt.NDArray[np.float64]
         Autocovariance matrix of predicted data.
         Dimensions are (:math:`N_{obs}, N_{obs}`).
     cov_mm: npt.NDArray[np.float64]
@@ -63,7 +63,7 @@ class ESMDA:
         Additional kwargs for the callable forward_model.
     n_assimilations : int
         Number of data assimilations (:math:`N_{a}`).
-    cov_d_inflation_factors : List[float]
+    cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
     cov_mm_inflation_factors: List[float]
@@ -72,13 +72,26 @@ class ESMDA:
         Each realization of the ensemble at the end of each update step i,
         is linearly inflated around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
+    dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
+        Correlation matrix based on spatial and temporal distances between
+        observations and observations :math:`\rho_{DD}`. It is used to localize the
+        autocovariance matrix of predicted data by applying an elementwise
+        multiplication by this matrix.
+        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
+    md_correlation_matrix : Optional[npt.NDArray[np.float64]]
+        Correlation matrix based on spatial and temporal distances between
+        parameters and observations :math:`\rho_{MD}`. It is used to localize the
+        cross-covariance matrix between the forecast state vector (parameters)
+        and predicted data by applying an elementwise
+        multiplication by this matrix.
+        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     """
 
     __slots__: List[str] = [
         "obs",
-        "_cov_d",
+        "_cov_obs",
         "d_obs_uc",
         "d_pred",
         "d_history",
@@ -91,8 +104,10 @@ class ESMDA:
         "forward_model_args",
         "forward_model_kwargs",
         "_n_assimilations",
-        "_cov_d_inflation_factors",
+        "_cov_obs_inflation_factors",
         "_cov_mm_inflation_factors",
+        "_dd_correlation_matrix",
+        "_md_correlation_matrix",
         "save_ensembles_history",
     ]
 
@@ -100,17 +115,19 @@ class ESMDA:
         self,
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
-        cov_d: npt.NDArray[np.float64],
+        cov_obs: npt.NDArray[np.float64],
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        cov_d_inflation_factors: Optional[Sequence[float]] = None,
+        cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factors: Optional[Sequence[float]] = None,
+        dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
+        md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
     ) -> None:
-        """Construct the instance.
+        r"""Construct the instance.
 
         Parameters
         ----------
@@ -119,7 +136,7 @@ class ESMDA:
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{e}`, :math:`N_{m}`).
-        cov_d: npt.NDArray[np.float64]
+        cov_obs: npt.NDArray[np.float64]
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`).
         forward_model: callable
@@ -132,7 +149,7 @@ class ESMDA:
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
-        cov_d_inflation_factors : Optional[Sequence[float]]
+        cov_obs_inflation_factors : Optional[Sequence[float]]
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors.
             Must match the number of data assimilations (:math:`N_{a}`).
@@ -145,6 +162,21 @@ class ESMDA:
             Must match the number of data assimilations (:math:`N_{a}`).
             See :cite:p:`andersonExploringNeedLocalization2007`.
             If None, the default is 1.0. at each iteration (no inflation).
+            The default is None.
+        dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
+            Correlation matrix based on spatial and temporal distances between
+            observations and observations :math:`\rho_{DD}`. It is used to localize the
+            autocovariance matrix of predicted data by applying an elementwise
+            multiplication by this matrix.
+            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
+            The default is None.
+        md_correlation_matrix : Optional[npt.NDArray[np.float64]]
+            Correlation matrix based on spatial and temporal distances between
+            parameters and observations :math:`\rho_{MD}`. It is used to localize the
+            cross-covariance matrix between the forecast state vector (parameters)
+            and predicted data by applying an elementwise
+            multiplication by this matrix.
+            Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
             The default is None.
         m_bounds : Optional[npt.NDArray[np.float64]], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
@@ -160,18 +192,20 @@ class ESMDA:
         self.m_history: list[npt.NDArray[np.float64]] = []
         self.d_history: list[npt.NDArray[np.float64]] = []
         self.d_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.d_dim])
-        self.cov_d = cov_d
+        self.cov_obs = cov_obs
         self.d_obs_uc: npt.NDArray[np.float64] = np.array([])
         self.cov_md: npt.NDArray[np.float64] = np.array([])
         self.cov_dd: npt.NDArray[np.float64] = np.array([])
         self.forward_model: Callable = forward_model
         self.forward_model_args: Sequence[Any] = forward_model_args
         if forward_model_kwargs is None:
-            forward_model_kwargs: Dict[str, Any] = {}
+            forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self.n_assimilations = n_assimilations
-        self.cov_d_inflation_factors = cov_d_inflation_factors
+        self.cov_obs_inflation_factors = cov_obs_inflation_factors
         self.cov_mm_inflation_factors = cov_mm_inflation_factors
+        self.dd_correlation_matrix = dd_correlation_matrix
+        self.md_correlation_matrix = md_correlation_matrix
         self.m_bounds = m_bounds
 
     @property
@@ -204,24 +238,19 @@ class ESMDA:
         return len(self.obs)
 
     @property
-    def cov_d(self) -> npt.NDArray[np.float64]:
+    def cov_obs(self) -> npt.NDArray[np.float64]:
         """Get the observation errors covariance matrix."""
-        return self._cov_d
+        return self._cov_obs
 
-    @cov_d.setter
-    def cov_d(self, s: npt.NDArray[np.float64]) -> None:
+    @cov_obs.setter
+    def cov_obs(self, s: npt.NDArray[np.float64]) -> None:
         """Set the observation errors covariance matrix."""
-        if len(s.shape) != 2 or s.shape[0] != s.shape[1]:
+        if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
             raise ValueError(
-                "cov_d must be a square matrix with same "
-                "dimensions as the observations vector."
+                "cov_obs must be a 2D square matrix with "
+                f"dimensions ({self.d_dim}, {self.d_dim})."
             )
-        if s.shape[0] != self.d_dim:
-            raise ValueError(
-                "cov_d must be a square matrix with same "
-                "dimensions as the observations vector."
-            )
-        self._cov_d: npt.NDArray[np.float64] = s
+        self._cov_obs: npt.NDArray[np.float64] = s
 
     @property
     def cov_mm(self) -> npt.NDArray[np.float64]:
@@ -257,7 +286,7 @@ class ESMDA:
         return self._m_bounds
 
     @m_bounds.setter
-    def m_bounds(self, mb: npt.NDArray[np.float64]) -> None:
+    def m_bounds(self, mb: Optional[npt.NDArray[np.float64]]) -> None:
         """Set the parameter errors covariance matrix."""
         if mb is None:
             # In that case, create an array of nan.
@@ -267,14 +296,14 @@ class ESMDA:
             self._m_bounds[:] = np.nan
         elif mb.shape[0] != self.m_dim:
             raise ValueError(
-                f"m_bounds is of size {mb.shape} while it "
-                f"should be of size ({self.m_dim}, 2)"
+                f"m_bounds is of shape {mb.shape} while it "
+                f"should be of shape ({self.m_dim}, 2)"
             )
         else:
             self._m_bounds = mb
 
     @property
-    def cov_d_inflation_factors(self) -> List[float]:
+    def cov_obs_inflation_factors(self) -> List[float]:
         r"""
         Get the inlfation factors for the covariance matrix of the measurement errors.
 
@@ -289,21 +318,21 @@ class ESMDA:
         In practise, :math:`\alpha_{l} = N_{a}` is a good choice
         :cite:p:`emerickEnsembleSmootherMultiple2013`.
         """
-        return self._cov_d_inflation_factors
+        return self._cov_obs_inflation_factors
 
-    @cov_d_inflation_factors.setter
-    def cov_d_inflation_factors(self, a: Sequence[float]) -> None:
+    @cov_obs_inflation_factors.setter
+    def cov_obs_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
         """Set the inflation factors the covariance matrix of the measurement errors."""
         if a is None:
-            self._cov_d_inflation_factors: List[float] = [
+            self._cov_obs_inflation_factors: List[float] = [
                 1 / self.n_assimilations
             ] * self.n_assimilations
         elif len(a) != self.n_assimilations:
             raise ValueError(
-                "The length of cov_d_inflation_factors should match n_assimilations"
+                "The length of cov_obs_inflation_factors should match n_assimilations"
             )
         else:
-            self._cov_d_inflation_factors = list(a)
+            self._cov_obs_inflation_factors = list(a)
 
     @property
     def cov_mm_inflation_factors(self) -> List[float]:
@@ -327,7 +356,7 @@ class ESMDA:
         return list(self._cov_mm_inflation_factors)
 
     @cov_mm_inflation_factors.setter
-    def cov_mm_inflation_factors(self, a: Sequence[float]) -> None:
+    def cov_mm_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
         """
         Set the inflation factors the adjusted parameters covariance matrix.
 
@@ -342,6 +371,47 @@ class ESMDA:
             )
         else:
             self._cov_mm_inflation_factors = list(a)
+
+    @property
+    def dd_correlation_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """Get the observations-observations localization matrix."""
+        return self._dd_correlation_matrix
+
+    @dd_correlation_matrix.setter
+    def dd_correlation_matrix(self, s: Optional[npt.NDArray[np.float64]]) -> None:
+        """Set the observations-observations localization matrix."""
+        if s is None:
+            self._dd_correlation_matrix = None
+            return
+        if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
+            raise ValueError(
+                "dd_correlation_matrix must be a 2D square matrix with "
+                f"dimensions ({self.d_dim}, {self.d_dim})."
+            )
+        self._dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = s
+
+    @property
+    def md_correlation_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """Get the parameters-observations localization matrix."""
+        return self._md_correlation_matrix
+
+    @md_correlation_matrix.setter
+    def md_correlation_matrix(self, s: Optional[npt.NDArray[np.float64]]) -> None:
+        """Set the parameters-observations localization matrix."""
+        if s is None:
+            self._md_correlation_matrix = None
+            return
+        if len(s.shape) != 2:
+            raise ValueError(
+                "md_correlation_matrix must be a 2D matrix with "
+                f"dimensions ({self.m_dim}, {self.d_dim})."
+            )
+        if s.shape[0] != self.m_dim or s.shape[1] != self.d_dim:
+            raise ValueError(
+                "md_correlation_matrix must be a 2D matrix with "
+                f"dimensions ({self.m_dim}, {self.d_dim})."
+            )
+        self._md_correlation_matrix: Optional[npt.NDArray[np.float64]] = s
 
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA algorithm."""
@@ -394,8 +464,8 @@ class ESMDA:
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
             self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
-                self.cov_d_inflation_factors[assimilation_iteration]
-            ) * np.random.normal(0, np.abs(self.cov_d[i, i]), self.n_ensemble)
+                self.cov_obs_inflation_factors[assimilation_iteration]
+            ) * np.random.normal(0, np.abs(self.cov_obs[i, i]), self.n_ensemble)
 
     def _approximate_covariance_matrices(self) -> None:
         r"""
@@ -418,6 +488,20 @@ class ESMDA:
         with :math:`\overline{m^{l}}` and :math:`\overline{d^{l}}`, the
         the ensemble means, at iteration :math:`l`, of parameters and predictions,
         respectively.
+
+        If defined by the user, covariances localization is applied by element-wise
+        multiplication (Schur product or Hadamard product) of the original
+        covariance matrix and a distance dependent correlation function
+        that smoothly reduces the correlations between points for increasing distances
+        and cuts off long-range correlations above a specific distance:
+
+        .. math::
+           \tilde{C}^{l}_{MD} = \rho_{MD} \odot C^{l}_{MD}
+
+        .. math::
+           \tilde{C}^{l}_{DD} = \rho_{DD} \odot C^{l}_{DD}
+
+        with :math:`\odot` the element wise multiplication.
         """
         # Average of parameters and predictions of the ensemble members
         m_average = np.mean(self.m_prior, axis=0)
@@ -435,6 +519,13 @@ class ESMDA:
 
         self.cov_md = dd_md / (self.n_ensemble - 1.0)
         self.cov_dd = dd_dd / (self.n_ensemble - 1.0)
+
+        # Spatial and temporal localization: obs - obs
+        if self.dd_correlation_matrix is not None:
+            self.cov_dd *= self.dd_correlation_matrix
+        # Spatial and temporal localization: parameters - obs
+        if self.md_correlation_matrix is not None:
+            self.cov_md *= self.md_correlation_matrix
 
     def _analyse(self, assimilation_iteration: int) -> None:
         r"""

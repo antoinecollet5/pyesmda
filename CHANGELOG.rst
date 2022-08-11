@@ -5,17 +5,24 @@ Changelog
 0.3.0 (To be defined)
 ---------------------
 
+* `!PR11 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/11>`_ Implement the covariance localization. Introduces the 
+  correlation matrices **dd_correlation_matrix** and **md_correlation_matrix**.
+  To avoid confusion , **cov_d** has been renamed **cov_obs**.
+* `!PR10 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/10>`_ Implement the parameters auto-covariance inflation.
+  Add the estimation of the parameters auto-covariance matrix. The parameter **alpha** becomes **cov_obs_inflation_factors**.
+
+
 0.2.0 (2022-07-23)
 ------------------
 
-* `!PR6 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/6>`_ The parameter `stdev_d` becomes `cov_d`.
-* `!PR5 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/5>`_ The parameter `n_assimilation` becomes `n_assimilations`.
-* `!PR4 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/4>`_ The parameter `stdev_m` is removed.
+* `!PR6 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/6>`_ The parameter **stdev_d** becomes **cov_d**.
+* `!PR5 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/5>`_ The parameter **n_assimilation** becomes **n_assimilations**.
+* `!PR4 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/4>`_ The parameter **stdev_m** is removed.
 * `!PR3 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/3>`_ Type hints are now used in the library.
 * `!PR2 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/2>`_ Add the possibility to save the history of m and d. This introduces a new knew
-  keyword (boolean) for the constructor `save_ensembles_history`. 
-  Note that the `m_mean` attribute is depreciated and two new attributes are 
-  introduced: `m_history`, `d_history` respectively to access the successive
+  keyword (boolean) for the constructor **save_ensembles_history**. 
+  Note that the **m_mean** attribute is depreciated and two new attributes are 
+  introduced: **m_history**, **d_history** respectively to access the successive
   parameter and predictions ensemble. 
 
 
