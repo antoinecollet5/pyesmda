@@ -5,6 +5,10 @@ Changelog
 0.3.0 (To be defined)
 ---------------------
 
+* `!PR13 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/13>`_ Implementation: Faster analyse step by avoiding matrix inversion.
+* `!PR12 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/12>`_ Add a seed parameter for the random 
+  number generation **seed** in the prediction perturbation step.
+  To avoid confusion , **cov_d** has been renamed **cov_obs**.
 * `!PR11 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/11>`_ Implement the covariance localization. Introduces the 
   correlation matrices **dd_correlation_matrix** and **md_correlation_matrix**.
   To avoid confusion , **cov_d** has been renamed **cov_obs**.
