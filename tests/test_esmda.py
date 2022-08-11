@@ -283,14 +283,14 @@ def test_esmda_exponential_case():
     # timesteps
     x = np.arange(500)
     # Noisy signal with predictable noise
-    np.random.seed(0)
-    obs = exponential((a, b), x) + np.random.normal(0.0, 1.0, 500)
+    rng = np.random.default_rng(0)
+    obs = exponential((a, b), x) + rng.normal(0.0, 1.0, 500)
     # Initiate an ensemble of (a, b) parameters
     n_ensemble = 100  # size of the ensemble
     # Uniform law for the parameter a ensemble
-    ma = np.random.uniform(low=-10.0, high=50.0, size=n_ensemble)
+    ma = rng.uniform(low=-10.0, high=50.0, size=n_ensemble)
     # Uniform law for the parameter b ensemble
-    mb = np.random.uniform(low=-0.001, high=0.01, size=n_ensemble)
+    mb = rng.uniform(low=-0.001, high=0.01, size=n_ensemble)
     # Prior ensemble
     m_ensemble = np.stack((ma, mb), axis=1)
 
@@ -336,6 +336,7 @@ def test_esmda_exponential_case():
         md_correlation_matrix=np.ones((m_ensemble.shape[1], obs.size)),
         dd_correlation_matrix=np.ones((obs.size, obs.size)),
         save_ensembles_history=True,
+        seed=0,
     )
     # Call the ES-MDA solver
     solver.solve()
@@ -349,5 +350,5 @@ def test_esmda_exponential_case():
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.4e-1, 7.3e-5]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.57e-1, 7.97e-5]), rtol=5e-2
     ).all()
