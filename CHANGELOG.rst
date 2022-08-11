@@ -5,6 +5,8 @@ Changelog
 0.3.0 (To be defined)
 ---------------------
 
+* `!PR14 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/14>`_ Add keyword **is_forecast_for_last_assimilation** to choose whether to 
+  compute the predictions for the ensemble obtained at the last assimilation step. The default is True.
 * `!PR13 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/13>`_ Implementation: Faster analyse step by avoiding matrix inversion.
 * `!PR12 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/12>`_ Add a seed parameter for the random 
   number generation **seed** in the prediction perturbation step.
