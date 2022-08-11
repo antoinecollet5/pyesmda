@@ -581,6 +581,7 @@ class ESMDA:
                     self.d_obs_uc[j, :] - self.d_pred[j, :],
                 ),
             )
+
         # Covariance inflation
         if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
             m_pred = self._cov_mm_inflation_factors[assimilation_iteration] * (
