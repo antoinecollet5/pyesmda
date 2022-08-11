@@ -2,8 +2,8 @@
 Changelog
 ==============
 
-0.3.0 (To be defined)
----------------------
+0.3.0 (2022-08-12)
+------------------
 
 * `!PR15 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/15>`_ Implement ESMDA-RS (restricted step) which provides
   an automatic estimation of the inflation parameter and determines when to stop (number of assimilations) on the fly.
