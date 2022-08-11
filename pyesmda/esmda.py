@@ -87,6 +87,8 @@ class ESMDA:
         Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
+    rng: np.random.Generator
+        The random number generator used in the predictions perturbation step.
     """
 
     __slots__: List[str] = [
@@ -109,6 +111,7 @@ class ESMDA:
         "_dd_correlation_matrix",
         "_md_correlation_matrix",
         "save_ensembles_history",
+        "rng",
     ]
 
     def __init__(
@@ -126,6 +129,7 @@ class ESMDA:
         md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
         r"""Construct the instance.
 
@@ -185,6 +189,10 @@ class ESMDA:
         save_ensembles_history: bool, optional
             Whether to save the history predictions and parameters over
             the assimilations. The default is False.
+        seed: Optional[int]
+            Seed for the white noise generator used in the perturbation step.
+            If None, the default :func:`numpy.random.default_rng()` is used.
+            The default is None.
         """
         self.obs: npt.NDArray[np.float64] = obs
         self.m_prior: npt.NDArray[np.float64] = m_init
@@ -207,6 +215,7 @@ class ESMDA:
         self.dd_correlation_matrix = dd_correlation_matrix
         self.md_correlation_matrix = md_correlation_matrix
         self.m_bounds = m_bounds
+        self.rng: np.random.Generator = np.random.default_rng(seed)
 
     @property
     def n_assimilations(self) -> int:
@@ -460,12 +469,17 @@ class ESMDA:
             \textrm{for } j=1,2,...,N_{e},
 
         where :math:`Z_{d} \sim \mathcal{N}(O, I_{N_{d}})`.
+
+        Notes
+        -----
+        To get reproducible behavior, use a seed when creating the ESMDA instance.
+
         """
         self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
         for i in range(self.d_dim):
             self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
                 self.cov_obs_inflation_factors[assimilation_iteration]
-            ) * np.random.normal(0, np.abs(self.cov_obs[i, i]), self.n_ensemble)
+            ) * self.rng.normal(0, np.abs(self.cov_obs[i, i]), self.n_ensemble)
 
     def _approximate_covariance_matrices(self) -> None:
         r"""
