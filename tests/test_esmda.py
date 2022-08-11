@@ -302,7 +302,7 @@ def test_esmda_exponential_case():
     m_bounds = None
 
     # Number of assimilations
-    n_assimilations = 4
+    n_assimilations = 3
 
     # Use a geometric suite (see procedure un evensen 2018) to compte alphas.
     # Also explained in Torrado 2021 (see her PhD manuscript.)
@@ -350,5 +350,5 @@ def test_esmda_exponential_case():
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.57e-1, 7.97e-5]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.02e-1, 6.74e-5]), rtol=5e-2
     ).all()
