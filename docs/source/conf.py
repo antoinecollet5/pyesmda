@@ -97,6 +97,7 @@ master_doc = "index"
 # General information about the project.
 project = "pyESMDA"
 author = pyesmda.__author__
+# pylint: disable=W0622 # Redefining built-in 'copyright'
 copyright = f"2021-{datetime.datetime.today().year}, {author}"
 
 
