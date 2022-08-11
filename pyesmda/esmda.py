@@ -8,6 +8,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 import numpy as np
 import numpy.typing as npt
 
+# pylint: disable=C0103 # Does not conform to snake_case naming style
+
 
 class ESMDA:
     r"""
@@ -89,8 +91,11 @@ class ESMDA:
         Whether to save the history predictions and parameters over the assimilations.
     rng: np.random.Generator
         The random number generator used in the predictions perturbation step.
+    is_forecast_for_last_assimilation: bool
+        Whether to compute the predictions for the ensemble obtained at the
+        last assimilation step.
     """
-
+    # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
@@ -112,6 +117,7 @@ class ESMDA:
         "_md_correlation_matrix",
         "save_ensembles_history",
         "rng",
+        "is_forecast_for_last_assimilation",
     ]
 
     def __init__(
@@ -130,7 +136,10 @@ class ESMDA:
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
+        is_forecast_for_last_assimilation: bool = True,
     ) -> None:
+        # pylint: disable=R0913 # Too many arguments
+        # pylint: disable=R0914 # Too many local variables
         r"""Construct the instance.
 
         Parameters
@@ -193,6 +202,10 @@ class ESMDA:
             Seed for the white noise generator used in the perturbation step.
             If None, the default :func:`numpy.random.default_rng()` is used.
             The default is None.
+        is_forecast_for_last_assimilation: bool, optional
+            Whether to compute the predictions for the ensemble obtained at the
+            last assimilation step. The default is True.
+
         """
         self.obs: npt.NDArray[np.float64] = obs
         self.m_prior: npt.NDArray[np.float64] = m_init
@@ -216,6 +229,7 @@ class ESMDA:
         self.md_correlation_matrix = md_correlation_matrix
         self.m_bounds = m_bounds
         self.rng: np.random.Generator = np.random.default_rng(seed)
+        self.is_forecast_for_last_assimilation = is_forecast_for_last_assimilation
 
     @property
     def n_assimilations(self) -> int:
@@ -432,6 +446,8 @@ class ESMDA:
             self._pertrub(assimilation_iteration)
             self._approximate_covariance_matrices()
             self._analyse(assimilation_iteration)
+        if self.is_forecast_for_last_assimilation:
+            self._forecast()
 
     def _forecast(self) -> None:
         r"""
