@@ -559,20 +559,28 @@ class ESMDA:
             m^{l+1}_{j} \leftarrow r^{l+1}\left(m^{l+1}_{j} - \frac{1}{N_{e}}
             \sum_{j}^{N_{e}}m^{l+1}_{j}\right)
             + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l+1}_{j}
+
+        Notes
+        -----
+        To avoid the inversion of :math:`\left(C^{l}_{DD}+\alpha_{l+1} C_{D}\right)`,
+        the product :math:`\left(C^{l}_{DD}+\alpha_{l+1} C_{D}\right) ^{-1}
+        \left(d^{l}_{uc,j} - d^{l}_{j} \right)`
+        is solved linearly as :math:`A^{-1}b = x`
+        which is equivalent to solve :math:`Ax = b`.
+
         """
         # predicted parameters
         m_pred: npt.NDArray[np.float64] = np.zeros([self.n_ensemble, self.m_dim])
         for j in range(self.n_ensemble):
-            tmp_mat = np.matmul(
+            m_pred[j, :] = self.m_prior[j, :] + np.matmul(
                 self.cov_md,
-                np.linalg.inv(
+                np.linalg.solve(
                     self.cov_dd
                     + self.cov_obs_inflation_factors[assimilation_iteration]
-                    * self.cov_obs
+                    * self.cov_obs,
+                    self.d_obs_uc[j, :] - self.d_pred[j, :],
                 ),
             )
-            tmp_vec = self.d_obs_uc[j, :] - self.d_pred[j, :]
-            m_pred[j, :] = self.m_prior[j, :] + np.matmul(tmp_mat, tmp_vec)
 
         # Covariance inflation
         if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
