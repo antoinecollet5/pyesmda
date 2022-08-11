@@ -8,3 +8,4 @@ API Reference
    :template: class.rst
    
     ESMDA
+    ESMDA_RS
