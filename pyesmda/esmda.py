@@ -8,6 +8,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 import numpy as np
 import numpy.typing as npt
 
+# pylint: disable=C0103 # Does not conform to snake_case naming style
+
 
 class ESMDA:
     r"""
@@ -93,7 +95,7 @@ class ESMDA:
         Whether to compute the predictions for the ensemble obtained at the
         last assimilation step.
     """
-
+    # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
@@ -136,6 +138,8 @@ class ESMDA:
         seed: Optional[int] = None,
         is_forecast_for_last_assimilation: bool = True,
     ) -> None:
+        # pylint: disable=R0913 # Too many arguments
+        # pylint: disable=R0914 # Too many local variables
         r"""Construct the instance.
 
         Parameters
