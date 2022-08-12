@@ -109,8 +109,8 @@ def test_esmda_rs_exponential_case():
     # Observation error covariance matrix
     cov_obs = np.diag([1.0] * obs.shape[0])
 
-    # A priori estimated parameters covariance
-    cov_m_prior = np.array([[30, 0.0], [0.0, 0.01]])
+    # A priori estimated parameters standard deviation
+    std_m_prior = np.array([30, 0.01])
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -123,7 +123,7 @@ def test_esmda_rs_exponential_case():
         obs,
         m_ensemble,
         cov_obs,
-        cov_m_prior,
+        std_m_prior,
         forward_model,
         forward_model_args=(x,),
         # cov_mm_inflation_factors=cov_mm_inflation_factors,
