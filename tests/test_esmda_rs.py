@@ -7,6 +7,8 @@ import numpy as np
 
 from pyesmda import ESMDA_RS
 
+from .test_esmda import exponential, forward_model
+
 
 def test_normalized_objective_function():
 
@@ -38,54 +40,6 @@ def test_ensemble_average_normalized_objective_function():
         )
         == 0.25
     )
-
-
-def exponential(p, x):
-    """
-    Simple exponential function with an amplitude and change factor.
-
-    Parameters
-    ----------
-    p : tuple, list
-        Parameters vector: amplitude i.e. initial value and change factor.
-    x : np.array
-        Independent variable (e.g. time).
-
-    Returns
-    -------
-    np.array
-        Result.
-
-    """
-    return p[0] * np.exp(x * p[1])
-
-
-def forward_model(m_ensemble, x):
-    """
-    Wrap the non-linear observation model (forward model).
-
-    Function calling the non-linear observation model (forward model).
-    for all ensemble members and returning the predicted data for
-    each ensemble member.
-
-    Parameters
-    ----------
-    m_ensemble : np.array
-        Initial ensemble of N_{e} parameters vector..
-    x : np.array
-        Independent variable (e.g. time).
-
-    Returns
-    -------
-    d_pred: np.array
-        Predicted data for each ensemble member.
-    """
-    # Initiate an array of predicted results.
-    d_pred = np.zeros([m_ensemble.shape[0], x.shape[0]])
-    for j in range(m_ensemble.shape[0]):
-        # Calling the forward model for each member of the ensemble
-        d_pred[j, :] = exponential(m_ensemble[j, :], x)
-    return d_pred
 
 
 def test_esmda_rs_exponential_case():
