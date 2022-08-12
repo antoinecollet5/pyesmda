@@ -2,6 +2,12 @@
 Changelog
 ==============
 
+0.3.1 (2022-08-12)
+------------------
+
+* `!PR20 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/20>`_ Fix ESMDA-RS documentation and change the
+  **cov_m_prior** input parameter to its diagonal **std_m_prior** to be consistent with the implementation and be less memory consuming.
+
 0.3.0 (2022-08-12)
 ------------------
 
@@ -36,5 +42,6 @@ Changelog
 
 0.1.0 (2021-11-28)
 ------------------
+
 
 * First release on PyPI.
