@@ -24,7 +24,7 @@ test_requirements = [
 ]
 
 setup(
-    author="Antoine Collet",
+    author=pyesmda.__author__,
     author_email="antoine.collet5@gmail.com",
     python_requires=">=3.6",
     classifiers=[

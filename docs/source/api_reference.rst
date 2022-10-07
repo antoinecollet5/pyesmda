@@ -1,11 +1,12 @@
+.. _api_ref:
+
+=============
 API Reference
 =============
 
-.. currentmodule:: pyesmda
+.. automodule:: pyesmda
 
-.. autosummary::
-   :toctree: _autosummary
-   :template: class.rst
-   
-    ESMDA
-    ESMDA_RS
+.. raw:: latex
+
+    \clearpage
+

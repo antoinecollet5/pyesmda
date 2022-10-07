@@ -8,6 +8,13 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 import numpy as np
 import numpy.typing as npt
 
+from pyesmda.utils import (
+    approximate_cov_mm,
+    approximate_covariance_matrix_from_ensembles,
+    check_nans_in_predictions,
+    inflate_ensemble_around_its_mean,
+)
+
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
 
@@ -111,6 +118,7 @@ class ESMDA:
         "forward_model_args",
         "forward_model_kwargs",
         "_n_assimilations",
+        "_assimilation_step",
         "_cov_obs_inflation_factors",
         "_cov_mm_inflation_factors",
         "_dd_correlation_matrix",
@@ -222,8 +230,9 @@ class ESMDA:
         if forward_model_kwargs is None:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
-        self.n_assimilations = n_assimilations
-        self.cov_obs_inflation_factors = cov_obs_inflation_factors
+        self._set_n_assimilations(n_assimilations)
+        self._assimilation_step: int = 0
+        self.set_cov_obs_inflation_factors(cov_obs_inflation_factors)
         self.cov_mm_inflation_factors = cov_mm_inflation_factors
         self.dd_correlation_matrix = dd_correlation_matrix
         self.md_correlation_matrix = md_correlation_matrix
@@ -233,11 +242,10 @@ class ESMDA:
 
     @property
     def n_assimilations(self) -> int:
-        """Return the number of assimilations to perform."""
+        """Return the number of assimilations to perform. Read-only attribute."""
         return self._n_assimilations
 
-    @n_assimilations.setter
-    def n_assimilations(self, n: int) -> None:
+    def _set_n_assimilations(self, n: int) -> None:
         """Set the number of assimilations to perform."""
         if not isinstance(n, int):
             raise TypeError("The number of assimilations must be a positive integer.")
@@ -292,16 +300,7 @@ class ESMDA:
         with :math:`\overline{m^{l}}`, the parameters
         ensemble means, at iteration :math:`l`.
         """
-        m_average: npt.NDArray[np.float64] = np.mean(self.m_prior, axis=0)
-        # Delta with average per ensemble member
-        delta_m: npt.NDArray[np.float64] = self.m_prior - m_average
-
-        dd_mm: npt.NDArray[np.float64] = np.zeros((self.m_dim, self.m_dim))
-
-        for j in range(self.n_ensemble):
-            dd_mm += np.outer(delta_m[j, :], delta_m[j, :])
-
-        return dd_mm / (self.n_ensemble - 1.0)
+        return approximate_cov_mm(self.m_prior)
 
     @property
     def m_bounds(self) -> npt.NDArray[np.float64]:
@@ -343,8 +342,7 @@ class ESMDA:
         """
         return self._cov_obs_inflation_factors
 
-    @cov_obs_inflation_factors.setter
-    def cov_obs_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
+    def set_cov_obs_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
         """Set the inflation factors the covariance matrix of the measurement errors."""
         if a is None:
             self._cov_obs_inflation_factors: List[float] = [
@@ -387,7 +385,7 @@ class ESMDA:
         each iteration (no inflation).
         """
         if a is None:
-            self._cov_mm_inflation_factors: List[float] = [1] * self.n_assimilations
+            self._cov_mm_inflation_factors: List[float] = [1.0] * self.n_assimilations
         elif len(a) != self.n_assimilations:
             raise ValueError(
                 "The length of cov_mm_inflation_factors should match n_assimilations"
@@ -440,19 +438,23 @@ class ESMDA:
         """Solve the optimization problem with ES-MDA algorithm."""
         if self.save_ensembles_history:
             self.m_history.append(self.m_prior)  # save m_init
-        for assimilation_iteration in range(self.n_assimilations):
-            print(f"Assimilation # {assimilation_iteration + 1}")
+        for self._assimilation_step in range(self.n_assimilations):
+            print(f"Assimilation # {self._assimilation_step + 1}")
             self._forecast()
-            self._pertrub(self.cov_obs_inflation_factors[assimilation_iteration])
+            self._pertrub(self.cov_obs_inflation_factors[self._assimilation_step])
             self._approximate_covariance_matrices()
-            m_pred = self._analyse(
-                self.cov_obs_inflation_factors[assimilation_iteration]
-            )
             # Update the prior parameter for next iteration
-            self.m_prior = m_pred
+            self.m_prior = self._apply_bounds(
+                inflate_ensemble_around_its_mean(
+                    self._analyse(
+                        self.cov_obs_inflation_factors[self._assimilation_step]
+                    ),
+                    self.cov_mm_inflation_factors[self._assimilation_step],
+                )
+            )
             # Saving the parameters history
             if self.save_ensembles_history:
-                self.m_history.append(m_pred)
+                self.m_history.append(self.m_prior)
 
         if self.is_forecast_for_last_assimilation:
             self._forecast()
@@ -481,6 +483,10 @@ class ESMDA:
         )
         if self.save_ensembles_history:
             self.d_history.append(self.d_pred)
+
+        # Check if no nan values are found in the predictions.
+        # If so, stop the assimilation
+        check_nans_in_predictions(self.d_pred, self._assimilation_step)
 
     def _pertrub(self, inflation_factor: float) -> None:
         r"""
@@ -541,22 +547,12 @@ class ESMDA:
 
         with :math:`\odot` the element wise multiplication.
         """
-        # Average of parameters and predictions of the ensemble members
-        m_average = np.mean(self.m_prior, axis=0)
-        d_average = np.mean(self.d_pred, axis=0)
-        # Delta with average per ensemble member
-        delta_m = self.m_prior - m_average
-        delta_d = self.d_pred - d_average
-
-        dd_md = np.zeros((self.m_dim, self.d_dim))
-        dd_dd = np.zeros((self.d_dim, self.d_dim))
-
-        for j in range(self.n_ensemble):
-            dd_md += np.outer(delta_m[j, :], delta_d[j, :])
-            dd_dd += np.outer(delta_d[j, :], delta_d[j, :])
-
-        self.cov_md = dd_md / (self.n_ensemble - 1.0)
-        self.cov_dd = dd_dd / (self.n_ensemble - 1.0)
+        self.cov_md = approximate_covariance_matrix_from_ensembles(
+            self.m_prior, self.d_pred
+        )
+        self.cov_dd = approximate_covariance_matrix_from_ensembles(
+            self.d_pred, self.d_pred
+        )
 
         # Spatial and temporal localization: obs - obs
         if self.dd_correlation_matrix is not None:
@@ -575,14 +571,6 @@ class ESMDA:
            m^{l+1}_{j} = m^{l}_{j} + C^{l}_{MD}\left(C^{l}_{DD}+\alpha_{l+1}
            C_{D}\right)^{-1} \left(d^{l}_{uc,j} - d^{l}_{j} \right),
            \textrm{for } j=1,2,...,N_{e}.
-
-        The updated parameter values are eventually inflated using
-        (see `cov_mm_inflation_factors`):
-
-        .. math::
-            m^{l+1}_{j} \leftarrow r^{l+1}\left(m^{l+1}_{j} - \frac{1}{N_{e}}
-            \sum_{j}^{N_{e}}m^{l+1}_{j}\right)
-            + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l+1}_{j}
 
         Notes
         -----
@@ -603,14 +591,10 @@ class ESMDA:
                     self.d_obs_uc[j, :] - self.d_pred[j, :],
                 ),
             )
+        return m_pred
 
-        # Covariance inflation
-        # if not self._cov_mm_inflation_factors[assimilation_iteration] == 1.0:
-        #     m_pred = inflation_factor * (m_pred - np.mean(m_pred, axis=0)) + np.mean(
-        #         m_pred, axis=0
-        #     )
-
-        # Apply bounds constraints to parameters
+    def _apply_bounds(self, m_pred: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Apply bounds constraints to the adjusted parameters."""
         m_pred = np.where(
             m_pred < self.m_bounds[:, 0], self.m_bounds[:, 0], m_pred
         )  # lower bounds

@@ -10,38 +10,6 @@ from pyesmda import ESMDA_RS
 from .test_esmda import exponential, forward_model
 
 
-def test_normalized_objective_function():
-
-    pred = np.ones((20))
-    obs = np.ones((20)) * 2.0
-    obs_cov = np.diag(np.ones((20)) * 0.5)
-    assert ESMDA_RS.compute_normalized_objective_function(pred, obs, obs_cov) == 1.0
-
-    obs_cov = np.diag(np.ones((20)) * 2.0)
-    assert ESMDA_RS.compute_normalized_objective_function(pred, obs, obs_cov) == 0.25
-
-
-def test_ensemble_average_normalized_objective_function():
-
-    pred = np.ones((10, 20))
-    obs = np.ones((20)) * 2
-    obs_cov = np.diag(np.ones((20)) * 0.5)
-    assert (
-        ESMDA_RS.compute_ensemble_average_normalized_objective_function(
-            pred, obs, obs_cov
-        )
-        == 1.0
-    )
-
-    obs_cov = np.diag(np.ones((20)) * 2.0)
-    assert (
-        ESMDA_RS.compute_ensemble_average_normalized_objective_function(
-            pred, obs, obs_cov
-        )
-        == 0.25
-    )
-
-
 def test_esmda_rs_exponential_case():
     """Test the ES-MDA on a simple synthetic case with two parameters."""
     a = 10.0
