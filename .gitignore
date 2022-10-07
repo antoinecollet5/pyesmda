@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# autodoc
+_autosummary/
+
 # Distribution / packaging
 .Python
 env/

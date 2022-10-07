@@ -2,6 +2,11 @@
 Changelog
 ==============
 
+0.3.2 (2022-10-07)
+------------------
+
+* `!PR21 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/21>`_ FIX: design - some static methods should be moved to a utils.py file.
+
 0.3.1 (2022-08-12)
 ------------------
 

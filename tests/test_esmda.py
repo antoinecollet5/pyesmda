@@ -320,7 +320,7 @@ def test_esmda_exponential_case():
     np.testing.assert_almost_equal(sum(1.0 / np.array(cov_obs_inflation_factors)), 1.0)
 
     # This is just for the test
-    cov_mm_inflation_factors: list[float] = [1.2] * n_assimilations
+    cov_mm_inflation_factors: list[float] = [1.01] * n_assimilations
 
     solver = ESMDA(
         obs,

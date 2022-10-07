@@ -1,5 +1,5 @@
 """
-Implement the ES-MDA algorithms.
+Implement the ES-MDA-RS algorithms.
 
 @author: acollet
 """
@@ -9,6 +9,7 @@ import numpy as np
 import numpy.typing as npt
 
 from pyesmda.esmda import ESMDA
+from pyesmda.utils import compute_ensemble_average_normalized_objective_function
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -107,6 +108,7 @@ class ESMDA_RS(ESMDA):
         Whether to compute the predictions for the ensemble obtained at the
         last assimilation step.
     """
+
     # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "obs",
@@ -124,6 +126,7 @@ class ESMDA_RS(ESMDA):
         "forward_model_args",
         "forward_model_kwargs",
         "_n_assimilations",
+        "_assimilation_step",
         "_cov_obs_inflation_factors",
         "_cov_mm_inflation_factors",
         "_dd_correlation_matrix",
@@ -232,7 +235,7 @@ class ESMDA_RS(ESMDA):
         if forward_model_kwargs is None:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
-        self.n_assimilations: int = 0
+        self._assimilation_step: int = 0
         self.cov_obs_inflation_factors = []
         self.cov_mm_inflation_factors = cov_mm_inflation_factors
         self.dd_correlation_matrix = dd_correlation_matrix
@@ -243,13 +246,8 @@ class ESMDA_RS(ESMDA):
 
     @property
     def n_assimilations(self) -> int:
-        """Return the number of assimilations to perform."""
-        return self._n_assimilations
-
-    @n_assimilations.setter
-    def n_assimilations(self, n: int) -> None:
-        """Set the number of assimilations to perform."""
-        self._n_assimilations = n
+        """Get the number of assimilations performed. Read-only."""
+        return self._assimilation_step
 
     @property
     def cov_obs_inflation_factors(self) -> List[float]:
@@ -274,94 +272,6 @@ class ESMDA_RS(ESMDA):
         """Set the inflation factors the covariance matrix of the measurement errors."""
         self._cov_obs_inflation_factors = a
 
-    @staticmethod
-    def compute_ensemble_average_normalized_objective_function(
-        pred_ensemble: npt.NDArray[np.float64],
-        obs: npt.NDArray[np.float64],
-        cov_obs: npt.NDArray[np.float64],
-    ) -> float:
-        r"""
-        Compute the ensemble average normalized objective function.
-
-        .. math::
-
-            \overline{O}_{N_{d}} = \frac{1}{N_{e}} \sum_{j=1}^{N_{e}} O_{N_{d}, j}
-
-        .. math::
-
-            \textrm{with  } O_{N_{d}, j} = \frac{1}{2N_{d}}
-            \sum_{j=1}^{N_{e}}\left(d^{l}_{j}
-           - {d_{obs}} \right)^{T}C_{D}^{-1}\left(d^{l}_{j}
-           - {d_{obs}} \right)\\
-
-        Parameters
-        ----------
-        pred_ensemble : npt.NDArray[np.float64]
-            Vector of predicted values.
-        obs : npt.NDArray[np.float64]
-            Vector of observed values.
-        cov_obs : npt.NDArray[np.float64]
-            Covariance matrix of observed data measurement errors with dimensions
-            (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-
-        Returns
-        -------
-        float
-            The objective function.
-
-        """
-
-        def member_obj_fun(pred) -> float:
-            return ESMDA_RS.compute_normalized_objective_function(pred, obs, cov_obs)
-
-        return np.mean(
-            list(
-                map(
-                    member_obj_fun,
-                    pred_ensemble,
-                )
-            )
-        )
-
-    @staticmethod
-    def compute_normalized_objective_function(
-        pred: npt.NDArray[np.float64],
-        obs: npt.NDArray[np.float64],
-        cov_obs: npt.NDArray[np.float64],
-    ) -> float:
-        r"""
-        Compute the normalized objective function for a given member :math:`j`.
-
-        .. math::
-
-           O_{N_{d}, j} = \frac{1}{2N_{d}} \sum_{j=1}^{N_{e}}\left(d^{l}_{j}
-           - {d_{obs}} \right)^{T}C_{D}^{-1}\left(d^{l}_{j}
-           - {d_{obs}} \right)
-
-        Parameters
-        ----------
-        pred : npt.NDArray[np.float64]
-            Vector of predicted values.
-        obs : npt.NDArray[np.float64]
-            Vector of observed values.
-        cov_obs : npt.NDArray[np.float64]
-            Covariance matrix of observed data measurement errors with dimensions
-            (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-
-        Returns
-        -------
-        float
-            The objective function.
-
-        """
-        residuals: npt.NDArray[np.float64] = obs - pred
-        # return 1 / (2 * obs.size) * np.dot(residuals.T, np.divide(residuals, cov_obs))
-        return (
-            1
-            / (2 * obs.size)
-            * np.dot(residuals.T, np.linalg.solve(cov_obs, residuals))
-        )
-
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA-RS algorithm."""
         if self.save_ensembles_history:
@@ -369,8 +279,8 @@ class ESMDA_RS(ESMDA):
 
         current_inflation_factor: float = 10.0  # to initiate the while
         while not self._is_unity_reached(current_inflation_factor):
-            self.n_assimilations += 1
-            print(f"Assimilation # {self.n_assimilations}")
+            self._assimilation_step += 1
+            print(f"Assimilation # {self._assimilation_step}")
             self._forecast()
             # Divide per 2, because it is multiplied by 2 as the beginning
             # of the second while loop
@@ -382,7 +292,7 @@ class ESMDA_RS(ESMDA):
                 current_inflation_factor *= 2  # double the inflation (dumping) factor
                 self._pertrub(current_inflation_factor)
                 self._approximate_covariance_matrices()
-                m_pred = self._analyse(current_inflation_factor)
+                m_pred = self._apply_bounds(self._analyse(current_inflation_factor))
                 is_valid_parameter_change: bool = self._is_valid_parameter_change(
                     m_pred
                 )
@@ -414,7 +324,7 @@ class ESMDA_RS(ESMDA):
 
     def _compute_initial_inflation_factor(self) -> float:
         r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
-        return 0.25 * self.compute_ensemble_average_normalized_objective_function(
+        return 0.25 * compute_ensemble_average_normalized_objective_function(
             self.d_pred, self.obs, self.cov_obs
         )
 
