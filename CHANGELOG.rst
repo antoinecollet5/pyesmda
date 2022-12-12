@@ -2,6 +2,11 @@
 Changelog
 ==============
 
+0.3.3 (2022-12-12)
+------------------
+
+* `!PR27 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/27>`_ STYLE: Add a DOI number from zenodo and correct typos.
+
 0.3.2 (2022-10-07)
 ------------------
 
