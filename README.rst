@@ -46,12 +46,16 @@ pyESMDA
     :target: https://timothycrosley.github.io/isort
     :alt: isort
 
-Python Ensemble Smoother with Multiple Data Assimilations
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.7425670.svg
+   :target: https://doi.org/10.5281/zenodo.7425670
+   :alt: DOI
+
+Python Ensemble Smoother with Multiple Data Assimilation
 
 **pyesmda** is an open-source, pure python, and object-oriented library that provides 
 a user friendly implementation of one of the most popular ensemble based method
 for parameters estimation and data assimilation: the Ensemble Smoother with
-Multiple Data Assimilations (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
+Multiple Data Assimilation (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
 
 Thanks to its simple formulation, ES-MDA of Emerick and Reynolds (2012) is perhaps the 
 most used iterative form of the ensemble smoother in geoscience applications.
@@ -59,9 +63,13 @@ most used iterative form of the ensemble smoother in geoscience applications.
 * Free software: MIT license
 * Documentation: https://pyesmda.readthedocs.io.
 
-The original python implementation was by Muhammad Iffan Hannanu
-(https://github.com/iffanh/Playground).
+How to Cite
+-----------
 
+**Software/Code citation for pyESMDA:**
+
+.. block::
+Antoine Collet. (2022). pyESMDA - Python Ensemble Smoother with Multiple Data Assimilation (v0.3.2). Zenodo. https://doi.org/10.5281/zenodo.7425670
 
 
 References

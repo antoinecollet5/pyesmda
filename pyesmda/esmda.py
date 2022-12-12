@@ -20,7 +20,7 @@ from pyesmda.utils import (
 
 class ESMDA:
     r"""
-    Ensemble Smoother with Multiple Data Assimilations.
+    Ensemble Smoother with Multiple Data Assimilation.
 
     Implement the ES-MDA as proposed by  Emerick, A. A. and A. C. Reynolds
     :cite:p:`emerickEnsembleSmootherMultiple2013,

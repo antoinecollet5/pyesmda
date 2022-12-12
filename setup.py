@@ -39,7 +39,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-    description="Python Ensemble Smoother with Multiple Data Assimilations",
+    description="Python Ensemble Smoother with Multiple Data Assimilation",
     install_requires=requirements,
     license="MIT license",
     long_description=readme + "\n\n" + history,
