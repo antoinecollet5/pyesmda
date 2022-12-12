@@ -16,7 +16,7 @@ from pyesmda.utils import compute_ensemble_average_normalized_objective_function
 
 class ESMDA_RS(ESMDA):
     r"""
-    Restricted Step Ensemble Smoother with Multiple Data Assimilations.
+    Restricted Step Ensemble Smoother with Multiple Data Assimilation.
 
     Implement an adaptative version of the original ES-MDA algorithm proposed by
     Emerick, A. A. and A. C. Reynolds

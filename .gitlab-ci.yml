@@ -1,9 +1,6 @@
 # Official language image. Look for the different tagged releases at:
 # https://hub.docker.com/r/library/python/tags/
-image: python:3.8.5 # defaults to latest
-
-include:
-  - remote: 'https://gitlab.com/yesolutions/gitlab-ci-templates/raw/main/templates/pre-commit-autofix.yaml'
+image: python:3.9 # defaults to latest
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -36,7 +33,20 @@ stages:
   - Test
   - Deploy
 
+pre_commit:
+  image: python:3.9
+  stage: Static Analysis
+  allow_failure: false
+  script:
+    - pip install -r requirements_dev.txt
+    - pre-commit run --all-files
+  artifacts:
+    paths:
+      - pre-commit-report
+    when: on_failure
+    
 test:
+  image: python:3.9
   stage: Test
   script:
     - pip install -r requirements_dev.txt
@@ -52,22 +62,8 @@ test:
         path: coverage.xml
     when: always
 
-
-# This is redundant with the pre-commit hook
-# flake8:
-#   image: python:latest
-#   stage: Static Analysis
-#   allow_failure: true
-#   script:
-#     - pip install -r requirements_dev.txt
-#     - flake8 pyesmda --format=html --htmldir=flake-report --max-line-length 88
-#   artifacts:
-#     paths:
-#       - flake-report
-#     when: on_failure
-
-
 tox:
+  image: python:3.8.5
   stage: Test
   script:
     - pip install tox

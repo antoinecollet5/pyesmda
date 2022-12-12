@@ -5,7 +5,7 @@ Purpose
 **pyesmda** is an open-source, pure python, and object-oriented library that provides
 a user friendly implementation of one of the most popular ensemble based method
 for parameters estimation and data assimilation: the Ensemble Smoother with
-Multiple Data Assimilations (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
+Multiple Data Assimilation (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
 
 The following functionalities are directly provided on module-level.
 
