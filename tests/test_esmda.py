@@ -215,7 +215,6 @@ def empty_forward_model(*args, **kwargs) -> None:
     ],
 )
 def test_constructor(args, kwargs, expected_exception) -> ESMDA:
-
     with expected_exception:
         esmda = ESMDA(*args, **kwargs)
 

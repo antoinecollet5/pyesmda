@@ -23,7 +23,6 @@ def does_not_raise():
 
 
 def test_normalized_objective_function():
-
     pred = np.ones((20))
     obs = np.ones((20)) * 2.0
     obs_cov = np.diag(np.ones((20)) * 0.5)
@@ -34,7 +33,6 @@ def test_normalized_objective_function():
 
 
 def test_ensemble_average_normalized_objective_function():
-
     pred = np.ones((10, 20))
     obs = np.ones((20)) * 2
     obs_cov = np.diag(np.ones((20)) * 0.5)
@@ -93,7 +91,6 @@ def test_approximate_covariance_matrix_from_ensembles(
 
 
 def test_inflate_ensemble_around_its_mean_factor_1() -> None:
-
     ensemble = np.ones((10, 10))
     inflated = inflate_ensemble_around_its_mean(ensemble, 1.0)
 
@@ -101,7 +98,6 @@ def test_inflate_ensemble_around_its_mean_factor_1() -> None:
 
 
 def test_inflate_ensemble_around_its_mean_random() -> None:
-
     rng = np.random.default_rng(0)
     ensemble = rng.normal(1.0, 2.0, size=(10, 10))
     inflated = inflate_ensemble_around_its_mean(ensemble, 2.0)
@@ -165,6 +161,5 @@ def test_inflate_ensemble_around_its_mean_random() -> None:
     ],
 )
 def test_check_nans_in_predictions(d_pred, assimilation_step, expected_exception):
-
     with expected_exception:
         check_nans_in_predictions(d_pred, assimilation_step)
