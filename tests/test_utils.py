@@ -13,6 +13,7 @@ from pyesmda.utils import (
     check_nans_in_predictions,
     compute_ensemble_average_normalized_objective_function,
     compute_normalized_objective_function,
+    get_ensemble_variance,
     inflate_ensemble_around_its_mean,
 )
 
@@ -88,6 +89,19 @@ def test_approximate_covariance_matrix_from_ensembles(
         np.testing.assert_almost_equal(
             approximate_covariance_matrix_from_ensembles(ens1, ens2), expected
         )
+
+
+def test_get_ensemble_variance():
+    ens = np.random.random((6, 6)) * 4.0
+
+    np.testing.assert_almost_equal(
+        approximate_covariance_matrix_from_ensembles(ens, ens).diagonal(),
+        get_ensemble_variance(ens),
+    )
+
+    # must be 2D !
+    with pytest.raises(ValueError):
+        get_ensemble_variance(np.array((3.0)))
 
 
 def test_inflate_ensemble_around_its_mean_factor_1() -> None:

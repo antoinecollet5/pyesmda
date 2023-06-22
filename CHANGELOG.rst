@@ -2,6 +2,12 @@
 Changelog
 ==============
 
+0.3.4 (2023-06-22)
+------------------
+
+* ENH: Add a function to get the ensemble variance. Convinient to compute the uncertainty a posteriori without the full covariance matrix approximation.
+* STYLE: Format with updated version of black.
+  
 0.3.3 (2022-12-12)
 ------------------
 
