@@ -9,6 +9,35 @@ import numpy as np
 import numpy.typing as npt
 
 
+def get_ensemble_variance(
+    m_ensemble: npt.NDArray[np.float64],
+) -> npt.NDArray[np.float64]:
+    """
+    Get the given ensemble variance (diagonal terms of the covariance matrix).
+
+    Parameters
+    ----------
+    m_ensemble : npt.NDArray[np.float64]
+        Ensemble of realization with diemnsions (:math:`N_{e}, N_{m1}`).
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+        The variance as a 1d array.
+
+    Raises
+    ------
+    ValueError
+        If the ensemble is not a 2D matrix.
+    """
+    # test ensemble size
+    if len(m_ensemble.shape) != 2:
+        raise ValueError("The ensemble must be a 2D matrix!")
+    return np.sum(((m_ensemble - np.mean(m_ensemble, axis=0)) ** 2), axis=0) / (
+        m_ensemble.shape[0] - 1.0
+    )
+
+
 def approximate_covariance_matrix_from_ensembles(
     ensemble_1: npt.NDArray[np.float64], ensemble_2: npt.NDArray[np.float64]
 ) -> npt.NDArray[np.float64]:

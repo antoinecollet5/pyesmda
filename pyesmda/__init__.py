@@ -24,6 +24,7 @@ Functions
 .. autosummary::
    :toctree: _autosummary
 
+    get_ensemble_variance
     approximate_cov_mm
     approximate_covariance_matrix_from_ensembles
     compute_ensemble_average_normalized_objective_function
@@ -41,6 +42,7 @@ from .utils import (
     check_nans_in_predictions,
     compute_ensemble_average_normalized_objective_function,
     compute_normalized_objective_function,
+    get_ensemble_variance,
     inflate_ensemble_around_its_mean,
 )
 
@@ -49,6 +51,7 @@ __all__ = [
     "__author__",
     "ESMDA",
     "ESMDA_RS",
+    "get_ensemble_variance",
     "approximate_covariance_matrix_from_ensembles",
     "approximate_cov_mm",
     "compute_normalized_objective_function",
