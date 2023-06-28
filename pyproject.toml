@@ -1,0 +1,9 @@
+[build-system]
+requires = [
+    "setuptools>=61.1.1", 
+    "wheel", 
+    "numpy>=1.2",
+    "scipy>=1.7.0",
+    "typing_extensions",
+]
+build-backend = "setuptools.build_meta"
