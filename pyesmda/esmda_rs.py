@@ -110,31 +110,7 @@ class ESMDA_RS(ESMDA):
     """
 
     # pylint: disable=R0902 # Too many instance attributes
-    __slots__: List[str] = [
-        "obs",
-        "_cov_obs",
-        "std_m_prior",
-        "d_obs_uc",
-        "d_pred",
-        "d_history",
-        "m_prior",
-        "_m_bounds",
-        "m_history",
-        "cov_md",
-        "cov_dd",
-        "forward_model",
-        "forward_model_args",
-        "forward_model_kwargs",
-        "_n_assimilations",
-        "_assimilation_step",
-        "_cov_obs_inflation_factors",
-        "_cov_mm_inflation_factors",
-        "_dd_correlation_matrix",
-        "_md_correlation_matrix",
-        "save_ensembles_history",
-        "rng",
-        "is_forecast_for_last_assimilation",
-    ]
+    __slots__: List[str] = ["std_m_prior"]
 
     def __init__(
         self,
