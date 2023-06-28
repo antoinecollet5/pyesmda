@@ -3,10 +3,12 @@ Implement the ES-MDA algorithms.
 
 @author: acollet
 """
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import numpy.typing as npt
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import gmres
 
 NDArrayFloat = npt.NDArray[np.float64]
 
@@ -121,7 +123,7 @@ def approximate_cov_mm(m_ensemble: NDArrayFloat) -> NDArrayFloat:
 def compute_ensemble_average_normalized_objective_function(
     pred_ensemble: NDArrayFloat,
     obs: NDArrayFloat,
-    cov_obs: NDArrayFloat,
+    cov_obs: Union[NDArrayFloat, csr_matrix],
 ) -> float:
     r"""
     Compute the ensemble average normalized objective function.
@@ -143,9 +145,10 @@ def compute_ensemble_average_normalized_objective_function(
         Vector of predicted values.
     obs : NDArrayFloat
         Vector of observed values.
-    cov_obs : NDArrayFloat
+    cov_obs : Union[NDArrayFloat, csr_matrix]
         Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. This can be a
+        sparse matrix.
 
     Returns
     -------
@@ -170,7 +173,7 @@ def compute_ensemble_average_normalized_objective_function(
 def compute_normalized_objective_function(
     pred: NDArrayFloat,
     obs: NDArrayFloat,
-    cov_obs: NDArrayFloat,
+    cov_obs: Union[NDArrayFloat, csr_matrix],
 ) -> float:
     r"""
     Compute the normalized objective function for a given member :math:`j`.
@@ -187,9 +190,10 @@ def compute_normalized_objective_function(
         Vector of predicted values.
     obs : NDArrayFloat
         Vector of observed values.
-    cov_obs : NDArrayFloat
+    cov_obs : Union[NDArrayFloat, csr_matrix]
         Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. This can be a
+        sparse matrix.
 
     Returns
     -------
@@ -198,7 +202,16 @@ def compute_normalized_objective_function(
 
     """
     residuals: NDArrayFloat = obs - pred
-    return 1 / (2 * obs.size) * np.dot(residuals.T, np.linalg.solve(cov_obs, residuals))
+    try:
+        # case of dense array
+        return (
+            1
+            / (2 * obs.size)
+            * np.dot(residuals.T, np.linalg.solve(cov_obs, residuals))
+        )
+    except Exception:
+        # case of sparse matrices
+        return 1 / (2 * obs.size) * np.dot(residuals.T, gmres(cov_obs, residuals)[0])
 
 
 def inflate_ensemble_around_its_mean(
