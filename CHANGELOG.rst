@@ -2,10 +2,17 @@
 Changelog
 ==============
 
-0.3.4 (2023-06-22)
+0.4.0 (2023-06-28)
 ------------------
 
-* ENH: Add a function to get the ensemble variance. Convinient to compute the uncertainty a posteriori without the full covariance matrix approximation.
+* `!PR30 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/30>`_ ENH: Allow to perform the analyse step by batches of gridblocks and avoid the
+  construction on large (N, M) correlation matrices. Three new parameters have been introduced - **batch_size**: Number of parameters that are assimilated at once. This option is
+  available to overcome memory limitations when the number of updated parameters is large. In that case, the size of the covariance matrices tends to explode
+  and the update step must be performed by chunks of parameters.
+  **is_parallel_analyse_step**: Whether to use parallel computing for the analyse step if the number of batch is above one. The default is True.
+  **n_batches**: Number of batches required during the update step. 
+  It also introduces the support for sparse matrices for correlation matrices and observation covariance matrix.
+* `!PR29 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/29>`_ ENH: Add a function to get the ensemble variance. Convinient to compute the uncertainty a posteriori without the full covariance matrix approximation.
 * STYLE: Format with updated version of black.
   
 0.3.3 (2022-12-12)

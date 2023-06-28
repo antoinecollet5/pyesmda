@@ -1,4 +1,0 @@
-[codespell]
-skip = *.pyc,*.gif,*.png,*.jpg,*.ply, ./bibliography.bib,*.ipynb
-ignore-words-list = lod,byteorder,flem,parm,doubleclick,revered
-quiet-level = 3
