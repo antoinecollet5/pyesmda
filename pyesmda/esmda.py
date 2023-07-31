@@ -493,17 +493,19 @@ class ESMDA:
             self.m_history.append(self.m_prior)  # save m_init
         for self._assimilation_step in range(self.n_assimilations):
             print(f"Assimilation # {self._assimilation_step + 1}")
+            # inflating the covariance
+            self.m_prior = self._apply_bounds(
+                inflate_ensemble_around_its_mean(
+                    self.m_prior,
+                    self.cov_mm_inflation_factors[self._assimilation_step],
+                )
+            )
             self._forecast()
             self._pertrub(self.cov_obs_inflation_factors[self._assimilation_step])
             self._approximate_covariance_matrices()
             # Update the prior parameter for next iteration
             self.m_prior = self._apply_bounds(
-                inflate_ensemble_around_its_mean(
-                    self._analyse(
-                        self.cov_obs_inflation_factors[self._assimilation_step]
-                    ),
-                    self.cov_mm_inflation_factors[self._assimilation_step],
-                )
+                self._analyse(self.cov_obs_inflation_factors[self._assimilation_step])
             )
             # Saving the parameters history
             if self.save_ensembles_history:
