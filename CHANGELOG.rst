@@ -2,6 +2,11 @@
 Changelog
 ==============
 
+0.4.1 (2023-07-31)
+------------------
+
+* `!PR33 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/33>`_ FIX: the covariance inflation is now applied before the forecast step.
+
 0.4.0 (2023-06-28)
 ------------------
 
