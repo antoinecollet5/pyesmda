@@ -2,6 +2,12 @@
 Changelog
 ==============
 
+0.4.2 (2023-08-02)
+------------------
+
+* `!PR36 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/36>`_ ENH: add some correlation functions.
+* Also add new hooks in pre-commit.
+
 0.4.1 (2023-07-31)
 ------------------
 
