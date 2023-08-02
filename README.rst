@@ -72,7 +72,7 @@ How to Cite
 
 **Software/Code citation for pyESMDA:**
 
-Antoine Collet. (2022). pyESMDA - Python Ensemble Smoother with Multiple Data Assimilation (v0.3.2). Zenodo. https://doi.org/10.5281/zenodo.7425670
+Antoine Collet. (2023). pyESMDA - Python Ensemble Smoother with Multiple Data Assimilation (v0.4.2). Zenodo. https://doi.org/10.5281/zenodo.7425670
 
 
 References
