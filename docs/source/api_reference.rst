@@ -9,4 +9,3 @@ API Reference
 .. raw:: latex
 
     \clearpage
-

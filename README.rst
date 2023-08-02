@@ -34,10 +34,14 @@ pyESMDA
     :target: https://gitlab.com/antoinecollet5/pyesmda/pipelines/
     :alt: Coverage
 
-.. image:: https://app.codacy.com/project/badge/Grade/bc4d1a8a1f574273a053a32d44931c00    
+.. image:: https://app.codacy.com/project/badge/Grade/bc4d1a8a1f574273a053a32d44931c00
     :target: https://www.codacy.com/gl/antoinecollet5/pyesmda/dashboard?utm_source=gitlab.com&amp;utm_medium=referral&amp;utm_content=antoinecollet5/pyesmda&amp;utm_campaign=Badge_Grade
     :alt: codacy
-    
+
+.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit
+   :target: https://github.com/pre-commit/pre-commit
+   :alt: pre-commit
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat
     :target: https://github.com/psf/black
     :alt: Black
@@ -52,12 +56,12 @@ pyESMDA
 
 Python Ensemble Smoother with Multiple Data Assimilation
 
-**pyesmda** is an open-source, pure python, and object-oriented library that provides 
+**pyesmda** is an open-source, pure python, and object-oriented library that provides
 a user friendly implementation of one of the most popular ensemble based method
 for parameters estimation and data assimilation: the Ensemble Smoother with
 Multiple Data Assimilation (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
 
-Thanks to its simple formulation, ES-MDA of Emerick and Reynolds (2012) is perhaps the 
+Thanks to its simple formulation, ES-MDA of Emerick and Reynolds (2012) is perhaps the
 most used iterative form of the ensemble smoother in geoscience applications.
 
 * Free software: MIT license

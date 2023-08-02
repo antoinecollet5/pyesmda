@@ -63,10 +63,7 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-    # This has been replace by automodule.	
-    # rm -f docs/source/pyesmda.rst
-	# rm -f docs/source/modules.rst
-	# sphinx-apidoc -o docs/ pyesmda
+	rm -fr docs/source/_autosummary/
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/build/html/index.html

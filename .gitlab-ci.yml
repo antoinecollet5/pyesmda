@@ -44,7 +44,7 @@ pre_commit:
     paths:
       - pre-commit-report
     when: on_failure
-    
+
 test:
   image: python:3.9
   stage: Test
@@ -79,4 +79,3 @@ tox:
         coverage_format: cobertura
         path: coverage.xml
     expire_in: 1 week
-
