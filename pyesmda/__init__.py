@@ -18,8 +18,17 @@ Classes
    ESMDA
    ESMDA_RS
 
-Functions
-=========
+Objective functions
+===================
+
+.. autosummary::
+   :toctree: _autosummary
+
+    compute_ensemble_average_normalized_objective_function
+    compute_normalized_objective_function
+
+Covariance approximation
+========================
 
 .. autosummary::
    :toctree: _autosummary
@@ -27,15 +36,33 @@ Functions
     get_ensemble_variance
     approximate_cov_mm
     approximate_covariance_matrix_from_ensembles
-    compute_ensemble_average_normalized_objective_function
-    compute_normalized_objective_function
     inflate_ensemble_around_its_mean
+
+Correlation functions
+=====================
+
+.. autosummary::
+   :toctree: _autosummary
+
+    distances_to_weights_beta_cumulative
+    distances_to_weights_fifth_order
+
+Other functions
+===============
+
+.. autosummary::
+   :toctree: _autosummary
+
     check_nans_in_predictions
 
 """
 from .__about__ import __author__, __version__
 from .esmda import ESMDA
 from .esmda_rs import ESMDA_RS
+from .localization import (
+    distances_to_weights_beta_cumulative,
+    distances_to_weights_fifth_order,
+)
 from .utils import (
     approximate_cov_mm,
     approximate_covariance_matrix_from_ensembles,
@@ -58,4 +85,6 @@ __all__ = [
     "compute_ensemble_average_normalized_objective_function",
     "inflate_ensemble_around_its_mean",
     "check_nans_in_predictions",
+    "distances_to_weights_beta_cumulative",
+    "distances_to_weights_fifth_order",
 ]

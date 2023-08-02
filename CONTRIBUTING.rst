@@ -46,9 +46,9 @@ Once an issue is ready for review a Merge Request can be opened.
 Code Style
 ~~~~~~~~~~
 
-The code is formatted with `black <https://github.com/psf/black>`__ so you don't have to worry about code formatting. 
-Docstrings follow `NumPy's style guide <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__ and all public 
-functions, classes and methods must come with a full description of input parameters and return outputs. 
+The code is formatted with `black <https://github.com/psf/black>`__ so you don't have to worry about code formatting.
+Docstrings follow `NumPy's style guide <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__ and all public
+functions, classes and methods must come with a full description of input parameters and return outputs.
 To format both code and docstrings, simply run the command:
 
 Commit Style
@@ -161,5 +161,3 @@ Ready to contribute? Here's how to set up `pyESMDA` for local development.
 
 
     will look for tests located in the tests/measurement directory and report test coverage of the pyesmda/measurement module.
-
-
