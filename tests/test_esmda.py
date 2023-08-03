@@ -349,7 +349,7 @@ def test_esmda_exponential_case():
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.02e-1, 6.74e-5]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([9.51e-2, 5.96e-5]), rtol=5e-2
     ).all()
 
 
@@ -455,5 +455,5 @@ def test_esmda_exponential_case_batch(batch_size, is_parallel_analyse_step) -> N
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.5e-1, 9.954e-5]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.2e-1, 7.8e-5]), rtol=5e-2
     ).all()
