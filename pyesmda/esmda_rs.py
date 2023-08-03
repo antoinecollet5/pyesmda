@@ -7,9 +7,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
+from scipy.sparse import spmatrix
 
 from pyesmda.esmda import ESMDABase
 from pyesmda.utils import (
+    NDArrayFloat,
     approximate_covariance_matrix_from_ensembles,
     compute_ensemble_average_normalized_objective_function,
     get_ensemble_variance,
@@ -135,8 +137,8 @@ class ESMDA_RS(ESMDABase):
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         std_m_prior: Optional[npt.NDArray[np.float64]] = None,
         cov_mm_inflation_factor: float = 1.0,
-        dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
-        md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
+        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,

@@ -6,7 +6,7 @@ Implement the ES-MDA algorithms.
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, spmatrix
 
 from pyesmda.base import ESMDABase
 from pyesmda.utils import (
@@ -131,8 +131,8 @@ class ESMDA(ESMDABase):
         n_assimilations: int = 4,
         cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factors: Optional[Sequence[float]] = None,
-        dd_correlation_matrix: Optional[Union[NDArrayFloat, csr_matrix]] = None,
-        md_correlation_matrix: Optional[Union[NDArrayFloat, csr_matrix]] = None,
+        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         m_bounds: Optional[NDArrayFloat] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
