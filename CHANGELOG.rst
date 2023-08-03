@@ -2,6 +2,14 @@
 Changelog
 ==============
 
+0.4.3 (2023-08-03)
+------------------
+
+* `!PR39 <https://gitlab.com/antoinecollet5/pyesmda/-/merge_requests/39>`_ ENH: introduce abstraction through a base class and remove some code duplication (see solve methods) and remove some conflicts around the inflation parameters.
+  ESMDA-RS now supports local update (**batch_size** and **is_parallel_analyse_step**) and initial inflation of the ensemble (**cov_mm_inflation_factor**). The keyword `seed` has been replaced by a more flexible `random_state`, that accepts
+  **np.random.RandomState** and **Generator** in addition to classic seeds. In ESMDA-RS, the **std_m_prior** is no longer mandatory and can be omitted. In that case,
+  the initial adjusted parameter variance is estimated from the ensemble.
+
 0.4.2 (2023-08-02)
 ------------------
 
