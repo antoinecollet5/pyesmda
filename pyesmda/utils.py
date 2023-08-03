@@ -211,7 +211,11 @@ def compute_normalized_objective_function(
         )
     except Exception:
         # case of sparse matrices
-        return 1 / (2 * obs.size) * np.dot(residuals.T, gmres(cov_obs, residuals)[0])
+        return (
+            1
+            / (2 * obs.size)
+            * np.dot(residuals.T, gmres(cov_obs, residuals, atol=1e-15)[0])
+        )
 
 
 def inflate_ensemble_around_its_mean(
