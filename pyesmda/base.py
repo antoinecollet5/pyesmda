@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Unio
 
 import numpy as np
 from scipy._lib._util import check_random_state  # To handle random_state
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, spmatrix
 
 from pyesmda.utils import (
     NDArrayFloat,
@@ -85,14 +85,13 @@ class ESMDABase(ABC):
         Each realization of the ensemble at the end of each update step i,
         is linearly inflated around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
-    dd_correlation_matrix : Optional[Union[NDArrayFloat, csr_matrix]]
+    dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         observations and observations :math:`\rho_{DD}`. It is used to localize the
         autocovariance matrix of predicted data by applying an elementwise
         multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`). A sparse matrix
-        format can be provided to save some memory.
-    md_correlation_matrix : Optional[Union[NDArrayFloat, csr_matrix]]
+        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
+    md_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         parameters and observations :math:`\rho_{MD}`. It is used to localize the
         cross-covariance matrix between the forecast state vector (parameters)
@@ -154,8 +153,8 @@ class ESMDABase(ABC):
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        dd_correlation_matrix: Optional[Union[NDArrayFloat, csr_matrix]] = None,
-        md_correlation_matrix: Optional[Union[NDArrayFloat, csr_matrix]] = None,
+        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         m_bounds: Optional[NDArrayFloat] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
@@ -191,14 +190,14 @@ class ESMDABase(ABC):
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
-        dd_correlation_matrix : Optional[NDArrayFloat]
+        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the
             autocovariance matrix of predicted data by applying an elementwise
             multiplication by this matrix.
             Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
             The default is None.
-        md_correlation_matrix : Optional[NDArrayFloat]
+        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             parameters and observations :math:`\rho_{MD}`. It is used to localize the
             cross-covariance matrix between the forecast state vector (parameters)
@@ -365,9 +364,7 @@ class ESMDABase(ABC):
         return self._dd_correlation_matrix
 
     @dd_correlation_matrix.setter
-    def dd_correlation_matrix(
-        self, s: Optional[Union[NDArrayFloat, csr_matrix]]
-    ) -> None:
+    def dd_correlation_matrix(self, s: Optional[Union[NDArrayFloat, spmatrix]]) -> None:
         """Set the observations-observations localization matrix."""
         if s is None:
             self._dd_correlation_matrix = None
@@ -385,9 +382,7 @@ class ESMDABase(ABC):
         return self._md_correlation_matrix
 
     @md_correlation_matrix.setter
-    def md_correlation_matrix(
-        self, s: Optional[Union[NDArrayFloat, csr_matrix]]
-    ) -> None:
+    def md_correlation_matrix(self, s: Optional[Union[NDArrayFloat, spmatrix]]) -> None:
         """Set the parameters-observations localization matrix."""
         if s is None:
             self._md_correlation_matrix = None

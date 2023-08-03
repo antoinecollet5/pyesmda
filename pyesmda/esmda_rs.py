@@ -89,13 +89,13 @@ class ESMDA_RS(ESMDABase):
         Each realization of the ensemble at the end of each update step i,
         is linearly inflated around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
-    dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
+    dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         observations and observations :math:`\rho_{DD}`. It is used to localize the
         autocovariance matrix of predicted data by applying an elementwise
         multiplication by this matrix.
         Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-    md_correlation_matrix : Optional[npt.NDArray[np.float64]]
+    md_correlation_matrix : Optional[spmatrix]
         Correlation matrix based on spatial and temporal distances between
         parameters and observations :math:`\rho_{MD}`. It is used to localize the
         cross-covariance matrix between the forecast state vector (parameters)
@@ -109,6 +109,17 @@ class ESMDA_RS(ESMDABase):
     is_forecast_for_last_assimilation: bool
         Whether to compute the predictions for the ensemble obtained at the
         last assimilation step.
+    batch_size: int
+            Number of parameters that are assimilated at once. This option is
+            available to overcome memory limitations when the number of parameters is
+            large. In that case, the size of the covariance matrices tends to explode
+            and the update step must be performed by chunks of parameters.
+    is_parallel_analyse_step: bool, optional
+            Whether to use parallel computing for the analyse step if the number of
+            batch is above one. The default is True.
+    n_batches: int
+            Number of batches required during the update step.
+
     """
 
     # pylint: disable=R0902 # Too many instance attributes
@@ -168,14 +179,14 @@ class ESMDA_RS(ESMDABase):
             Factor used to inflate the initial ensemble variance around its mean.
             See :cite:p:`andersonExploringNeedLocalization2007`.
             The default is 1.0, which means no inflation.
-        dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
+        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the
             autocovariance matrix of predicted data by applying an elementwise
             multiplication by this matrix.
             Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
             The default is None.
-        md_correlation_matrix : Optional[npt.NDArray[np.float64]]
+        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             parameters and observations :math:`\rho_{MD}`. It is used to localize the
             cross-covariance matrix between the forecast state vector (parameters)

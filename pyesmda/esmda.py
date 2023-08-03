@@ -81,14 +81,13 @@ class ESMDA(ESMDABase):
         Each realization of the ensemble at the end of each update step i,
         is linearly inflated around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
-    dd_correlation_matrix : Optional[Union[NDArrayFloat, csr_matrix]]
+    dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         observations and observations :math:`\rho_{DD}`. It is used to localize the
         autocovariance matrix of predicted data by applying an elementwise
         multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`). A sparse matrix
-        format can be provided to save some memory.
-    md_correlation_matrix : Optional[Union[NDArrayFloat, csr_matrix]]
+        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
+    md_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         parameters and observations :math:`\rho_{MD}`. It is used to localize the
         cross-covariance matrix between the forecast state vector (parameters)
@@ -183,14 +182,14 @@ class ESMDA(ESMDABase):
             See :cite:p:`andersonExploringNeedLocalization2007`.
             If None, the default is 1.0. at each iteration (no inflation).
             The default is None.
-        dd_correlation_matrix : Optional[NDArrayFloat]
+        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the
             autocovariance matrix of predicted data by applying an elementwise
             multiplication by this matrix.
             Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
             The default is None.
-        md_correlation_matrix : Optional[NDArrayFloat]
+        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             parameters and observations :math:`\rho_{MD}`. It is used to localize the
             cross-covariance matrix between the forecast state vector (parameters)
