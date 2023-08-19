@@ -18,7 +18,7 @@ pyESMDA
     :target: https://pypi.org/pypi/pyesmda
     :alt: PyPI
 
-.. image:: https://pepy.tech/badge/pyesmda
+.. image:: https://static.pepy.tech/badge/pyesmda
     :target: https://pepy.tech/project/pyesmda
     :alt: Downoads
 
