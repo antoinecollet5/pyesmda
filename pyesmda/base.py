@@ -6,20 +6,28 @@ Implement a base class for the ES-MDA algorithms and variants.
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
+from enum import Enum
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy._lib._util import check_random_state  # To handle random_state
-from scipy.sparse import csr_matrix, spmatrix
+import scipy as sp  # type: ignore
+from scipy._lib._util import check_random_state  # type: ignore
+from scipy.sparse import csr_matrix, spmatrix  # type: ignore
 
 from pyesmda.utils import (
     NDArrayFloat,
     approximate_cov_mm,
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
+    get_anomaly_matrix,
 )
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
+
+
+class ESMDAInversionType(str, Enum):
+    NAIVE = "naive"
+    EXACT_CHOLESKy = "exact_cholesky"
 
 
 class ESMDABase(ABC):
@@ -122,6 +130,7 @@ class ESMDABase(ABC):
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
+        "cov_obs_cholesky",
         "d_obs_uc",
         "d_pred",
         "d_history",
@@ -180,6 +189,7 @@ class ESMDABase(ABC):
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
             It can be a numpy array or a sparse matrix (scipy.linalg).
+            If a 1D array is passed, it represents a diagonal covariance matrix.
         forward_model: callable
             Function calling the non-linear observation model (forward model)
             for all ensemble members and returning the predicted data for
@@ -245,7 +255,6 @@ class ESMDABase(ABC):
         self.d_history: list[NDArrayFloat] = []
         self.d_pred: NDArrayFloat = np.zeros([self.n_ensemble, self.d_dim])
         self.cov_obs = cov_obs
-        self.d_obs_uc: NDArrayFloat = np.array([])
         self.cov_md: NDArrayFloat = np.array([])
         self.cov_dd: NDArrayFloat = np.array([])
         self.forward_model: Callable = forward_model
@@ -257,7 +266,7 @@ class ESMDABase(ABC):
         self._assimilation_step: int = 0
         self.dd_correlation_matrix = dd_correlation_matrix
         self.md_correlation_matrix = md_correlation_matrix
-        self.m_bounds = m_bounds
+        self.m_bounds = m_bounds  # type: ignore
         if seed is not None:
             warnings.warn(
                 DeprecationWarning(
@@ -305,19 +314,57 @@ class ESMDABase(ABC):
         return len(self.obs)
 
     @property
-    def cov_obs(self) -> csr_matrix:
+    def cov_obs(self) -> Union[NDArrayFloat, csr_matrix]:
         """Get the observation errors covariance matrix."""
         return self._cov_obs
 
     @cov_obs.setter
-    def cov_obs(self, s: Union[NDArrayFloat, csr_matrix]) -> None:
-        """Set the observation errors covariance matrix."""
-        if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
-            raise ValueError(
-                "cov_obs must be a 2D square matrix with "
-                f"dimensions ({self.d_dim}, {self.d_dim})."
-            )
-        self._cov_obs: csr_matrix = csr_matrix(s)
+    def cov_obs(self, cov: Union[NDArrayFloat, csr_matrix]) -> None:
+        """
+        Set the observation errors covariance matrix.
+
+        It must be a 2D array or sparse matrix, or a 1D array if the covariance matrix
+        is diagonal.
+        """
+        error = ValueError(
+            "cov_obs must be a 2D square matrix with "
+            f"dimensions ({self.d_dim}, {self.d_dim})."
+        )
+        if len(cov.shape) > 2:
+            raise error
+        if cov.shape[0] != self.obs.size:  # type: ignore
+            raise error
+        if cov.ndim == 2:
+            if cov.shape[0] != cov.shape[1]:  # type: ignore
+                raise error
+
+        # From iterative_ensemble_smoother code
+        # Only compute the covariance factorization once
+        # If it's a full matrix, we gain speedup by only computing cholesky once
+        # If it's a diagonal, we gain speedup by never having to compute cholesky
+        if cov.ndim == 2:
+            self.cov_obs_cholesky: NDArrayFloat = sp.linalg.cholesky(cov, lower=False)
+        else:
+            self.cov_obs_cholesky = np.sqrt(cov)  # type: ignore
+
+        self._cov_obs: Union[NDArrayFloat, csr_matrix] = cov
+
+    @property
+    def anomalies(self) -> NDArrayFloat:
+        r"""
+        Return the matrix of anomalies.
+
+        The anomaly matrix is defined as.
+
+
+        Or in matrix form:
+
+        .. math::
+
+                \bm{A} = \bm{X}\left(\bm{I_{N_{e}}} - \dfrac{1}{N_{e}} \bm{11}^{T}
+                \right) / \sqrt{N_{e}-1}.
+        """
+        return get_anomaly_matrix(self.m_prior)
 
     @property
     def cov_mm(self) -> NDArrayFloat:
@@ -350,7 +397,7 @@ class ESMDABase(ABC):
             # In that case, create an array of nan.
             self._m_bounds: NDArrayFloat = np.empty([self.m_dim, 2], dtype=np.float64)
             self._m_bounds[:] = np.nan
-        elif mb.shape[0] != self.m_dim:
+        elif mb.shape[0] != self.m_dim:  # type: ignore
             raise ValueError(
                 f"m_bounds is of shape {mb.shape} while it "
                 f"should be of shape ({self.m_dim}, 2)"
@@ -374,7 +421,7 @@ class ESMDABase(ABC):
                 "dd_correlation_matrix must be a 2D square matrix with "
                 f"dimensions ({self.d_dim}, {self.d_dim})."
             )
-        self._dd_correlation_matrix: Optional[csr_matrix] = csr_matrix(s)
+        self._dd_correlation_matrix = csr_matrix(s)
 
     @property
     def md_correlation_matrix(self) -> Optional[csr_matrix]:
@@ -397,7 +444,7 @@ class ESMDABase(ABC):
                 "md_correlation_matrix must be a 2D matrix with "
                 f"dimensions ({self.m_dim}, {self.d_dim})."
             )
-        self._md_correlation_matrix: Optional[csr_matrix] = csr_matrix(s)
+        self._md_correlation_matrix = csr_matrix(s)
 
     @property
     def n_batches(self) -> int:
@@ -454,12 +501,29 @@ class ESMDABase(ABC):
         -----
         To get reproducible behavior, use a seed when creating the ESMDA instance.
 
+        Draw samples from zero-centered multivariate normal with cov=alpha * C_D,
+        and add them to the observations. Notice that
+        if C_D = L L.T by the cholesky factorization, then drawing y from
+        a zero cented normal means that y := L @ z, where z ~ norm(0, 1)
+        Therefore, scaling C_D by alpha is equivalent to scaling L with sqrt(alpha)
+
         """
-        self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
-        for i in range(self.d_dim):
-            self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
-                inflation_factor
-            ) * self.rng.normal(0, np.abs(self.cov_obs.diagonal()[i]), self.n_ensemble)
+        shape = (self.d_dim, self.n_ensemble)
+
+        if self.cov_obs.ndim == 2:
+            self.d_obs_uc = (
+                self.obs.reshape(-1, 1)
+                + np.sqrt(inflation_factor)
+                * self.cov_obs_cholesky
+                @ self.rng.normal(size=shape)
+            ).T
+        else:
+            self.d_obs_uc = (
+                self.obs.reshape(-1, 1)
+                + np.sqrt(inflation_factor)
+                * self.rng.normal(size=shape)
+                * self.cov_obs_cholesky.reshape(-1, 1)
+            ).T
 
     def _approximate_covariance_matrices(self) -> None:
         r"""
@@ -482,6 +546,7 @@ class ESMDABase(ABC):
         with :math:`\overline{m^{l}}` and :math:`\overline{d^{l}}`, the
         the ensemble means, at iteration :math:`l`, of parameters and predictions,
         respectively.
+
 
         If defined by the user, covariances localization is applied by element-wise
         multiplication (Schur product or Hadamard product) of the original

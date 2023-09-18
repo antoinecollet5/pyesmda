@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import numpy.typing as npt
-from scipy.sparse import spmatrix
+from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.esmda import ESMDABase
 from pyesmda.utils import (
@@ -264,9 +264,7 @@ class ESMDA_RS(ESMDABase):
             self.std_m_prior: npt.NDArray[np.float64] = std_m_prior
         else:
             # otherwise, it is inffered from the inflated ensemble
-            self.std_m_prior: npt.NDArray[np.float64] = np.sqrt(
-                get_ensemble_variance(self.m_prior)
-            )
+            self.std_m_prior = np.sqrt(get_ensemble_variance(self.m_prior))
 
     @property
     def n_assimilations(self) -> int:
@@ -309,9 +307,7 @@ class ESMDA_RS(ESMDABase):
             self._forecast()
             # Divide per 2, because it is multiplied by 2 as the beginning
             # of the second while loop
-            current_inflation_factor: float = (
-                self._compute_initial_inflation_factor() / 2
-            )
+            current_inflation_factor = self._compute_initial_inflation_factor() / 2
             is_valid_parameter_change: bool = False
             while not is_valid_parameter_change:
                 current_inflation_factor *= 2  # double the inflation (dumping) factor
@@ -336,9 +332,7 @@ class ESMDA_RS(ESMDABase):
                         self._local_analyse(current_inflation_factor)
                     )
 
-                is_valid_parameter_change: bool = self._is_valid_parameter_change(
-                    m_pred
-                )
+                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
             # If the criteria is reached -> Get exactly one for the sum
             if self._is_unity_reached(current_inflation_factor):
@@ -348,9 +342,7 @@ class ESMDA_RS(ESMDABase):
                 self._pertrub(current_inflation_factor)
                 self._approximate_covariance_matrices()
                 m_pred = self._analyse(current_inflation_factor)
-                is_valid_parameter_change: bool = self._is_valid_parameter_change(
-                    m_pred
-                )
+                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
             self.cov_obs_inflation_factors.append(current_inflation_factor)
             print(f"- Inflation factor = {current_inflation_factor:.3f}")
@@ -403,7 +395,9 @@ class ESMDA_RS(ESMDABase):
             _description_
         """
 
-        def is_lower(residuals) -> bool:
-            return np.all(residuals < 2 * self.std_m_prior)
+        def is_lower(residuals: NDArrayFloat) -> bool:
+            return bool(np.all(residuals < 2 * self.std_m_prior))
 
-        return np.all(list(map(is_lower, np.abs(m_pred - self.m_prior))))
+        return bool(
+            np.all(list(map(is_lower, np.abs(m_pred - self.m_prior))))  # type: ignore
+        )

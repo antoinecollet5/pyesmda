@@ -24,12 +24,22 @@ def empty_forward_model(*args, **kwargs) -> None:
     "args,kwargs,expected_exception",
     [
         (  # simple construction
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones(20)),
+                empty_forward_model,
+            ),
             {},
             does_not_raise(),
         ),
         (  # issue with stdev_d
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((10)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((8))),
+                empty_forward_model,
+            ),
             {},
             pytest.raises(
                 ValueError,
@@ -40,7 +50,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (  # issue with stdev_d
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((9, 9)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.ones((9,)), empty_forward_model),
             {},
             pytest.raises(
                 ValueError,
@@ -51,14 +61,14 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (  # normal working with n_assimilations
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.ones((20)), empty_forward_model),
             {
                 "n_assimilations": 4,
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (np.zeros(20), np.zeros((8, 10)), np.ones((20)), empty_forward_model),
             {
                 "n_assimilations": 4.5,  # Not a valid number of assimilations
             },
@@ -68,7 +78,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "forward_model_args": (22, 45, "some_arg"),
                 "forward_model_kwargs": {"some_kwargs": "str", "some_other": 98.0},
@@ -76,7 +91,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "n_assimilations": -1,  # Not a valid number of assimilations
             },
@@ -85,14 +105,24 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "m_bounds": np.zeros((10, 2)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "m_bounds": np.zeros((3, 7)),
             },
@@ -105,7 +135,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "n_assimilations": 3,
                 "cov_obs_inflation_factors": np.ones(5),
@@ -119,7 +154,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "n_assimilations": 3,
                 "cov_mm_inflation_factors": np.ones(5),
@@ -133,35 +173,60 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "dd_correlation_matrix": np.zeros((20, 20)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "md_correlation_matrix": np.zeros((10, 20)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "dd_correlation_matrix": np.zeros((20, 20)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "md_correlation_matrix": np.zeros((10, 20)),
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "dd_correlation_matrix": np.zeros((20)),
             },
@@ -174,7 +239,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "md_correlation_matrix": np.zeros((10)),
             },
@@ -187,7 +257,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "dd_correlation_matrix": np.zeros((20, 19)),
             },
@@ -200,7 +275,12 @@ def empty_forward_model(*args, **kwargs) -> None:
             ),
         ),
         (
-            (np.zeros(20), np.zeros((8, 10)), np.zeros((20, 20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.diag(np.ones((20, 20))),
+                empty_forward_model,
+            ),
             {
                 "md_correlation_matrix": np.zeros((10, 10)),
             },

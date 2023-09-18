@@ -3,6 +3,8 @@ Implement some correlation functions.
 
 @author: acollet
 """
+from typing import Union
+
 import numpy as np
 
 from pyesmda.utils import NDArrayFloat
@@ -39,8 +41,8 @@ def _reversed_beta_cumulative(distances: NDArrayFloat, beta: float = 3) -> NDArr
         0.0,
         1.0 / (1.0 + np.power((distances2 / (1 - distances2)), -beta)),
     )
-    fact[distances >= 1] = 1
-    return 1 - fact
+    fact[distances >= 1] = 1.0
+    return 1.0 - fact
 
 
 def distances_to_weights_beta_cumulative(
@@ -78,13 +80,13 @@ def distances_to_weights_beta_cumulative(
     return _reversed_beta_cumulative(distances / scaling_factor, beta=beta)
 
 
-def _part1(d: float) -> float:
+def _part1(d: Union[NDArrayFloat, float]) -> Union[NDArrayFloat, float]:
     return (
         -1 / 4 * d**5.0 + 1 / 2 * d**4.0 + 5 / 8 * d**3.0 - 5 / 3 * d**2.0 + 1.0
     )
 
 
-def _part2(d: float) -> float:
+def _part2(d: Union[NDArrayFloat, float]) -> Union[NDArrayFloat, float]:
     return (
         1 / 12 * d**5.0
         - 1 / 2 * d**4.0
@@ -106,11 +108,14 @@ def distances_to_weights_fifth_order(
         f(z) =
             \begin{cases}
             0 & z < 0 \\
-            \dfrac{-1}{4} z^{5} + \dfrac{1}{2} z^{4} + \dfrac{5}{8} z^{3} - \dfrac{5}{3} z^{2} + 1 & 0 \leq z \leq 1\\
-            \dfrac{1}{12} z^{5} - \dfrac{1}{2} z^{4} + \dfrac{5}{8} z^{3} + \dfrac{5}{3} z^{2} - 5z + 4 - \dfrac{2}{3} z^{-1} & 1 \leq z \leq 2\\
+            \dfrac{-1}{4} z^{5} + \dfrac{1}{2} z^{4} + \dfrac{5}{8} z^{3} -
+            \dfrac{5}{3} z^{2} + 1 & 0 \leq z \leq 1\\
+            \dfrac{1}{12} z^{5} - \dfrac{1}{2} z^{4} + \dfrac{5}{8} z^{3} +
+            \dfrac{5}{3} z^{2} - 5z + 4 - \dfrac{2}{3} z^{-1} & 1 \leq z \leq 2\\
             \end{cases}
 
-    with :math:`z = \dfrac{d}{s}`,  :math:`d` the distances, and :math:`s` the scaling factor.
+    with :math:`z = \dfrac{d}{s}`,  :math:`d` the distances, and :math:`s`
+    the scaling factor.
 
     See :cite:p:`gaspariConstructionCorrelationFunctions1999`.
 
@@ -143,7 +148,7 @@ def distances_to_weights_fifth_order(
         0.0,
         np.where(
             distances2 >= 1.0,
-            _part2(np.where(distances2 <= 0.0, np.nan, distances2)),
+            _part2(np.where(distances2 <= 0.0, np.nan, distances2)),  # type: ignore
             _part1(distances2),
         ),
     )

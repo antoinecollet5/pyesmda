@@ -6,7 +6,7 @@ Implement the ES-MDA algorithms.
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy.sparse import csr_matrix, spmatrix
+from scipy.sparse import csr_matrix, spmatrix  # type: ignore
 
 from pyesmda.base import ESMDABase
 from pyesmda.utils import (
@@ -249,7 +249,7 @@ class ESMDA(ESMDABase):
             is_parallel_analyse_step=is_parallel_analyse_step,
         )
         self.set_cov_obs_inflation_factors(cov_obs_inflation_factors)
-        self.cov_mm_inflation_factors = cov_mm_inflation_factors
+        self.cov_mm_inflation_factors = cov_mm_inflation_factors  # type: ignore
 
     @property
     def cov_obs_inflation_factors(self) -> List[float]:
@@ -283,7 +283,7 @@ class ESMDA(ESMDABase):
             self._cov_obs_inflation_factors = list(a)
 
     @property
-    def cov_mm_inflation_factors(self) -> List[float]:
+    def cov_mm_inflation_factors(self) -> Sequence[float]:
         r"""
         Get the inlfation factors for the adjusted parameters covariance matrix.
 

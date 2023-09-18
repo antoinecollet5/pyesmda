@@ -33,7 +33,9 @@ Covariance approximation
 .. autosummary::
    :toctree: _autosummary
 
+    get_anomaly_matrix
     get_ensemble_variance
+    empirical_covariance_upper
     approximate_cov_mm
     approximate_covariance_matrix_from_ensembles
     inflate_ensemble_around_its_mean
@@ -69,6 +71,8 @@ from .utils import (
     check_nans_in_predictions,
     compute_ensemble_average_normalized_objective_function,
     compute_normalized_objective_function,
+    empirical_covariance_upper,
+    get_anomaly_matrix,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
 )
@@ -79,8 +83,10 @@ __all__ = [
     "ESMDA",
     "ESMDA_RS",
     "get_ensemble_variance",
+    "get_anomaly_matrix",
     "approximate_covariance_matrix_from_ensembles",
     "approximate_cov_mm",
+    "empirical_covariance_upper",
     "compute_normalized_objective_function",
     "compute_ensemble_average_normalized_objective_function",
     "inflate_ensemble_around_its_mean",

@@ -89,7 +89,8 @@ def test_esmda_rs_exponential_case(
 
 
 @pytest.mark.parametrize(
-    "batch_size, is_parallel_analyse_step, expected_uncertainties, expected_n_assimilations",
+    "batch_size, is_parallel_analyse_step, "
+    "expected_uncertainties, expected_n_assimilations",
     [
         (1, False, [1.1e-1, 6.69e-5], 4),
         (2, False, [1.1e-1, 6.69e-5], 4),

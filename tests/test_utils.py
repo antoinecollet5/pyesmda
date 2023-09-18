@@ -13,6 +13,9 @@ from pyesmda.utils import (
     check_nans_in_predictions,
     compute_ensemble_average_normalized_objective_function,
     compute_normalized_objective_function,
+    empirical_covariance_upper,
+    empirical_cross_covariance,
+    get_anomaly_matrix,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
 )
@@ -21,6 +24,44 @@ from pyesmda.utils import (
 @contextmanager
 def does_not_raise():
     yield
+
+
+def test_get_anomaly_matrix() -> None:
+    np.testing.assert_allclose(
+        get_anomaly_matrix(
+            np.array(
+                [
+                    [-2.4, -0.3, 0.7, 0.2, 1.1],
+                    [-1.5, 0.4, -0.4, -0.9, 1.0],
+                    [-0.1, -0.4, -0.0, -0.5, 1.1],
+                ]
+            )
+        ),
+        np.array(
+            [
+                [-0.75424723, -0.11785113, 0.87209836],
+                [-0.14142136, 0.35355339, -0.21213203],
+                [0.42426407, -0.35355339, -0.07071068],
+                [0.42426407, -0.35355339, -0.07071068],
+                [0.02357023, -0.04714045, 0.02357023],
+            ]
+        ),
+        rtol=1e-6,
+        atol=1e-6,
+    )
+
+
+def test_empirical_covariance_upper() -> None:
+    X = np.array(
+        [
+            [-2.4, -0.3, 0.7, 0.2, 1.1],
+            [-1.5, 0.4, -0.4, -0.9, 1.0],
+            [-0.1, -0.4, -0.0, -0.5, 1.1],
+        ]
+    )
+    empirical_covariance_upper(X.T)
+
+    np.triu(empirical_cross_covariance(X.T, X.T))
 
 
 def test_normalized_objective_function():
@@ -89,6 +130,29 @@ def test_approximate_covariance_matrix_from_ensembles(
         np.testing.assert_almost_equal(
             approximate_covariance_matrix_from_ensembles(ens1, ens2), expected
         )
+
+
+def test_approximate_covariance_matrix_from_ensembles_res() -> None:
+    X = np.array([[-2.4, -0.3, 0.7], [0.2, 1.1, -1.5]])
+    Y = np.array(
+        [[0.4, -0.4, -0.9], [1.0, -0.1, -0.4], [-0.0, -0.5, 1.1], [-1.8, -1.1, 0.3]]
+    )
+    np.testing.assert_allclose(
+        approximate_covariance_matrix_from_ensembles(X.T, Y.T),
+        np.array(
+            [
+                [-1.035, -1.15833333, 0.66, 1.56333333],
+                [0.465, 0.36166667, -1.08, -1.09666667],
+            ]
+        ),
+    )
+
+    # Verify against numpy.cov
+
+    np.testing.assert_allclose(
+        np.cov(X, rowvar=True, ddof=1),
+        approximate_covariance_matrix_from_ensembles(X.T, X.T),
+    )
 
 
 def test_get_ensemble_variance():
