@@ -28,3 +28,5 @@ pre-commit
 black==22.6.0
 isort==5.10.1
 codespell==2.1.0
+ruff
+mypy

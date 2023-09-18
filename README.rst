@@ -42,9 +42,17 @@ pyESMDA
    :target: https://github.com/pre-commit/pre-commit
    :alt: pre-commit
 
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+   :target: https://github.com/astral-sh/ruff
+   :alt: Ruff
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat
     :target: https://github.com/psf/black
     :alt: Black
+
+.. image:: https://www.mypy-lang.org/static/mypy_badge.svg
+    :target: https://mypy-lang.org/
+    :alt: Checked with mypy
 
 .. image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat
     :target: https://timothycrosley.github.io/isort
