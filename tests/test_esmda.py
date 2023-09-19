@@ -43,10 +43,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             {},
             pytest.raises(
                 ValueError,
-                match=(
-                    r"cov_obs must be a 2D square matrix with "
-                    r"dimensions \(20, 20\)."
-                ),
+                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
             ),
         ),
         (  # issue with stdev_d
@@ -54,10 +51,28 @@ def empty_forward_model(*args, **kwargs) -> None:
             {},
             pytest.raises(
                 ValueError,
-                match=(
-                    r"cov_obs must be a 2D square matrix with "
-                    r"dimensions \(20, 20\)."
-                ),
+                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+            ),
+        ),
+        (  # issue with stdev_d
+            (np.zeros(20), np.zeros((8, 10)), np.ones((20, 19)), empty_forward_model),
+            {},
+            pytest.raises(
+                ValueError,
+                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+            ),
+        ),
+        (  # issue with stdev_d
+            (
+                np.zeros(20),
+                np.zeros((8, 10)),
+                np.ones((20, 20, 20)),
+                empty_forward_model,
+            ),
+            {},
+            pytest.raises(
+                ValueError,
+                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
             ),
         ),
         (  # normal working with n_assimilations
@@ -434,17 +449,20 @@ def test_esmda_exponential_case():
 
 
 @pytest.mark.parametrize(
-    "batch_size, is_parallel_analyse_step",
+    "batch_size, cov_obs_dim, is_parallel_analyse_step",
     [
         (
             1,
+            1,
             False,
         ),
-        (2, False),
-        (2, True),
+        (2, 2, False),
+        (2, 1, True),
     ],
 )
-def test_esmda_exponential_case_batch(batch_size, is_parallel_analyse_step) -> None:
+def test_esmda_exponential_case_batch(
+    batch_size, cov_obs_dim, is_parallel_analyse_step
+) -> None:
     """Test the ES-MDA on a simple synthetic case with two parameters."""
     seed = 0
     rng = np.random.default_rng(seed=seed)
@@ -465,7 +483,9 @@ def test_esmda_exponential_case_batch(batch_size, is_parallel_analyse_step) -> N
     m_ensemble = np.stack((ma, mb), axis=1)
 
     # Observation error covariance matrix
-    cov_obs = np.diag([1.0] * obs.shape[0])
+    cov_obs = np.ones(obs.shape[0])
+    if cov_obs_dim == 2:
+        cov_obs = np.diag(cov_obs)
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])

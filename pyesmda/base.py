@@ -16,7 +16,6 @@ from scipy.sparse import csr_matrix, spmatrix  # type: ignore
 
 from pyesmda.utils import (
     NDArrayFloat,
-    approximate_cov_mm,
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
     get_anomaly_matrix,
@@ -68,9 +67,10 @@ class ESMDABase(ABC):
     cov_md: NDArrayFloat
         Cross-covariance matrix between the forecast state vector and predicted data.
         Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_obs: csr_matrix
+    cov_obs: NDArrayFloat
         Autocovariance matrix of predicted data.
-        Dimensions are (:math:`N_{obs}, N_{obs}`).
+        Dimensions are (:math:`N_{obs}, N_{obs}`). if the matrix is diagonal, it is
+        a 1D array.
     cov_mm: NDArrayFloat
         Autocovariance matrix of estimated parameters.
         Dimensions are (:math:`N_{m}, N_{m}`).
@@ -157,7 +157,7 @@ class ESMDABase(ABC):
         self,
         obs: NDArrayFloat,
         m_init: NDArrayFloat,
-        cov_obs: Union[NDArrayFloat, csr_matrix],
+        cov_obs: NDArrayFloat,
         forward_model: Callable[..., NDArrayFloat],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -188,7 +188,6 @@ class ESMDABase(ABC):
         cov_obs: NDArrayFloat
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-            It can be a numpy array or a sparse matrix (scipy.linalg).
             If a 1D array is passed, it represents a diagonal covariance matrix.
         forward_model: callable
             Function calling the non-linear observation model (forward model)
@@ -301,12 +300,12 @@ class ESMDABase(ABC):
     @property
     def n_ensemble(self) -> int:
         """Return the number of ensemble members."""
-        return self.m_prior.shape[0]
+        return self.m_prior.shape[0]  # type: ignore
 
     @property
     def m_dim(self) -> int:
         """Return the length of the parameters vector."""
-        return self.m_prior.shape[1]
+        return self.m_prior.shape[1]  # type: ignore
 
     @property
     def d_dim(self) -> int:
@@ -314,20 +313,21 @@ class ESMDABase(ABC):
         return len(self.obs)
 
     @property
-    def cov_obs(self) -> Union[NDArrayFloat, csr_matrix]:
+    def cov_obs(self) -> NDArrayFloat:
         """Get the observation errors covariance matrix."""
+        if self._cov_obs.ndim == 1:
+            return np.diag(self._cov_obs)
         return self._cov_obs
 
     @cov_obs.setter
-    def cov_obs(self, cov: Union[NDArrayFloat, csr_matrix]) -> None:
+    def cov_obs(self, cov: NDArrayFloat) -> None:
         """
         Set the observation errors covariance matrix.
 
-        It must be a 2D array or sparse matrix, or a 1D array if the covariance matrix
-        is diagonal.
+        It must be a 2D array, or a 1D array if the covariance matrix is diagonal.
         """
         error = ValueError(
-            "cov_obs must be a 2D square matrix with "
+            "cov_obs must be a 2D matrix with "
             f"dimensions ({self.d_dim}, {self.d_dim})."
         )
         if len(cov.shape) > 2:
@@ -347,7 +347,7 @@ class ESMDABase(ABC):
         else:
             self.cov_obs_cholesky = np.sqrt(cov)  # type: ignore
 
-        self._cov_obs: Union[NDArrayFloat, csr_matrix] = cov
+        self._cov_obs: NDArrayFloat = cov
 
     @property
     def anomalies(self) -> NDArrayFloat:
@@ -383,7 +383,7 @@ class ESMDABase(ABC):
         with :math:`\overline{m^{l}}`, the parameters
         ensemble means, at iteration :math:`l`.
         """
-        return approximate_cov_mm(self.m_prior)
+        return self.anomalies @ self.anomalies.T
 
     @property
     def m_bounds(self) -> NDArrayFloat:
@@ -510,7 +510,7 @@ class ESMDABase(ABC):
         """
         shape = (self.d_dim, self.n_ensemble)
 
-        if self.cov_obs.ndim == 2:
+        if self._cov_obs.ndim == 2:
             self.d_obs_uc = (
                 self.obs.reshape(-1, 1)
                 + np.sqrt(inflation_factor)
