@@ -24,7 +24,6 @@ Objective functions
 .. autosummary::
    :toctree: _autosummary
 
-    compute_ensemble_average_normalized_objective_function
     compute_normalized_objective_function
 
 Covariance approximation
@@ -36,7 +35,6 @@ Covariance approximation
     get_anomaly_matrix
     get_ensemble_variance
     empirical_covariance_upper
-    approximate_cov_mm
     approximate_covariance_matrix_from_ensembles
     inflate_ensemble_around_its_mean
 
@@ -61,15 +59,14 @@ Other functions
 from .__about__ import __author__, __version__
 from .esmda import ESMDA
 from .esmda_rs import ESMDA_RS
+from .inversion import ESMDAInversionType
 from .localization import (
     distances_to_weights_beta_cumulative,
     distances_to_weights_fifth_order,
 )
 from .utils import (
-    approximate_cov_mm,
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
-    compute_ensemble_average_normalized_objective_function,
     compute_normalized_objective_function,
     empirical_covariance_upper,
     get_anomaly_matrix,
@@ -82,13 +79,12 @@ __all__ = [
     "__author__",
     "ESMDA",
     "ESMDA_RS",
+    "ESMDAInversionType",
     "get_ensemble_variance",
     "get_anomaly_matrix",
     "approximate_covariance_matrix_from_ensembles",
-    "approximate_cov_mm",
     "empirical_covariance_upper",
     "compute_normalized_objective_function",
-    "compute_ensemble_average_normalized_objective_function",
     "inflate_ensemble_around_its_mean",
     "check_nans_in_predictions",
     "distances_to_weights_beta_cumulative",

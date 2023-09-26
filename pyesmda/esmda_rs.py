@@ -10,10 +10,10 @@ import numpy.typing as npt
 from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.esmda import ESMDABase
+from pyesmda.inversion import ESMDAInversionType
 from pyesmda.utils import (
     NDArrayFloat,
-    approximate_covariance_matrix_from_ensembles,
-    compute_ensemble_average_normalized_objective_function,
+    compute_normalized_objective_function,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
 )
@@ -50,15 +50,15 @@ class ESMDA_RS(ESMDABase):
         It is the diagonal of :math:`C_{M}`.
     d_obs_uc: npt.NDArray[np.float64]
         Vectors of pertubed observations with dimension
-        (:math:`N_{e}`, :math:`N_{obs}`).
+        (:math:`N_{obs}`, :math:`N_{e}`).
     d_pred: npt.NDArray[np.float64]
         Vectors of predicted values (one for each ensemble member)
-        with dimensions (:math:`N_{e}`, :math:`N_{obs}`).
+        with dimensions (:math:`N_{obs}`, :math:`N_{e}`).
     d_history: List[npt.NDArray[np.float64]]
         List of vectors of predicted values obtained at each assimilation step.
     m_prior:
         Vectors of parameter values (one vector for each ensemble member) used in the
-        last assimilation step. Dimensions are (:math:`N_{e}`, :math:`N_{m}`).
+        last assimilation step. Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
     m_bounds : npt.NDArray[np.float64]
         Lower and upper bounds for the :math:`N_{m}` parameter values.
         Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -112,15 +112,22 @@ class ESMDA_RS(ESMDABase):
         Whether to compute the predictions for the ensemble obtained at the
         last assimilation step.
     batch_size: int
-            Number of parameters that are assimilated at once. This option is
-            available to overcome memory limitations when the number of parameters is
-            large. In that case, the size of the covariance matrices tends to explode
-            and the update step must be performed by chunks of parameters.
+        Number of parameters that are assimilated at once. This option is
+        available to overcome memory limitations when the number of parameters is
+        large. In that case, the size of the covariance matrices tends to explode
+        and the update step must be performed by chunks of parameters.
     is_parallel_analyse_step: bool, optional
-            Whether to use parallel computing for the analyse step if the number of
-            batch is above one. The default is True.
+        Whether to use parallel computing for the analyse step if the number of
+        batch is above one. The default is True.
     n_batches: int
-            Number of batches required during the update step.
+        Number of batches required during the update step.
+    truncation: float
+        A value in the range ]0, 1], used to determine the number of
+        significant singular values kept when using svd for the inversion
+        of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+        corresponding to this fraction of the sum of the nonzero singular values.
+        The goal of truncation is to deal with smaller matrices (dimensionality
+        reduction), easier to inverse.
 
     """
 
@@ -136,6 +143,7 @@ class ESMDA_RS(ESMDABase):
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         std_m_prior: Optional[npt.NDArray[np.float64]] = None,
+        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_mm_inflation_factor: float = 1.0,
         dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
@@ -148,6 +156,7 @@ class ESMDA_RS(ESMDABase):
         ] = 198873,
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
+        truncation: float = 0.99,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -159,7 +168,7 @@ class ESMDA_RS(ESMDABase):
             Obsevrations vector with dimension :math:`N_{obs}`.
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
-            (:math:`N_{e}`, :math:`N_{m}`).
+            (:math:`N_{m}`, :math:`N_{e}`).
         cov_obs: npt.NDArray[np.float64]
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
@@ -227,6 +236,13 @@ class ESMDA_RS(ESMDABase):
             Whether to use parallel computing for the analyse step if the number of
             batch is above one. It relies on `concurrent.futures` multiprocessing.
             The default is True.
+        truncation: float
+            A value in the range ]0, 1], used to determine the number of
+            significant singular values kept when using svd for the inversion
+            of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+            corresponding to this fraction of the sum of the nonzero singular values.
+            The goal of truncation is to deal with smaller matrices (dimensionality
+            reduction), easier to inverse. The default is 0.99.
 
         """
         super().__init__(
@@ -241,6 +257,7 @@ class ESMDA_RS(ESMDABase):
             forward_model_args=forward_model_args,
             forward_model_kwargs=forward_model_kwargs,
             n_assimilations=1,  # in esmda-rs this number is determined automatically
+            inversion_type=inversion_type,
             dd_correlation_matrix=dd_correlation_matrix,
             md_correlation_matrix=md_correlation_matrix,
             # cov_mm_inflation_factors=None, # [cov_mm_inflation_factor],
@@ -251,6 +268,7 @@ class ESMDA_RS(ESMDABase):
             random_state=random_state,
             batch_size=batch_size,
             is_parallel_analyse_step=is_parallel_analyse_step,
+            truncation=truncation,
         )
 
         # Initialize an empty list
@@ -314,19 +332,8 @@ class ESMDA_RS(ESMDABase):
                 self._pertrub(current_inflation_factor)
 
                 if self.n_batches == 1:
-                    self._approximate_covariance_matrices()
                     m_pred = self._apply_bounds(self._analyse(current_inflation_factor))
                 else:
-                    # covariance approximation dd
-                    self.cov_dd = approximate_covariance_matrix_from_ensembles(
-                        self.d_pred, self.d_pred
-                    )
-                    # Spatial and temporal localization: obs - obs
-                    if self.dd_correlation_matrix is not None:
-                        self.cov_dd = self.dd_correlation_matrix.multiply(
-                            self.cov_dd
-                        ).toarray()
-
                     # Update the prior parameter for next iteration
                     m_pred = self._apply_bounds(
                         self._local_analyse(current_inflation_factor)
@@ -337,10 +344,9 @@ class ESMDA_RS(ESMDABase):
             # If the criteria is reached -> Get exactly one for the sum
             if self._is_unity_reached(current_inflation_factor):
                 current_inflation_factor = 1 / (
-                    1 - np.sum([1 / a for a in self.cov_obs_inflation_factors])
+                    1 - float(np.sum([1 / a for a in self.cov_obs_inflation_factors]))
                 )
                 self._pertrub(current_inflation_factor)
-                self._approximate_covariance_matrices()
                 m_pred = self._analyse(current_inflation_factor)
                 is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
@@ -359,8 +365,12 @@ class ESMDA_RS(ESMDABase):
 
     def _compute_initial_inflation_factor(self) -> float:
         r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
-        return 0.25 * compute_ensemble_average_normalized_objective_function(
-            self.d_pred, self.obs, self.cov_obs
+        return 0.25 * float(
+            np.mean(
+                compute_normalized_objective_function(
+                    self.d_pred, self.obs, self.cov_obs
+                )
+            )
         )
 
     def _is_unity_reached(self, current_inflation_factor: float) -> bool:
@@ -375,7 +385,7 @@ class ESMDA_RS(ESMDABase):
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors for the current (last) iteration.
         """
-        return (
+        return bool(
             np.sum([1 / a for a in self.cov_obs_inflation_factors])
             + 1 / current_inflation_factor
             >= 1
@@ -387,17 +397,18 @@ class ESMDA_RS(ESMDABase):
         Parameters
         ----------
         m_pred : npt.NDArray[np.float64]
-            _description_
+            Ensemble of predicted values with dimensions
+            (:math:`N_{obs}`, :math:`N_{e}`).
 
         Returns
         -------
         bool
-            _description_
+            Whether the parameter change is valid.
         """
 
         def is_lower(residuals: NDArrayFloat) -> bool:
             return bool(np.all(residuals < 2 * self.std_m_prior))
 
         return bool(
-            np.all(list(map(is_lower, np.abs(m_pred - self.m_prior))))  # type: ignore
+            np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T)))  # type: ignore
         )

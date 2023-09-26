@@ -37,7 +37,7 @@ def test_esmda_rs_exponential_case(
     # Uniform law for the parameter b ensemble
     mb = rng.uniform(low=-0.001, high=0.01, size=n_ensemble)
     # Prior ensemble
-    m_ensemble = np.stack((ma, mb), axis=1)
+    m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
     cov_obs = np.diag([1.0] * obs.shape[0])
@@ -63,7 +63,7 @@ def test_esmda_rs_exponential_case(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
-        md_correlation_matrix=np.ones((m_ensemble.shape[1], obs.size)),
+        md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
         dd_correlation_matrix=np.ones((obs.size, obs.size)),
         save_ensembles_history=True,
         std_m_prior=std_m_prior,
@@ -75,7 +75,7 @@ def test_esmda_rs_exponential_case(
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=0), np.array([a, b]), rtol=1e-1
+        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=1e-1
     ).all()
 
     # Get the uncertainty on the parameters
@@ -118,7 +118,7 @@ def test_esmda_exponential_case_batch(
     # Uniform law for the parameter b ensemble
     mb = rng.uniform(low=-0.001, high=0.01, size=n_ensemble)
     # Prior ensemble
-    m_ensemble = np.stack((ma, mb), axis=1)
+    m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
     cov_obs = np.diag([1.0] * obs.shape[0])
@@ -140,7 +140,7 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
-        md_correlation_matrix=np.ones((m_ensemble.shape[1], obs.size)),
+        md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
         dd_correlation_matrix=np.ones((obs.size, obs.size)),
         save_ensembles_history=True,
         std_m_prior=std_m_prior,
@@ -154,7 +154,7 @@ def test_esmda_exponential_case_batch(
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=0), np.array([a, b]), rtol=5e-2
+        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2
     ).all()
 
     # Get the uncertainty on the parameters

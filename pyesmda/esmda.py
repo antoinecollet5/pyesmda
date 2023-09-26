@@ -6,14 +6,11 @@ Implement the ES-MDA algorithms.
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy.sparse import csr_matrix, spmatrix  # type: ignore
+from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.base import ESMDABase
-from pyesmda.utils import (
-    NDArrayFloat,
-    approximate_covariance_matrix_from_ensembles,
-    inflate_ensemble_around_its_mean,
-)
+from pyesmda.inversion import ESMDAInversionType
+from pyesmda.utils import NDArrayFloat, inflate_ensemble_around_its_mean
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -38,15 +35,15 @@ class ESMDA(ESMDABase):
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     d_obs_uc: NDArrayFloat
         Vectors of pertubed observations with dimension
-        (:math:`N_{e}`, :math:`N_{obs}`).
+        (:math:`N_{obs}`, :math:`N_{e}`).
     d_pred: NDArrayFloat
         Vectors of predicted values (one for each ensemble member)
-        with dimensions (:math:`N_{e}`, :math:`N_{obs}`).
+        with dimensions (:math:`N_{obs}`, :math:`N_{e}`).
     d_history: List[NDArrayFloat]
         List of vectors of predicted values obtained at each assimilation step.
     m_prior:
         Vectors of parameter values (one vector for each ensemble member) used in the
-        last assimilation step. Dimensions are (:math:`N_{e}`, :math:`N_{m}`).
+        last assimilation step. Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
     m_bounds : NDArrayFloat
         Lower and upper bounds for the :math:`N_{m}` parameter values.
         Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -112,6 +109,13 @@ class ESMDA(ESMDABase):
             batch is above one. The default is True.
     n_batches: int
             Number of batches required during the update step.
+    truncation: float
+        A value in the range ]0, 1], used to determine the number of
+        significant singular values kept when using svd for the inversion
+        of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+        corresponding to this fraction of the sum of the nonzero singular values.
+        The goal of truncation is to deal with smaller matrices (dimensionality
+        reduction), easier to inverse.
 
     """
     # pylint: disable=R0902 # Too many instance attributes
@@ -124,11 +128,12 @@ class ESMDA(ESMDABase):
         self,
         obs: NDArrayFloat,
         m_init: NDArrayFloat,
-        cov_obs: Union[NDArrayFloat, csr_matrix],
+        cov_obs: NDArrayFloat,
         forward_model: Callable[..., NDArrayFloat],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
+        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factors: Optional[Sequence[float]] = None,
         dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
@@ -142,6 +147,7 @@ class ESMDA(ESMDABase):
         ] = 198873,
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
+        truncation: float = 0.99,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -153,7 +159,7 @@ class ESMDA(ESMDABase):
             Obsevrations vector with dimension :math:`N_{obs}`.
         m_init : NDArrayFloat
             Initial ensemble of parameters vector with dimensions
-            (:math:`N_{e}`, :math:`N_{m}`).
+            (:math:`N_{m}`, :math:`N_{e}`).
         cov_obs: NDArrayFloat
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
@@ -228,6 +234,13 @@ class ESMDA(ESMDABase):
             Whether to use parallel computing for the analyse step if the number of
             batch is above one. It relies on `concurrent.futures` multiprocessing.
             The default is True.
+        truncation: float
+            A value in the range ]0, 1], used to determine the number of
+            significant singular values kept when using svd for the inversion
+            of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+            corresponding to this fraction of the sum of the nonzero singular values.
+            The goal of truncation is to deal with smaller matrices (dimensionality
+            reduction), easier to inverse. The default is 0.99.
 
         """
         super().__init__(
@@ -238,6 +251,7 @@ class ESMDA(ESMDABase):
             forward_model_args=forward_model_args,
             forward_model_kwargs=forward_model_kwargs,
             n_assimilations=n_assimilations,
+            inversion_type=inversion_type,
             dd_correlation_matrix=dd_correlation_matrix,
             md_correlation_matrix=md_correlation_matrix,
             m_bounds=m_bounds,
@@ -247,6 +261,7 @@ class ESMDA(ESMDABase):
             random_state=random_state,
             batch_size=batch_size,
             is_parallel_analyse_step=is_parallel_analyse_step,
+            truncation=truncation,
         )
         self.set_cov_obs_inflation_factors(cov_obs_inflation_factors)
         self.cov_mm_inflation_factors = cov_mm_inflation_factors  # type: ignore
@@ -337,7 +352,6 @@ class ESMDA(ESMDABase):
             self._pertrub(self.cov_obs_inflation_factors[self._assimilation_step])
 
             if self.n_batches == 1:
-                self._approximate_covariance_matrices()
                 # Update the prior parameter for next iteration
                 self.m_prior = self._apply_bounds(
                     self._analyse(
@@ -345,16 +359,6 @@ class ESMDA(ESMDABase):
                     )
                 )
             else:
-                # covariance approximation dd
-                self.cov_dd = approximate_covariance_matrix_from_ensembles(
-                    self.d_pred, self.d_pred
-                )
-                # Spatial and temporal localization: obs - obs
-                if self.dd_correlation_matrix is not None:
-                    self.cov_dd = self.dd_correlation_matrix.multiply(
-                        self.cov_dd
-                    ).toarray()
-
                 # Update the prior parameter for next iteration
                 self.m_prior = self._apply_bounds(
                     self._local_analyse(

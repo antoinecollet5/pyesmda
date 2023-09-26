@@ -4,15 +4,13 @@ Implement the ES-MDA algorithms.
 @author: acollet
 """
 from functools import lru_cache, wraps
-from typing import List, Union
+from typing import List
 
 import numpy as np
 import numpy.typing as npt
 import scipy as sp  # type: ignore
-from scipy.sparse import csr_matrix  # type: ignore
-from scipy.sparse.linalg import gmres  # type: ignore
 
-NDArrayFloat = npt.NDArray[np.float64]
+NDArrayFloat = npt.NDArray[np.float_]
 
 
 def np_cache(*args, **kwargs):
@@ -91,8 +89,10 @@ def get_ensemble_variance(
     # test ensemble size
     if len(ensemble.shape) != 2:
         raise ValueError("The ensemble must be a 2D matrix!")
-    return np.sum(((ensemble - np.mean(ensemble, axis=0)) ** 2), axis=0) / (
-        ensemble.shape[0] - 1.0
+    return np.sum(
+        ((ensemble - np.mean(ensemble, axis=1, keepdims=True)) ** 2), axis=1
+    ) / (
+        ensemble.shape[1] - 1.0
     )  # type: ignore
 
 
@@ -106,7 +106,7 @@ def get_anomaly_matrix(
     Parameters
     ----------
     ensemble: NDArrayFloat
-        Ensemble of realization with shape ($N_{e}$, $N_{m}$), $N_{e}$ and $N_{m}$
+        Ensemble of realization with shape ($N_{m}$, $N_{e}$), $N_{e}$ and $N_{m}$
         being the ensemble size and one member size respectively.
 
     Examples
@@ -125,8 +125,8 @@ def get_anomaly_matrix(
     ------
     The anomaly matrix with with shape ($N_{e}$, $N_{m}$).
     """
-    return (ensemble.T - np.mean(ensemble.T, axis=1, keepdims=True)) / np.sqrt(
-        ensemble.shape[0] - 1  # type: ignore
+    return (ensemble - np.mean(ensemble, axis=1, keepdims=True)) / np.sqrt(
+        ensemble.shape[1] - 1  # type: ignore
     )
 
 
@@ -182,9 +182,9 @@ def approximate_covariance_matrix_from_ensembles(
     Parameters
     ----------
     ensemble_1 : NDArrayFloat
-        First ensemble of realization with diemnsions (:math:`N_{e}, N_{m1}`).
+        First ensemble of realization with diemnsions (:math:`N_{m1}, N_{e}`).
     ensemble_2 : NDArrayFloat
-        Second ensemble of realization with diemnsions (:math:`N_{e}, N_{m2}`).
+        Second ensemble of realization with diemnsions (:math:`N_{m2}, N_{e}`).
 
     Returns
     -------
@@ -218,13 +218,14 @@ def approximate_covariance_matrix_from_ensembles(
         _description_
     """
     # test ensemble size
-    if (
-        ensemble_1.shape[0] != ensemble_2.shape[0]  # type: ignore
-        or len(ensemble_1.shape) != 2
-        or len(ensemble_2.shape) != 2
-    ):
+    is_issue = False
+    if ensemble_1.ndim != 2 or ensemble_2.ndim != 2:
+        is_issue = True
+    elif ensemble_1.shape[1] != ensemble_2.shape[1]:  # type: ignore
+        is_issue = True
+    if is_issue:
         raise ValueError(
-            "The ensemble should be 2D matrices with equal first dimension!"
+            "The ensemble should be 2D matrices with equal second dimension!"
         )
     return get_anomaly_matrix(ensemble_1) @ get_anomaly_matrix(ensemble_2).T
 
@@ -233,85 +234,11 @@ def approximate_covariance_matrix_from_ensembles(
 empirical_cross_covariance = approximate_covariance_matrix_from_ensembles
 
 
-def approximate_cov_mm(ensemble: NDArrayFloat) -> NDArrayFloat:
-    r"""
-    Approximate the parameters autocovariance matrix from the ensemble.
-
-    The covariance matrice :math:`C^{l}_{MM}`
-    is approximated from the ensemble in the standard way of EnKF
-    :cite:p:`evensenDataAssimilationEnsemble2007,aanonsenEnsembleKalmanFilter2009`:
-
-    .. math::
-        C^{l}_{MM} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(m^{l}_{j} -
-        \overline{m^{l}}\right)\left(m^{l}_{j}
-        - \overline{m^{l}} \right)^{T}
-
-    with :math:`\overline{m^{l}}`, the parameters
-    ensemble means, at iteration :math:`l`.
-
-    Parameters
-    ----------
-    ensemble: NDArrayFloat
-        Ensemble of parameters realization with diemnsions (:math:`N_{e}, N_{m}`).
-    """
-    return approximate_covariance_matrix_from_ensembles(ensemble, ensemble)
-
-
-def compute_ensemble_average_normalized_objective_function(
-    pred_ensemble: NDArrayFloat,
-    obs: NDArrayFloat,
-    cov_obs: Union[NDArrayFloat, csr_matrix],
-) -> float:
-    r"""
-    Compute the ensemble average normalized objective function.
-
-    .. math::
-
-        \overline{O}_{N_{d}} = \frac{1}{N_{e}} \sum_{j=1}^{N_{e}} O_{N_{d}, j}
-
-    .. math::
-
-        \textrm{with  } O_{N_{d}, j} = \frac{1}{2N_{d}}
-        \sum_{j=1}^{N_{e}}\left(d^{l}_{j}
-        - {d_{obs}} \right)^{T}C_{D}^{-1}\left(d^{l}_{j}
-        - {d_{obs}} \right)\\
-
-    Parameters
-    ----------
-    pred_ensemble : NDArrayFloat
-        Vector of predicted values.
-    obs : NDArrayFloat
-        Vector of observed values.
-    cov_obs : Union[NDArrayFloat, csr_matrix]
-        Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. This can be a
-        sparse matrix.
-
-    Returns
-    -------
-    float
-        The objective function.
-
-    """
-
-    def member_obj_fun(pred: NDArrayFloat) -> float:
-        return compute_normalized_objective_function(pred, obs, cov_obs)
-
-    return np.mean(
-        list(
-            map(
-                member_obj_fun,
-                pred_ensemble,
-            )
-        )  # type: ignore
-    )
-
-
 def compute_normalized_objective_function(
     pred: NDArrayFloat,
     obs: NDArrayFloat,
-    cov_obs: Union[NDArrayFloat, csr_matrix],
-) -> float:
+    cov_obs_cholesky: NDArrayFloat,
+) -> NDArrayFloat:
     r"""
     Compute the normalized objective function for a given member :math:`j`.
 
@@ -324,35 +251,45 @@ def compute_normalized_objective_function(
     Parameters
     ----------
     pred : NDArrayFloat
-        Vector of predicted values.
+        Ensemble of prediction vector with shape (:math:`N_{obs}, N_{e}`), or
+        single vector with shape :math:`(N_{obs},)`.
     obs : NDArrayFloat
         Vector of observed values.
-    cov_obs : Union[NDArrayFloat, csr_matrix]
-        Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. This can be a
-        sparse matrix.
+    cov_obs_cholesky
+        Cholesky upper factorisation of the covariance matrix of observed data
+        measurement errors with dimensions
+        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. Or 1D vector if
+        the covariance matrix is diagonal.
 
     Returns
     -------
-    float
-        The objective function.
+    NDArrayFloat
+        The objective function for each ensemble realization.
 
     """
-    residuals: NDArrayFloat = obs - pred
-    try:
-        # case of dense array
+    residuals: NDArrayFloat = (pred.T - obs).T  # still has shape (N_obs, N_e)
+    # case of dense array
+    if cov_obs_cholesky.ndim == 2:
         return (
             1
             / (2 * obs.size)
-            * np.dot(residuals.T, np.linalg.solve(cov_obs, residuals))
+            * np.sum(
+                residuals
+                * sp.linalg.solve(
+                    cov_obs_cholesky, residuals, assume_a="pos", lower=False
+                ),
+                axis=0,
+            )
         )
-    except Exception:
-        # case of sparse matrices
+    elif cov_obs_cholesky.ndim == 1:
         return (
             1
             / (2 * obs.size)
-            * np.dot(residuals.T, gmres(cov_obs, residuals, atol=1e-15)[0])
+            * np.square(
+                residuals / cov_obs_cholesky.reshape(-1, 1)  # type: ignore
+            ).sum(axis=0)
         )
+    raise ValueError("cov_obs_cholesky must be a 2D array or a 1D array.")
 
 
 def inflate_ensemble_around_its_mean(
@@ -369,7 +306,7 @@ def inflate_ensemble_around_its_mean(
     Parameters
     ----------
     ensemble: NDArrayFloat
-        Ensemble of realization with diemnsions (:math:`N_{e}, N_{m}`).
+        Ensemble of realization with diemnsions (:math:`N_{m}, N_{e}`).
 
     Returns
     -------
@@ -377,9 +314,9 @@ def inflate_ensemble_around_its_mean(
         The inflated ensemble.
     """
     if not inflation_factor == 1.0:
-        return inflation_factor * (ensemble - np.mean(ensemble, axis=0)) + np.mean(
-            ensemble, axis=0
-        )
+        return inflation_factor * (
+            ensemble - np.mean(ensemble, axis=1, keepdims=True)
+        ) + np.mean(ensemble, axis=1, keepdims=True)
     return ensemble
 
 
@@ -404,12 +341,12 @@ def check_nans_in_predictions(d_pred: NDArrayFloat, assimilation_step: int) -> N
         return
 
     # indices of members for which nan have been found
-    error_indices: List[int] = sorted(set(np.where(np.isnan(d_pred))[0]))
+    error_indices: List[int] = sorted(set(np.where(np.isnan(d_pred))[1]))
     if assimilation_step == 0:
         msg: str = "with the initial ensemble predictions "
     else:
         msg = f" after assimilation step {assimilation_step}"
     raise Exception(
-        "Something went wrong " + msg + " -> NaN values"
+        f"Something went wrong {msg} -> NaN values"
         f" are found in predictions for members {error_indices} !"
     )
