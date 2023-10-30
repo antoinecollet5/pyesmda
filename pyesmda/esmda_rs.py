@@ -85,11 +85,8 @@ class ESMDA_RS(ESMDABase):
     n_assimilations : int
         Number of data assimilations (:math:`N_{a}`) performed.
         Automatically determined. Initially at 0.
-    cov_mm_initial_inflation_factor: float
-        List of factors used to inflate the adjusted parameters covariance among
-        iterations:
-        Each realization of the ensemble at the end of each update step i,
-        is linearly inflated around its mean.
+    cov_mm_inflation_factor: float
+        Factor used to inflate the initial ensemble around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
     dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
@@ -247,8 +244,6 @@ class ESMDA_RS(ESMDABase):
         """
         super().__init__(
             obs=obs,
-            # only inflate the initial ensemble because we don't known
-            # the number of assimilations
             m_init=inflate_ensemble_around_its_mean(
                 m_init, inflation_factor=cov_mm_inflation_factor
             ),
@@ -260,7 +255,6 @@ class ESMDA_RS(ESMDABase):
             inversion_type=inversion_type,
             dd_correlation_matrix=dd_correlation_matrix,
             md_correlation_matrix=md_correlation_matrix,
-            # cov_mm_inflation_factors=None, # [cov_mm_inflation_factor],
             m_bounds=m_bounds,
             save_ensembles_history=save_ensembles_history,
             seed=seed,

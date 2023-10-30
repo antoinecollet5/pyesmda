@@ -77,12 +77,6 @@ class ESMDABase(ABC):
     cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
-    cov_mm_inflation_factors: List[float]
-        List of factors used to inflate the adjusted parameters covariance among
-        iterations:
-        Each realization of the ensemble at the end of each update step i,
-        is linearly inflated around its mean.
-        See :cite:p:`andersonExploringNeedLocalization2007`.
     dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         observations and observations :math:`\rho_{DD}`. It is used to localize the
@@ -199,6 +193,8 @@ class ESMDABase(ABC):
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
+        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE
+            Type of inversion used to solve :math:`(C_DD + \alpha CD)^{-1)(d-dobs)`.
         dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the

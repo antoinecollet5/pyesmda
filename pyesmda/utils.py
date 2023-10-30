@@ -72,8 +72,8 @@ def get_ensemble_variance(
     Parameters
     ----------
     ensemble : NDArrayFloat
-        Ensemble of realization with diemnsions (:math:`N_{e}, N_{m}`),
-        $N_{m}$), $N_{e}$ and $N_{m}$
+        Ensemble of realization with diemnsions (:math:`N_{m}, N_{e}`),
+        $N_{m}$) and $N_{e}$
         being the ensemble size and one member size respectively.
 
     Returns

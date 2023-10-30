@@ -177,25 +177,6 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "n_assimilations": 3,
-                "cov_mm_inflation_factors": np.ones(5),
-            },
-            pytest.raises(
-                ValueError,
-                match=(
-                    r"The length of cov_mm_inflation_factors "
-                    "should match n_assimilations"
-                ),
-            ),
-        ),
-        (
-            (
-                np.zeros(20),
-                np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
-                empty_forward_model,
-            ),
-            {
                 "dd_correlation_matrix": np.zeros((20, 20)),
             },
             does_not_raise(),
@@ -353,10 +334,6 @@ def test_constructor(args, kwargs, expected_exception) -> ESMDA:
             for val in esmda.cov_obs_inflation_factors:
                 assert val == 1 / esmda.n_assimilations
 
-        if "cov_mm_inflation_factors " not in kwargs.keys():
-            for val in esmda.cov_mm_inflation_factors:
-                assert val == 1.0
-
 
 def exponential(p, x) -> NDArrayFloat:
     """
@@ -407,13 +384,13 @@ def forward_model(m_ensemble, x):
 
 
 expected_std = {
-    ESMDAInversionType.NAIVE: [1.21e-1, 6.9e-5],
-    ESMDAInversionType.EXACT_CHOLESKY: [1.21e-1, 6.9e-5],
-    ESMDAInversionType.EXACT_LSTSQ: [1.21e-1, 6.9e-5],
-    ESMDAInversionType.EXACT_RESCALED: [1.27e-1, 6.64e-5],
-    ESMDAInversionType.EXACT_SUBSPACE: [1.20708999e-01, 6.90757690e-05],
-    ESMDAInversionType.SUBSPACE: [0.12, 6.9e-05],
-    ESMDAInversionType.SUBSPACE_RESCALED: [1.2143659e-01, 6.92145164e-05],
+    ESMDAInversionType.NAIVE: [1.05e-1, 6.31e-5],
+    ESMDAInversionType.EXACT_CHOLESKY: [1.05e-1, 6.31e-5],
+    ESMDAInversionType.EXACT_LSTSQ: [1.055e-1, 6.31e-5],
+    ESMDAInversionType.EXACT_RESCALED: [1.05e-1, 6.64e-5],
+    ESMDAInversionType.EXACT_SUBSPACE: [1.05e-01, 6.31e-05],
+    ESMDAInversionType.SUBSPACE: [0.105, 6.31e-05],
+    ESMDAInversionType.SUBSPACE_RESCALED: [0.105, 6.30e-05],
 }
 
 
@@ -477,9 +454,6 @@ def test_esmda_exponential_case(
 
     np.testing.assert_almost_equal(sum(1.0 / np.array(cov_obs_inflation_factors)), 1.0)
 
-    # This is just for the test
-    cov_mm_inflation_factors: list[float] = [1.2] * n_assimilations
-
     solver = ESMDA(
         obs,
         m_ensemble,
@@ -489,7 +463,7 @@ def test_esmda_exponential_case(
         forward_model_kwargs={},
         n_assimilations=n_assimilations,
         cov_obs_inflation_factors=cov_obs_inflation_factors,
-        cov_mm_inflation_factors=cov_mm_inflation_factors,
+        cov_mm_inflation_factor=1.2,
         m_bounds=m_bounds,
         save_ensembles_history=True,
         inversion_type=inversion_type,
@@ -569,9 +543,6 @@ def test_esmda_exponential_case_batch(
 
     np.testing.assert_almost_equal(sum(1.0 / np.array(cov_obs_inflation_factors)), 1.0)
 
-    # This is just for the test
-    cov_mm_inflation_factors: list[float] = [1.2] * n_assimilations
-
     solver = ESMDA(
         obs,
         m_ensemble,
@@ -581,7 +552,7 @@ def test_esmda_exponential_case_batch(
         forward_model_kwargs={},
         n_assimilations=n_assimilations,
         cov_obs_inflation_factors=cov_obs_inflation_factors,
-        cov_mm_inflation_factors=cov_mm_inflation_factors,
+        cov_mm_inflation_factor=1.2,
         md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
         dd_correlation_matrix=np.ones((obs.size, obs.size)),
         m_bounds=m_bounds,
@@ -619,5 +590,5 @@ def test_esmda_exponential_case_batch(
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.2e-1, 7.8e-5]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.01666593e-01, 6.59889089e-05]), rtol=5e-2
     ).all()

@@ -87,7 +87,7 @@ class ESMDAInversionType(str, Enum):
             return False
         return self.value == other
 
-    @classmethod
+    @classmethod  # type: ignore
     def to_list(cls) -> List[ESMDAInversionType]:
         """Return all enums as a list."""
         return list(cls)

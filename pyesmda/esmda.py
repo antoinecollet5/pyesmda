@@ -72,12 +72,10 @@ class ESMDA(ESMDABase):
     cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
-    cov_mm_inflation_factors: List[float]
-        List of factors used to inflate the adjusted parameters covariance among
-        iterations:
-        Each realization of the ensemble at the end of each update step i,
-        is linearly inflated around its mean.
+    cov_mm_inflation_factor: float
+        Factor used to inflate the initial ensemble around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
+        The default is 1.0 i.e., no inflation.
     dd_correlation_matrix : Optional[csr_matrix]
         Correlation matrix based on spatial and temporal distances between
         observations and observations :math:`\rho_{DD}`. It is used to localize the
@@ -121,7 +119,6 @@ class ESMDA(ESMDABase):
     # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "_cov_obs_inflation_factors",
-        "_cov_mm_inflation_factors",
     ]
 
     def __init__(
@@ -135,7 +132,7 @@ class ESMDA(ESMDABase):
         n_assimilations: int = 4,
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_obs_inflation_factors: Optional[Sequence[float]] = None,
-        cov_mm_inflation_factors: Optional[Sequence[float]] = None,
+        cov_mm_inflation_factor: float = 1.0,
         dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         m_bounds: Optional[NDArrayFloat] = None,
@@ -179,15 +176,10 @@ class ESMDA(ESMDABase):
             measurement errors.
             Must match the number of data assimilations (:math:`N_{a}`).
             The default is None.
-        cov_mm_inflation_factors: Optional[Sequence[float]]
-            List of factors used to inflate the adjusted parameters covariance
-            among iterations:
-            Each realization of the ensemble at the end of each update step i,
-            is linearly inflated around its mean.
-            Must match the number of data assimilations (:math:`N_{a}`).
+        cov_mm_inflation_factor: float
+            Factor used to inflate the initial ensemble around its mean.
             See :cite:p:`andersonExploringNeedLocalization2007`.
-            If None, the default is 1.0. at each iteration (no inflation).
-            The default is None.
+            The default is 1.0 i.e., no inflation.
         dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the
@@ -245,7 +237,9 @@ class ESMDA(ESMDABase):
         """
         super().__init__(
             obs=obs,
-            m_init=m_init,
+            m_init=inflate_ensemble_around_its_mean(
+                m_init, inflation_factor=cov_mm_inflation_factor
+            ),
             cov_obs=cov_obs,
             forward_model=forward_model,
             forward_model_args=forward_model_args,
@@ -264,7 +258,6 @@ class ESMDA(ESMDABase):
             truncation=truncation,
         )
         self.set_cov_obs_inflation_factors(cov_obs_inflation_factors)
-        self.cov_mm_inflation_factors = cov_mm_inflation_factors  # type: ignore
 
     @property
     def cov_obs_inflation_factors(self) -> List[float]:
@@ -297,44 +290,6 @@ class ESMDA(ESMDABase):
         else:
             self._cov_obs_inflation_factors = list(a)
 
-    @property
-    def cov_mm_inflation_factors(self) -> Sequence[float]:
-        r"""
-        Get the inlfation factors for the adjusted parameters covariance matrix.
-
-        Covariance inflation is a method used to counteract the tendency of ensemble
-        Kalman methods to underestimate the uncertainty because of either undersampling,
-        inbreeding, or spurious correlations
-        :cite:p:`todaroAdvancedTechniquesSolving2021`.
-        The spread of the ensemble is artificially increased before the assimilation
-        of the observations, according to scheme introduced by
-        :cite:`andersonExploringNeedLocalization2007`:
-
-        .. math::
-            m^{l}_{j} \leftarrow r^{l}\left(m^{l}_{j} - \frac{1}{N_{e}}
-            \sum_{j}^{N_{e}}m^{l}_{j}\right) + \frac{1}{N_{e}}\sum_{j}^{N_{e}}m^{l}_{j}
-
-        where :math:`r` is the inflation factor for the assimilation step :math:`l`.
-        """
-        return list(self._cov_mm_inflation_factors)
-
-    @cov_mm_inflation_factors.setter
-    def cov_mm_inflation_factors(self, a: Optional[Sequence[float]]) -> None:
-        """
-        Set the inflation factors the adjusted parameters covariance matrix.
-
-        If no values have been provided by the user, the default is 1.0. at
-        each iteration (no inflation).
-        """
-        if a is None:
-            self._cov_mm_inflation_factors: List[float] = [1.0] * self.n_assimilations
-        elif len(a) != self.n_assimilations:
-            raise ValueError(
-                "The length of cov_mm_inflation_factors should match n_assimilations"
-            )
-        else:
-            self._cov_mm_inflation_factors = list(a)
-
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA algorithm."""
         if self.save_ensembles_history:
@@ -342,12 +297,6 @@ class ESMDA(ESMDABase):
         for self._assimilation_step in range(self.n_assimilations):
             print(f"Assimilation # {self._assimilation_step + 1}")
             # inflating the covariance
-            self.m_prior = self._apply_bounds(
-                inflate_ensemble_around_its_mean(
-                    self.m_prior,
-                    self.cov_mm_inflation_factors[self._assimilation_step],
-                )
-            )
             self._forecast()
             self._pertrub(self.cov_obs_inflation_factors[self._assimilation_step])
 
