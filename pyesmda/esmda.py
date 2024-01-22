@@ -10,7 +10,7 @@ from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.base import ESMDABase
 from pyesmda.inversion import ESMDAInversionType
-from pyesmda.utils import NDArrayFloat, inflate_ensemble_around_its_mean
+from pyesmda.utils import NDArrayFloat
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -237,15 +237,14 @@ class ESMDA(ESMDABase):
         """
         super().__init__(
             obs=obs,
-            m_init=inflate_ensemble_around_its_mean(
-                m_init, inflation_factor=cov_mm_inflation_factor
-            ),
+            m_init=m_init,
             cov_obs=cov_obs,
             forward_model=forward_model,
             forward_model_args=forward_model_args,
             forward_model_kwargs=forward_model_kwargs,
             n_assimilations=n_assimilations,
             inversion_type=inversion_type,
+            cov_mm_inflation_factor=cov_mm_inflation_factor,
             dd_correlation_matrix=dd_correlation_matrix,
             md_correlation_matrix=md_correlation_matrix,
             m_bounds=m_bounds,

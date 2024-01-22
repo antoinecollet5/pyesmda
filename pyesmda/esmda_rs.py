@@ -15,7 +15,6 @@ from pyesmda.utils import (
     NDArrayFloat,
     compute_normalized_objective_function,
     get_ensemble_variance,
-    inflate_ensemble_around_its_mean,
 )
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
@@ -244,15 +243,14 @@ class ESMDA_RS(ESMDABase):
         """
         super().__init__(
             obs=obs,
-            m_init=inflate_ensemble_around_its_mean(
-                m_init, inflation_factor=cov_mm_inflation_factor
-            ),
+            m_init=m_init,
             cov_obs=cov_obs,
             forward_model=forward_model,
             forward_model_args=forward_model_args,
             forward_model_kwargs=forward_model_kwargs,
             n_assimilations=1,  # in esmda-rs this number is determined automatically
             inversion_type=inversion_type,
+            cov_mm_inflation_factor=cov_mm_inflation_factor,
             dd_correlation_matrix=dd_correlation_matrix,
             md_correlation_matrix=md_correlation_matrix,
             m_bounds=m_bounds,

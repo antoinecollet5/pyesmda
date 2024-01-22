@@ -14,7 +14,12 @@ from scipy._lib._util import check_random_state  # type: ignore
 from scipy.sparse import csr_matrix, spmatrix  # type: ignore
 
 from pyesmda.inversion import ESMDAInversionType, inversion
-from pyesmda.utils import NDArrayFloat, check_nans_in_predictions, get_anomaly_matrix
+from pyesmda.utils import (
+    NDArrayFloat,
+    check_nans_in_predictions,
+    get_anomaly_matrix,
+    inflate_ensemble_around_its_mean,
+)
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -155,6 +160,7 @@ class ESMDABase(ABC):
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
+        cov_mm_inflation_factor: float = 1.0,
         dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
         m_bounds: Optional[NDArrayFloat] = None,
@@ -195,6 +201,10 @@ class ESMDABase(ABC):
             Number of data assimilations (:math:`N_{a}`). The default is 4.
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE
             Type of inversion used to solve :math:`(C_DD + \alpha CD)^{-1)(d-dobs)`.
+        cov_mm_inflation_factor: float
+            Factor used to inflate the initial ensemble variance around its mean.
+            See :cite:p:`andersonExploringNeedLocalization2007`.
+            The default is 1.0, which means no inflation.
         dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
             Correlation matrix based on spatial and temporal distances between
             observations and observations :math:`\rho_{DD}`. It is used to localize the
@@ -283,6 +293,14 @@ class ESMDABase(ABC):
         self.batch_size = batch_size
         self.is_parallel_analyse_step: bool = is_parallel_analyse_step
         self.truncation = truncation
+
+        # Inflate the initial ensemble respecting the given bounds
+        if cov_mm_inflation_factor != 1.0:
+            self.m_prior = self._apply_bounds(
+                inflate_ensemble_around_its_mean(
+                    m_init, inflation_factor=cov_mm_inflation_factor
+                )
+            )
 
     @property
     def n_assimilations(self) -> int:
