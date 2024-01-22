@@ -304,7 +304,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 match=(
                     r"smth_not_valid is not a supported inversion type! "
                     r"Choose among \['naive', 'exact_cholesky', 'exact_lstq', "
-                    r"'exact_rescaled', 'exact_subspace', 'subspace', "
+                    r"'exact_woodbury', 'rescaled', 'subspace', "
                     r"'subspace_rescaled'\]"
                 ),
             ),
@@ -387,9 +387,9 @@ expected_std = {
     ESMDAInversionType.NAIVE: [1.05e-1, 6.31e-5],
     ESMDAInversionType.EXACT_CHOLESKY: [1.05e-1, 6.31e-5],
     ESMDAInversionType.EXACT_LSTSQ: [1.055e-1, 6.31e-5],
-    ESMDAInversionType.EXACT_RESCALED: [1.05e-1, 6.64e-5],
-    ESMDAInversionType.EXACT_SUBSPACE: [1.05e-01, 6.31e-05],
-    ESMDAInversionType.SUBSPACE: [0.105, 6.31e-05],
+    ESMDAInversionType.EXACT_WOODBURY: [1.055e-1, 6.31e-5],
+    ESMDAInversionType.RESCALED: [1.05e-1, 6.64e-5],
+    ESMDAInversionType.SUBSPACE: [1.05e-01, 6.31e-05],
     ESMDAInversionType.SUBSPACE_RESCALED: [0.105, 6.30e-05],
 }
 
@@ -401,8 +401,8 @@ expected_std = {
         ESMDAInversionType.NAIVE,
         ESMDAInversionType.EXACT_CHOLESKY,
         ESMDAInversionType.EXACT_LSTSQ,
-        ESMDAInversionType.EXACT_RESCALED,
-        ESMDAInversionType.EXACT_SUBSPACE,
+        ESMDAInversionType.EXACT_WOODBURY,
+        ESMDAInversionType.RESCALED,
         ESMDAInversionType.SUBSPACE,
         ESMDAInversionType.SUBSPACE_RESCALED,
     ],

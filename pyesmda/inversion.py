@@ -50,28 +50,25 @@ class ESMDAInversionType(str, Enum):
     It is a hashable string enum and can be iterated.
 
     Available inversion types are:
-    - naive: direct inversion of C_DD + alpha * C_D
-    - exact_cholesky
-    - exact_lstq
-    - exact_rescaled
-    - exact_subspace
-    - subspace: sub
-    - subspace_rescaled: Same as subspace but with a rescaling procedure to avoid loss
-    of information during truncation of small singular values
-    (see :cite:t:`evensenSamplingStrategiesSquare2004`).
+    - naive: direct inversion of C_DD + alpha * C_D;
+    - exact_cholesky: perform the cholesky factorization of C_DD + alpha * C_D;
+    - exact_lstq: Computes inversion using least squares. While this method can deal
+    with rank-deficient C_D, it should not be used since it's very slow;
+    - exact_woodbury: Rely on woodbury lemma to reformulate the problem.
+    - rescaled: rely on truncated singular value decomposition TSVD of C_DD;
+    - subspace: rely on TSVD of U with C_DD = UU^{T};
+    - subspace_rescaled: Same as subspace but with a rescaling procedure to avoid
+    loss of information during truncation of small singular values
+    (see :cite:t:`evensenSamplingStrategiesSquare2004`);
     """
 
-    # direct inversion (CD)
     NAIVE = "naive"
-    # only if cdd is diagonal
     EXACT_CHOLESKY = "exact_cholesky"
-    # for big data assimilation this is the recommended method
     EXACT_LSTSQ = "exact_lstq"
-    # for big data assimilation this is the recommended method
-    EXACT_RESCALED = "exact_rescaled"
-    EXACT_SUBSPACE = "exact_subspace"  # for ...
+    EXACT_WOODBURY = "exact_woodbury"
+    RESCALED = "rescaled"
     SUBSPACE = "subspace"
-    SUBSPACE_RESCALED = "subspace_rescaled"  # using full Cdd
+    SUBSPACE_RESCALED = "subspace_rescaled"
 
     def __str__(self) -> str:
         """Return instance value."""
@@ -220,10 +217,10 @@ def inversion(
         ESMDAInversionType.NAIVE: inversion_exact_naive,
         ESMDAInversionType.EXACT_CHOLESKY: inversion_exact_cholesky,
         ESMDAInversionType.EXACT_LSTSQ: inversion_exact_lstsq,
-        ESMDAInversionType.EXACT_RESCALED: inversion_exact_rescaled,
-        ESMDAInversionType.EXACT_SUBSPACE: inversion_exact_subspace_woodbury,
-        ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
+        ESMDAInversionType.EXACT_WOODBURY: inversion_exact_woodbury,
+        ESMDAInversionType.RESCALED: inversion_rescaled,
         ESMDAInversionType.SUBSPACE: inversion_subspace,
+        ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
     }[invertion_type](
         inflation_factor=inflation_factor,
         C_D=cov_obs,
@@ -299,6 +296,7 @@ def inversion_exact_cholesky(
         # C_D is a covariance matrix
         C_DD += inflation_factor * C_D  # Save memory by mutating
         K: NDArrayFloat = sp.linalg.solve(C_DD, (D - Y), **solver_kwargs)
+    # A diagonal covariance matrix was given as a vector
     else:
         # C_D is an array, so add it to the diagonal without forming diag(C_D)
         C_DD.flat[:: C_DD.shape[1] + 1] += inflation_factor * C_D
@@ -325,18 +323,79 @@ def inversion_exact_lstsq(
 
     # A covariance matrix was given
     if C_D.ndim == 2:
-        lhs = C_DD + inflation_factor * C_D
+        C_DD += inflation_factor * C_D  # Save memory by mutating
     # A diagonal covariance matrix was given as a vector
     else:
-        lhs = C_DD
-        lhs.flat[:: lhs.shape[0] + 1] += inflation_factor * C_D
+        C_DD.flat[:: C_DD.shape[0] + 1] += inflation_factor * C_D
 
     # K = lhs^-1 @ (D - Y)
     # lhs @ K = (D - Y)
     K, *_ = sp.linalg.lstsq(
-        lhs, D - Y, overwrite_a=True, overwrite_b=True, lapack_driver="gelsy"
+        C_DD, D - Y, overwrite_a=True, overwrite_b=True, lapack_driver="gelsy"
     )
     return get_localized_cmd_multi_dot(X, Y, K, md_corr_mat=md_corr_mat)
+
+
+def inversion_exact_woodbury(
+    *,
+    inflation_factor: float,
+    C_D: NDArrayFloat,
+    D: NDArrayFloat,
+    Y: NDArrayFloat,
+    X: NDArrayFloat,
+    dd_corr_mat: Optional[spmatrix] = None,
+    md_corr_mat: Optional[spmatrix] = None,
+    **kwargs,
+) -> NDArrayFloat:
+    """Use the Woodbury lemma to compute the inversion.
+
+    This approach uses the Woodbury lemma to compute:
+        C_MD @ inv(C_DD + inflation_factor * C_D) @ (D - Y)
+
+    Since C_DD = U @ U.T, where U := center(Y) / sqrt(N_e - 1), we can use:
+
+    V = inflation_factor * C_D
+
+    (V + U @ U.T)^-1 = V^-1 - V^-1 @ U @ (1 + U.T @ V^-1 @ U )^-1 @ U.T @ V^-1
+
+    to compute inv(C_DD + inflation_factor * C_D).
+    """
+    # TODO: If regularization -> we can try to apply the localization
+    # and then to use cholesky afterwards ?
+    Y_shift = get_anomaly_matrix(Y)
+
+    # A full covariance matrix was given
+    if C_D.ndim == 2:
+        # Invert C_D -> we use a cached function
+        C_D_inv = get_inv(C_D) / inflation_factor
+
+        # Compute the center part of the rhs in woodburry
+        center = np.linalg.multi_dot([Y_shift.T, C_D_inv, Y_shift])
+        center.flat[:: center.shape[0] + 1] += 1.0  # Add to diagonal
+
+        # Compute the symmetric term of the rhs in woodbury
+        term = C_D_inv @ Y_shift
+
+        # Compute the woodbury inversion, then return
+        inverted = C_D_inv - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T])
+
+        return get_localized_cmd_multi_dot(
+            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
+        )
+
+    # A diagonal covariance matrix was given as a 1D array.
+    # Same computation as above, but exploit the diagonal structure
+    else:
+        C_D_inv = 1 / (C_D * inflation_factor)  # Invert diagonal
+        center = np.linalg.multi_dot([Y_shift.T * C_D_inv, Y_shift])
+        center.flat[:: center.shape[0] + 1] += 1.0
+        UT_D = Y_shift.T * C_D_inv
+        inverted = np.diag(C_D_inv) - np.linalg.multi_dot(
+            [UT_D.T, sp.linalg.inv(center), UT_D]
+        )
+        return get_localized_cmd_multi_dot(
+            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
+        )
 
 
 def singular_values_to_keep(
@@ -377,7 +436,7 @@ def singular_values_to_keep(
     return int(np.searchsorted(cumsum, v=truncation, side="left") + 1)
 
 
-def inversion_exact_rescaled(
+def inversion_rescaled(
     *,
     inflation_factor: float,
     C_D: NDArrayFloat,
@@ -439,68 +498,6 @@ def inversion_exact_rescaled(
     return get_localized_cmd_multi_dot(
         X, Y, term / s_r, term.T, (D - Y), md_corr_mat=md_corr_mat
     )
-
-
-def inversion_exact_subspace_woodbury(
-    *,
-    inflation_factor: float,
-    C_D: NDArrayFloat,
-    D: NDArrayFloat,
-    Y: NDArrayFloat,
-    X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
-    **kwargs,
-) -> NDArrayFloat:
-    """Use the Woodbury lemma to compute the inversion.
-
-    This approach uses the Woodbury lemma to compute:
-        C_MD @ inv(C_DD + inflation_factor * C_D) @ (D - Y)
-
-    Since C_DD = U @ U.T, where U := center(Y) / sqrt(N_e - 1), we can use:
-
-    V = inflation_factor * C_D
-
-    (V + U @ U.T)^-1 = V^-1 - V^-1 @ U @ (1 + U.T @ V^-1 @ U )^-1 @ U.T @ V^-1
-
-    to compute inv(C_DD + inflation_factor * C_D).
-    """
-    # TODO: If regularization -> we can try to apply the localization
-    # and then to use cholesky afterwards ?
-    Y_shift = get_anomaly_matrix(Y)
-
-    # A full covariance matrix was given
-    if C_D.ndim == 2:
-        # Invert C_D -> we use a cached function
-        C_D_inv = get_inv(C_D) / inflation_factor
-
-        # Compute the center part of the rhs in woodburry
-        center = np.linalg.multi_dot([Y_shift.T, C_D_inv, Y_shift])
-        center.flat[:: center.shape[0] + 1] += 1.0  # Add to diagonal
-
-        # Compute the symmetric term of the rhs in woodbury
-        term = C_D_inv @ Y_shift
-
-        # Compute the woodbury inversion, then return
-        inverted = C_D_inv - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T])
-
-        return get_localized_cmd_multi_dot(
-            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
-        )
-
-    # A diagonal covariance matrix was given as a 1D array.
-    # Same computation as above, but exploit the diagonal structure
-    else:
-        C_D_inv = 1 / (C_D * inflation_factor)  # Invert diagonal
-        center = np.linalg.multi_dot([Y_shift.T * C_D_inv, Y_shift])
-        center.flat[:: center.shape[0] + 1] += 1.0
-        UT_D = Y_shift.T * C_D_inv
-        inverted = np.diag(C_D_inv) - np.linalg.multi_dot(
-            [UT_D.T, sp.linalg.inv(center), UT_D]
-        )
-        return get_localized_cmd_multi_dot(
-            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
-        )
 
 
 def inversion_subspace(
