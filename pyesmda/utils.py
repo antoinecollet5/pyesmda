@@ -3,6 +3,7 @@ Implement the ES-MDA algorithms.
 
 @author: acollet
 """
+
 from functools import lru_cache, wraps
 from typing import List
 
@@ -234,7 +235,7 @@ def approximate_covariance_matrix_from_ensembles(
 empirical_cross_covariance = approximate_covariance_matrix_from_ensembles
 
 
-def compute_normalized_objective_function(
+def ls_cost_function(
     pred: NDArrayFloat,
     obs: NDArrayFloat,
     cov_obs_cholesky: NDArrayFloat,
@@ -272,7 +273,7 @@ def compute_normalized_objective_function(
     if cov_obs_cholesky.ndim == 2:
         return (
             1
-            / (2 * obs.size)
+            / 2
             * np.sum(
                 residuals
                 * sp.linalg.solve(
@@ -284,7 +285,7 @@ def compute_normalized_objective_function(
     elif cov_obs_cholesky.ndim == 1:
         return (
             1
-            / (2 * obs.size)
+            / 2
             * np.square(
                 residuals / cov_obs_cholesky.reshape(-1, 1)  # type: ignore
             ).sum(axis=0)

@@ -3,6 +3,8 @@ Implement a base class for the ES-MDA algorithms and variants.
 
 @author: acollet
 """
+
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
@@ -120,7 +122,10 @@ class ESMDABase(ABC):
         corresponding to this fraction of the sum of the nonzero singular values.
         The goal of truncation is to deal with smaller matrices (dimensionality
         reduction), easier to inverse.
+    logger: Optional[logging.Logger]
+        Optional :class:`logging.Logger` instance used for event logging.
     """
+
     # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "obs",
@@ -148,6 +153,7 @@ class ESMDABase(ABC):
         "batch_size",
         "is_parallel_analyse_step",
         "_truncation",
+        "logger",
     ]
 
     def __init__(
@@ -173,6 +179,7 @@ class ESMDABase(ABC):
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
         truncation: float = 0.99,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -258,6 +265,9 @@ class ESMDABase(ABC):
             corresponding to this fraction of the sum of the nonzero singular values.
             The goal of truncation is to deal with smaller matrices (dimensionality
             reduction), easier to inverse. The default is 0.99.
+        logger: Optional[logging.Logger]
+            Optional :class:`logging.Logger` instance used for event logging.
+            The default is None.
         """
         self.obs: NDArrayFloat = obs
         self.m_prior: NDArrayFloat = m_init
@@ -283,7 +293,7 @@ class ESMDABase(ABC):
             warnings.warn(
                 DeprecationWarning(
                     "The keyword `seed` is now replaced by `random_state` "
-                    "and will be dropped in 0.5.x."
+                    "and has been dropped since version 0.4.3."
                 )
             )
         self.rng: np.random.RandomState = check_random_state(
@@ -301,6 +311,8 @@ class ESMDABase(ABC):
                     m_init, inflation_factor=cov_mm_inflation_factor
                 )
             )
+
+        self.logger: Optional[logging.Logger] = logger
 
     @property
     def n_assimilations(self) -> int:
@@ -510,6 +522,11 @@ class ESMDABase(ABC):
         if truncation > 1 or truncation <= 0:
             raise ValueError("The truncation number should be in ]0, 1]!")
         self._truncation = float(truncation)
+
+    def loginfo(self, msg: str) -> None:
+        """Log the message."""
+        if self.logger is not None:
+            self.logger.info(msg)
 
     @abstractmethod
     def solve(self) -> None:

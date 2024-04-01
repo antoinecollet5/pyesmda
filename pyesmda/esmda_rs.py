@@ -3,6 +3,8 @@ Implement the ES-MDA-RS algorithms.
 
 @author: acollet
 """
+
+import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
@@ -11,11 +13,7 @@ from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.esmda import ESMDABase
 from pyesmda.inversion import ESMDAInversionType
-from pyesmda.utils import (
-    NDArrayFloat,
-    compute_normalized_objective_function,
-    get_ensemble_variance,
-)
+from pyesmda.utils import NDArrayFloat, ls_cost_function
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -124,7 +122,8 @@ class ESMDA_RS(ESMDABase):
         corresponding to this fraction of the sum of the nonzero singular values.
         The goal of truncation is to deal with smaller matrices (dimensionality
         reduction), easier to inverse.
-
+    logger: Optional[logging.Logger]
+        Optional :class:`logging.Logger` instance used for event logging.
     """
 
     # pylint: disable=R0902 # Too many instance attributes
@@ -153,6 +152,7 @@ class ESMDA_RS(ESMDABase):
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
         truncation: float = 0.99,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -239,6 +239,9 @@ class ESMDA_RS(ESMDABase):
             corresponding to this fraction of the sum of the nonzero singular values.
             The goal of truncation is to deal with smaller matrices (dimensionality
             reduction), easier to inverse. The default is 0.99.
+        logger: Optional[logging.Logger]
+            Optional :class:`logging.Logger` instance used for event logging.
+            The default is None.
 
         """
         super().__init__(
@@ -261,6 +264,7 @@ class ESMDA_RS(ESMDABase):
             batch_size=batch_size,
             is_parallel_analyse_step=is_parallel_analyse_step,
             truncation=truncation,
+            logger=logger,
         )
 
         # Initialize an empty list
@@ -274,7 +278,7 @@ class ESMDA_RS(ESMDABase):
             self.std_m_prior: npt.NDArray[np.float64] = std_m_prior
         else:
             # otherwise, it is inffered from the inflated ensemble
-            self.std_m_prior = np.sqrt(get_ensemble_variance(self.m_prior))
+            self.std_m_prior = np.std(self.m_prior, axis=1, ddof=1)
 
     @property
     def n_assimilations(self) -> int:
@@ -313,7 +317,7 @@ class ESMDA_RS(ESMDABase):
         m_pred = self.m_prior
         while not self._is_unity_reached(current_inflation_factor):
             self._assimilation_step += 1
-            print(f"Assimilation # {self._assimilation_step}")
+            self.loginfo(f"Assimilation # {self._assimilation_step}")
             self._forecast()
             # Divide per 2, because it is multiplied by 2 as the beginning
             # of the second while loop
@@ -343,7 +347,7 @@ class ESMDA_RS(ESMDABase):
                 is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
             self.cov_obs_inflation_factors.append(current_inflation_factor)
-            print(f"- Inflation factor = {current_inflation_factor:.3f}")
+            self.loginfo(f"- Inflation factor = {current_inflation_factor:.3f}")
 
             # Update the prior parameter for next iteration
             self.m_prior = m_pred
@@ -357,11 +361,11 @@ class ESMDA_RS(ESMDABase):
 
     def _compute_initial_inflation_factor(self) -> float:
         r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
-        return 0.25 * float(
-            np.mean(
-                compute_normalized_objective_function(
-                    self.d_pred, self.obs, self.cov_obs
-                )
+        return (
+            0.25
+            / self.obs.size
+            * float(
+                np.mean(ls_cost_function(self.d_pred, self.obs, self.cov_obs_cholesky))
             )
         )
 
@@ -384,13 +388,13 @@ class ESMDA_RS(ESMDABase):
         )
 
     def _is_valid_parameter_change(self, m_pred: npt.NDArray[np.float64]) -> bool:
-        """Check if all change residuals are below 2 sigma.
+        r"""Check if all change residuals are below 2 sigma.
 
         Parameters
         ----------
         m_pred : npt.NDArray[np.float64]
             Ensemble of predicted values with dimensions
-            (:math:`N_{obs}`, :math:`N_{e}`).
+            (:math:`N_{s}`, :math:`N_{e}`).
 
         Returns
         -------

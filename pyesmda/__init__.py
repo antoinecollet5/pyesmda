@@ -2,7 +2,7 @@
 Purpose
 =======
 
-**pyesmda** is an open-source, pure python, and object-oriented library that provides
+**pyesmda** is an open-source, and object-oriented library that provides
 a user friendly implementation of one of the most popular ensemble based method
 for parameters estimation and data assimilation: the Ensemble Smoother with
 Multiple Data Assimilation (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
@@ -17,6 +17,7 @@ Classes
 
    ESMDA
    ESMDA_RS
+   ESMDA_DMC
 
 Objective functions
 ===================
@@ -24,7 +25,7 @@ Objective functions
 .. autosummary::
    :toctree: _autosummary
 
-    compute_normalized_objective_function
+    ls_cost_function
 
 Covariance approximation
 ========================
@@ -56,8 +57,10 @@ Other functions
     check_nans_in_predictions
 
 """
+
 from .__about__ import __author__, __version__
 from .esmda import ESMDA
+from .esmda_dmc import ESMDA_DMC
 from .esmda_rs import ESMDA_RS
 from .inversion import ESMDAInversionType
 from .localization import (
@@ -67,11 +70,11 @@ from .localization import (
 from .utils import (
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
-    compute_normalized_objective_function,
     empirical_covariance_upper,
     get_anomaly_matrix,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
+    ls_cost_function,
 )
 
 __all__ = [
@@ -79,12 +82,13 @@ __all__ = [
     "__author__",
     "ESMDA",
     "ESMDA_RS",
+    "ESMDA_DMC",
     "ESMDAInversionType",
     "get_ensemble_variance",
     "get_anomaly_matrix",
     "approximate_covariance_matrix_from_ensembles",
     "empirical_covariance_upper",
-    "compute_normalized_objective_function",
+    "ls_cost_function",
     "inflate_ensemble_around_its_mean",
     "check_nans_in_predictions",
     "distances_to_weights_beta_cumulative",

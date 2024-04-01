@@ -3,11 +3,31 @@ Implement some correlation functions.
 
 @author: acollet
 """
+from abc import ABC, abstractmethod
 from typing import Union
 
 import numpy as np
 
 from pyesmda.utils import NDArrayFloat
+
+
+class LocalizationStrategy(ABC):
+    """Abstract class for localization strategy."""
+
+    @abstractmethod
+    def localize_C_SD(
+        self, C_SD: NDArrayFloat, S: NDArrayFloat, D: NDArrayFloat, inplace: bool = True
+    ) -> NDArrayFloat:
+        """Apply the localization to C_SD."""
+        ...
+
+    @abstractmethod
+    def localize_C_DD(
+        self, C_DD: NDArrayFloat, D: NDArrayFloat, inplace: bool = True
+    ) -> NDArrayFloat:
+        """Apply the localization to C_DD."""
+
+    ...
 
 
 def _reversed_beta_cumulative(distances: NDArrayFloat, beta: float = 3) -> NDArrayFloat:

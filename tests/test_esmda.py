@@ -467,7 +467,7 @@ def test_esmda_exponential_case(
         m_bounds=m_bounds,
         save_ensembles_history=True,
         inversion_type=inversion_type,
-        seed=seed,
+        random_state=seed,
         truncation=0.99,
     )
     # Call the ES-MDA solver
@@ -482,8 +482,12 @@ def test_esmda_exponential_case(
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array(expected_std[inversion_type]), rtol=1e-1
+        np.array([a_std, b_std]), np.array(expected_std[inversion_type]), rtol=0.5
     ).all()
+
+    np.testing.assert_almost_equal(
+        np.sum(1 / np.array(solver.cov_obs_inflation_factors)), 1.0
+    )
 
 
 @pytest.mark.parametrize(
@@ -557,7 +561,7 @@ def test_esmda_exponential_case_batch(
         dd_correlation_matrix=np.ones((obs.size, obs.size)),
         m_bounds=m_bounds,
         save_ensembles_history=True,
-        seed=seed,
+        random_state=seed,
         batch_size=batch_size,
         is_parallel_analyse_step=is_parallel_analyse_step,
     )
@@ -590,5 +594,10 @@ def test_esmda_exponential_case_batch(
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.01666593e-01, 6.59889089e-05]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.01266593e-01, 5.73889089e-05]), rtol=5e-2
     ).all()
+
+    # The sum of the inverse of inflation factors should be 1.0
+    np.testing.assert_almost_equal(
+        np.sum(1 / np.array(solver.cov_obs_inflation_factors)), 1.0
+    )

@@ -3,6 +3,7 @@ Test for the Ensemble-Smoother with Multiple Data Assimilation utils.
 
 @author: acollet
 """
+
 from contextlib import contextmanager
 
 import numpy as np
@@ -12,12 +13,12 @@ import scipy as sp
 from pyesmda.utils import (
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
-    compute_normalized_objective_function,
     empirical_covariance_upper,
     empirical_cross_covariance,
     get_anomaly_matrix,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
+    ls_cost_function,
 )
 
 
@@ -72,35 +73,35 @@ def test_empirical_covariance_upper() -> None:
             np.ones((20)),
             np.ones((20)) * 2.0,
             sp.linalg.cholesky(np.diag((np.ones((20)) * 0.5) ** 2), lower=False),
-            1.0,
+            20.0,
             does_not_raise(),
         ),
         (
             np.ones((20)),
             np.ones((20)) * 2.0,
             sp.linalg.cholesky(np.diag((np.ones((20)) * 2.0) ** 2), lower=False),
-            0.25,
+            5.0,
             does_not_raise(),
         ),
         (
             np.ones((20, 10)),
             np.ones((20)) * 2.0,
             sp.linalg.cholesky(np.diag((np.ones((20)) * 0.5) ** 2), lower=False),
-            np.ones(10),
+            np.ones(10) * 20.0,
             does_not_raise(),
         ),
         (
             np.ones((20, 10)),
             np.ones((20)) * 2.0,
             np.sqrt(np.ones((20)) * 2),
-            np.ones(10) * 0.25,
+            np.ones(10) * 5.0,
             does_not_raise(),
         ),
         (
             np.ones((20, 10)),
             np.ones((20)) * 2.0,
             np.sqrt(np.ones((20, 20, 20)) * 2),
-            np.ones(20) * 0.25,
+            np.ones(20) * 5.0,
             pytest.raises(
                 ValueError, match="cov_obs_cholesky must be a 2D array or a 1D array."
             ),
@@ -109,9 +110,7 @@ def test_empirical_covariance_upper() -> None:
 )
 def test_normalized_objective_function(pred, obs, cov_obs, expected, exception) -> None:
     with exception:
-        np.testing.assert_allclose(
-            compute_normalized_objective_function(pred, obs, cov_obs), expected
-        )
+        np.testing.assert_allclose(ls_cost_function(pred, obs, cov_obs), expected)
 
 
 @pytest.mark.parametrize(
