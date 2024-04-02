@@ -366,15 +366,13 @@ class CorrelationBasedLocalization(LocalizationStrategy):
         return np.multiply(
             cov_mat,
             self.transform(
-                np.abs(
-                    cov_to_corr(
-                        cov_mat,
-                        np.std(X, axis=1, ddof=1),
-                        np.std(Y, axis=1, ddof=1),
-                        inplace=False,
-                    )
+                cov_to_corr(
+                    cov_mat,
+                    np.std(X, axis=1, ddof=1),
+                    np.std(Y, axis=1, ddof=1),
+                    inplace=False,
                 ),
-                X.shape[0],
+                X.shape[1],
             ),
         )
 
@@ -457,6 +455,21 @@ def gc_correlation_tempering(corr_mat: NDArrayFloat, ne: int) -> NDArrayFloat:
     if ne <= 9:
         raise ValueError("Cannot use the Gaspari-Cohn tempering if Ne <= 9.")
     return distances_to_weights_fifth_order((1 - np.abs(corr_mat)) / (1 - 3 / ne))
+
+
+def gc_correlation_tempering_positive(corr_mat: NDArrayFloat, ne: int) -> NDArrayFloat:
+    """
+    Apply the Gaspari-Cohn tempering to the correlation matrix.
+
+    See section 2.3, Localization in the CHOP problem from
+    :cite:t:`ContinuousHyperparameterOPtimization2022`.
+
+    .. math::
+        (TODO) 1 - \dfrac{1}{1 + \left(\dfrac{d}{s - d}\right)^{-\beta}}
+    """
+    out = gc_correlation_tempering(corr_mat, ne)
+    out[corr_mat < 0] = 0
+    return out
 
 
 def distances_to_weights_beta_cumulative(
