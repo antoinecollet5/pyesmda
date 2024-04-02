@@ -3,12 +3,14 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 
 @author: acollet
 """
+
 from contextlib import contextmanager
 
 import numpy as np
 import pytest
 
 from pyesmda import ESMDA, ESMDAInversionType
+from pyesmda.localization import FixedLocalization
 from pyesmda.utils import NDArrayFloat
 
 
@@ -177,7 +179,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "dd_correlation_matrix": np.zeros((20, 20)),
+                "C_DD_localization": FixedLocalization(np.zeros((20, 20))),
             },
             does_not_raise(),
         ),
@@ -189,7 +191,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "md_correlation_matrix": np.zeros((10, 20)),
+                "C_MD_localization": FixedLocalization(np.zeros((10, 20))),
             },
             does_not_raise(),
         ),
@@ -201,7 +203,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "dd_correlation_matrix": np.zeros((20, 20)),
+                "C_DD_localization": FixedLocalization(np.zeros((20, 20))),
             },
             does_not_raise(),
         ),
@@ -213,7 +215,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "md_correlation_matrix": np.zeros((10, 20)),
+                "C_MD_localization": FixedLocalization(np.zeros((10, 20))),
             },
             does_not_raise(),
         ),
@@ -225,13 +227,13 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "dd_correlation_matrix": np.zeros((20)),
+                "C_DD_localization": FixedLocalization(np.zeros((20))),
             },
             pytest.raises(
                 ValueError,
                 match=(
-                    r"dd_correlation_matrix must be a 2D "
-                    r"square matrix with dimensions \(20, 20\)."
+                    r"C_DD_localization must be a 2D "
+                    r"matrix with dimensions \(20, 20\)."
                 ),
             ),
         ),
@@ -243,12 +245,12 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "md_correlation_matrix": np.zeros((10)),
+                "C_MD_localization": FixedLocalization(np.zeros((10))),
             },
             pytest.raises(
                 ValueError,
                 match=(
-                    r"md_correlation_matrix must be a 2D "
+                    r"C_MD_localization must be a 2D "
                     r"matrix with dimensions \(10, 20\)."
                 ),
             ),
@@ -261,13 +263,13 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "dd_correlation_matrix": np.zeros((20, 19)),
+                "C_DD_localization": FixedLocalization(np.zeros((20, 19))),
             },
             pytest.raises(
                 ValueError,
                 match=(
-                    r"dd_correlation_matrix must be a 2D "
-                    r"square matrix with dimensions \(20, 20\)."
+                    r"C_DD_localization must be a 2D "
+                    r"matrix with dimensions \(20, 20\)."
                 ),
             ),
         ),
@@ -279,12 +281,12 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
-                "md_correlation_matrix": np.zeros((10, 10)),
+                "C_MD_localization": FixedLocalization(np.zeros((10, 10))),
             },
             pytest.raises(
                 ValueError,
                 match=(
-                    r"md_correlation_matrix must be a 2D "
+                    r"C_MD_localization must be a 2D "
                     r"matrix with dimensions \(10, 20\)."
                 ),
             ),
@@ -557,8 +559,8 @@ def test_esmda_exponential_case_batch(
         n_assimilations=n_assimilations,
         cov_obs_inflation_factors=cov_obs_inflation_factors,
         cov_mm_inflation_factor=1.2,
-        md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
-        dd_correlation_matrix=np.ones((obs.size, obs.size)),
+        C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
+        C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         m_bounds=m_bounds,
         save_ensembles_history=True,
         random_state=seed,

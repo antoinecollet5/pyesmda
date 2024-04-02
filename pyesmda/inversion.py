@@ -23,6 +23,7 @@ The methods can be classified as
                  exact when truncation is 1.0
 
 """
+
 # Every inversion function has the form
 # inversion_<exact/approximate>_<name>
 from __future__ import annotations
@@ -34,6 +35,7 @@ import numpy as np
 import scipy as sp  # type: ignore
 from scipy.sparse import spmatrix  # type: ignore
 
+from pyesmda.localization import LocalizationStrategy, NoLocalization
 from pyesmda.utils import (
     NDArrayFloat,
     empirical_cross_covariance,
@@ -160,9 +162,10 @@ def inversion(
     obs_uc: NDArrayFloat,
     d_pred: NDArrayFloat,
     s_ens: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
     truncation: float = 0.99,
+    batch_slice: slice = slice(None),
 ) -> NDArrayFloat:
     r"""
     Computes C_MD @ inv(C_DD + alpha * C_D) @ (D - Y).
@@ -186,19 +189,18 @@ def inversion(
     m_pred : npt.NDArray[np.float64]
         Ensemble of adjusted parameters with dimensions
         (:math:`N_{m}`, :math:`N_{e}`).
-    dd_corr_mat: Optional[spmatrix]
-        Correlation matrix based on spatial and temporal distances between
-        observations and observations :math:`\rho_{DD}`. It is used to localize the
-        autocovariance matrix of predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`). The default is None.
-    md_corr_mat: Optional[spmatrix]
-        Correlation matrix based on spatial and temporal distances between
-        parameters and observations :math:`\rho_{MD}`. It is used to localize the
-        cross-covariance matrix between the forecast state vector (parameters)
-        and predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`). The default is None.
+    C_DD_localization: LocalizationStrategy
+        Localization operator :math:`\rho_{DD}` applied to the predictions
+        empirical auto-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
+    C_MD_localization : Optional[csr_matrix]
+        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+        empirical corss-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
     truncation : float, optional
         truncation: float
         A value in the range ]0, 1], used to determine the number of
@@ -228,9 +230,10 @@ def inversion(
         D=obs_uc,
         Y=d_pred,
         X=s_ens,
-        dd_corr_mat=dd_corr_mat,
-        md_corr_mat=md_corr_mat,
+        C_DD_localization=C_DD_localization,
+        C_MD_localization=C_MD_localization,
         truncation=truncation,
+        batch_slice=batch_slice,
     )
 
 
@@ -241,8 +244,9 @@ def inversion_exact_naive(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     **kwargs,
 ) -> NDArrayFloat:
     """Naive inversion, used for testing only.
@@ -250,13 +254,9 @@ def inversion_exact_naive(
     Computes C_MD @ inv(C_DD + inflation_factor * C_D) @ (D - Y) naively.
     """
     # Naive implementation of Equation (3) in Emerick (2013)
-    C_MD = empirical_cross_covariance(X, Y)
-
-    if md_corr_mat is not None:
-        C_MD = md_corr_mat.multiply(C_MD)  # type: ignore
-    C_DD = get_localized_cdd(Y, dd_corr_mat)
+    C_MD = C_MD_localization.localize(X, Y, batch_slice=batch_slice)
+    C_DD = C_DD_localization.localize(Y, Y)
     C_D = np.diag(C_D) if C_D.ndim == 1 else C_D
-
     return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D) @ (D - Y)  # type: ignore
 
 
@@ -267,8 +267,9 @@ def inversion_exact_cholesky(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     **kwargs,
 ) -> NDArrayFloat:
     """Computes an exact inversion using `sp.linalg.solve`, which uses a
@@ -281,7 +282,7 @@ def inversion_exact_cholesky(
     C_MD @ K, but we don't explicitly form C_MD, since it might be more
     efficient to perform the matrix products in another order.
     """
-    C_DD = get_localized_cdd(Y, dd_corr_mat)
+    C_DD = C_DD_localization.localize(Y, Y)
 
     # Arguments for sp.linalg.solve
     solver_kwargs = {
@@ -302,7 +303,7 @@ def inversion_exact_cholesky(
         C_DD.flat[:: C_DD.shape[1] + 1] += inflation_factor * C_D
         K = sp.linalg.solve(C_DD, (D - Y), **solver_kwargs)
 
-    return get_localized_cmd_multi_dot(X, Y, K, md_corr_mat=md_corr_mat)
+    return C_MD_localization.localize_multi_dot(X, Y, K, batch_slice=batch_slice)
 
 
 def inversion_exact_lstsq(
@@ -312,14 +313,15 @@ def inversion_exact_lstsq(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     **kwargs,
 ) -> NDArrayFloat:
     """Computes inversion using least squares. While this method can deal with
     rank-deficient C_D, it should not be used since it's very slow.
     """
-    C_DD = get_localized_cdd(Y, dd_corr_mat)
+    C_DD = C_DD_localization.localize(Y, Y)
 
     # A covariance matrix was given
     if C_D.ndim == 2:
@@ -333,7 +335,7 @@ def inversion_exact_lstsq(
     K, *_ = sp.linalg.lstsq(
         C_DD, D - Y, overwrite_a=True, overwrite_b=True, lapack_driver="gelsy"
     )
-    return get_localized_cmd_multi_dot(X, Y, K, md_corr_mat=md_corr_mat)
+    return C_MD_localization.localize_multi_dot(X, Y, K, batch_slice=batch_slice)
 
 
 def inversion_exact_woodbury(
@@ -343,8 +345,9 @@ def inversion_exact_woodbury(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     **kwargs,
 ) -> NDArrayFloat:
     """Use the Woodbury lemma to compute the inversion.
@@ -379,8 +382,8 @@ def inversion_exact_woodbury(
         # Compute the woodbury inversion, then return
         inverted = C_D_inv - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T])
 
-        return get_localized_cmd_multi_dot(
-            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
+        return C_MD_localization.localize_multi_dot(
+            X, Y, inverted, (D - Y), batch_slice=batch_slice
         )
 
     # A diagonal covariance matrix was given as a 1D array.
@@ -393,8 +396,8 @@ def inversion_exact_woodbury(
         inverted = np.diag(C_D_inv) - np.linalg.multi_dot(
             [UT_D.T, sp.linalg.inv(center), UT_D]
         )
-        return get_localized_cmd_multi_dot(
-            X, Y, inverted, (D - Y), md_corr_mat=md_corr_mat
+        return C_MD_localization.localize_multi_dot(
+            X, Y, inverted, (D - Y), batch_slice=batch_slice
         )
 
 
@@ -444,8 +447,9 @@ def inversion_rescaled(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     truncation: float = 0.99,
     **kwargs,
 ) -> NDArrayFloat:
@@ -454,7 +458,7 @@ def inversion_rescaled(
     See Appendix A.1 in :cite:t:`emerickHistoryMatchingTimelapse2012`
     for details regarding this approach.
     """
-    C_DD = get_localized_cdd(Y, dd_corr_mat)
+    C_DD = C_DD_localization.localize_multi_dot(Y, Y)
 
     if C_D.ndim == 2:
         C_D_L_inv, _ = sp.linalg.lapack.dtrtri(
@@ -495,8 +499,8 @@ def inversion_rescaled(
     # finally multiply with (D - Y)
     term = C_D_L_inv.T @ U_r if C_D.ndim == 2 else (C_D_L_inv * U_r.T).T
 
-    return get_localized_cmd_multi_dot(
-        X, Y, term / s_r, term.T, (D - Y), md_corr_mat=md_corr_mat
+    return C_MD_localization.localize_multi_dot(
+        X, Y, term / s_r, term.T, (D - Y), batch_slice=batch_slice
     )
 
 
@@ -507,8 +511,9 @@ def inversion_subspace(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     truncation: float = 0.99,
     **kwargs,
 ) -> NDArrayFloat:
@@ -592,8 +597,8 @@ def inversion_subspace(
 
     # Note: need to multiply X by (N_e - 1) to compensate for the anomaly matrix
     # computation
-    return get_localized_cmd_multi_dot(
-        X * (N_e - 1), Y, (term / (1 + T)), term.T, (D - Y), md_corr_mat=md_corr_mat
+    return C_MD_localization.localize_multi_dot(
+        X * (N_e - 1), Y, (term / (1 + T)), term.T, (D - Y), batch_slice=batch_slice
     )
 
 
@@ -605,8 +610,9 @@ def inversion_rescaled_subspace(
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
-    dd_corr_mat: Optional[spmatrix] = None,
-    md_corr_mat: Optional[spmatrix] = None,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+    C_MD_localization: LocalizationStrategy = NoLocalization(),
+    batch_slice: slice = slice(None),
     truncation: float = 0.99,
     **kwargs,
 ) -> NDArrayFloat:
@@ -655,11 +661,6 @@ def inversion_rescaled_subspace(
 
     # Note: need to multiply X by (N_e - 1) to compensate for the anomaly matrix
     # computation
-    return get_localized_cmd_multi_dot(
-        X * (N_e - 1),
-        Y,
-        (term * diag),
-        term.T,
-        (D - Y),
-        md_corr_mat=md_corr_mat,
+    return C_MD_localization.localize_multi_dot(
+        X * (N_e - 1), Y, (term * diag), term.T, (D - Y), batch_slice=batch_slice
     )

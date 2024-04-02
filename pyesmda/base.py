@@ -13,9 +13,9 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Unio
 import numpy as np
 import scipy as sp  # type: ignore
 from scipy._lib._util import check_random_state  # type: ignore
-from scipy.sparse import csr_matrix, spmatrix  # type: ignore
 
 from pyesmda.inversion import ESMDAInversionType, inversion
+from pyesmda.localization import LocalizationStrategy, NoLocalization
 from pyesmda.utils import (
     NDArrayFloat,
     check_nans_in_predictions,
@@ -84,20 +84,18 @@ class ESMDABase(ABC):
     cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
-    dd_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        observations and observations :math:`\rho_{DD}`. It is used to localize the
-        autocovariance matrix of predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-    md_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        parameters and observations :math:`\rho_{MD}`. It is used to localize the
-        cross-covariance matrix between the forecast state vector (parameters)
-        and predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`). . A sparse matrix
-        format can be provided to save some memory.
+    C_DD_localization: LocalizationStrategy
+        Localization operator :math:`\rho_{DD}` applied to the predictions
+        empirical auto-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
+    C_MD_localization : Optional[csr_matrix]
+        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+        empirical corss-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     rng: np.random.Generator
@@ -145,8 +143,8 @@ class ESMDABase(ABC):
         "forward_model_kwargs",
         "_n_assimilations",
         "_assimilation_step",
-        "_dd_correlation_matrix",
-        "_md_correlation_matrix",
+        "C_DD_localization",
+        "C_MD_localization",
         "save_ensembles_history",
         "rng",
         "is_forecast_for_last_assimilation",
@@ -167,8 +165,8 @@ class ESMDABase(ABC):
         n_assimilations: int = 4,
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_mm_inflation_factor: float = 1.0,
-        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
-        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        C_DD_localization: LocalizationStrategy = NoLocalization(),
+        C_MD_localization: LocalizationStrategy = NoLocalization(),
         m_bounds: Optional[NDArrayFloat] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
@@ -212,21 +210,18 @@ class ESMDABase(ABC):
             Factor used to inflate the initial ensemble variance around its mean.
             See :cite:p:`andersonExploringNeedLocalization2007`.
             The default is 1.0, which means no inflation.
-        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            observations and observations :math:`\rho_{DD}`. It is used to localize the
-            autocovariance matrix of predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-            The default is None.
-        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            parameters and observations :math:`\rho_{MD}`. It is used to localize the
-            cross-covariance matrix between the forecast state vector (parameters)
-            and predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
-            The default is None.
+        C_DD_localization: LocalizationStrategy
+            Localization operator :math:`\rho_{DD}` applied to the predictions
+            empirical auto-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
+        C_MD_localization : Optional[csr_matrix]
+            Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+            empirical corss-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
         m_bounds : Optional[NDArrayFloat], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -286,8 +281,15 @@ class ESMDABase(ABC):
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self._set_n_assimilations(n_assimilations)
         self._assimilation_step: int = 0
-        self.dd_correlation_matrix = dd_correlation_matrix
-        self.md_correlation_matrix = md_correlation_matrix
+        # check the localization shape correctness
+        C_DD_localization.check_localization_shape(
+            (self.d_dim, self.d_dim), "C_DD_localization"
+        )
+        C_MD_localization.check_localization_shape(
+            (self.m_dim, self.d_dim), "C_MD_localization"
+        )
+        self.C_DD_localization: LocalizationStrategy = C_DD_localization
+        self.C_MD_localization: LocalizationStrategy = C_MD_localization
         self.m_bounds = m_bounds  # type: ignore
         if seed is not None:
             warnings.warn(
@@ -458,55 +460,6 @@ class ESMDABase(ABC):
         )
 
     @property
-    def dd_correlation_matrix(self) -> Optional[csr_matrix]:
-        """Get the observations-observations localization matrix."""
-        return self._dd_correlation_matrix
-
-    @dd_correlation_matrix.setter
-    def dd_correlation_matrix(
-        self, mat: Optional[Union[NDArrayFloat, spmatrix]]
-    ) -> None:
-        """Set the observations-observations localization matrix."""
-        if mat is None:
-            self._dd_correlation_matrix = None
-            return
-        if (
-            len(mat.shape) != 2
-            or mat.shape[0] != mat.shape[1]
-            or mat.shape[0] != self.d_dim
-        ):
-            raise ValueError(
-                "dd_correlation_matrix must be a 2D square matrix with "
-                f"dimensions ({self.d_dim}, {self.d_dim})."
-            )
-        self._dd_correlation_matrix = csr_matrix(mat)
-
-    @property
-    def md_correlation_matrix(self) -> Optional[csr_matrix]:
-        """Get the parameters-observations localization matrix."""
-        return self._md_correlation_matrix
-
-    @md_correlation_matrix.setter
-    def md_correlation_matrix(
-        self, mat: Optional[Union[NDArrayFloat, spmatrix]]
-    ) -> None:
-        """Set the parameters-observations localization matrix."""
-        if mat is None:
-            self._md_correlation_matrix = None
-            return
-        if len(mat.shape) != 2:
-            raise ValueError(
-                "md_correlation_matrix must be a 2D matrix with "
-                f"dimensions ({self.m_dim}, {self.d_dim})."
-            )
-        if mat.shape[0] != self.m_dim or mat.shape[1] != self.d_dim:
-            raise ValueError(
-                "md_correlation_matrix must be a 2D matrix with "
-                f"dimensions ({self.m_dim}, {self.d_dim})."
-            )
-        self._md_correlation_matrix = csr_matrix(mat)
-
-    @property
     def n_batches(self) -> int:
         """Number of batch used in the optimization."""
         return int(np.ceil(self.m_dim / self.batch_size))
@@ -626,8 +579,8 @@ class ESMDABase(ABC):
                 self.d_obs_uc,
                 self.d_pred,
                 self.m_prior,
-                dd_corr_mat=self.dd_correlation_matrix,
-                md_corr_mat=self.md_correlation_matrix,
+                C_DD_localization=self.C_DD_localization,
+                C_MD_localization=self.C_MD_localization,
                 truncation=self.truncation,
             )
         )
@@ -682,11 +635,6 @@ class ESMDABase(ABC):
             index * self.batch_size, max([(index + 1) * self.batch_size, self.m_dim])
         )
 
-        if self.md_correlation_matrix is not None:
-            batch_cov_md: Optional[csr_matrix] = self.md_correlation_matrix[_slice, :]
-        else:
-            batch_cov_md = None
-
         return self.m_prior[_slice, :] + (
             inversion(
                 self.inversion_type,  # type: ignore
@@ -698,9 +646,10 @@ class ESMDABase(ABC):
                 self.m_prior[_slice, :].reshape(
                     -1, self.m_prior.shape[-1]
                 ),  # ensure 2d array
-                dd_corr_mat=self.dd_correlation_matrix,
-                md_corr_mat=batch_cov_md,
+                C_DD_localization=self.C_DD_localization,
+                C_MD_localization=self.C_MD_localization,
                 truncation=1.0,
+                batch_slice=_slice,
             )
         )
 

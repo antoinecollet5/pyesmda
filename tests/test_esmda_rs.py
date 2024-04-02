@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from pyesmda import ESMDA_RS
+from pyesmda.localization import FixedLocalization
 
 from .test_esmda import exponential, forward_model
 
@@ -64,8 +65,8 @@ def test_esmda_rs_exponential_case(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
-        md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
-        dd_correlation_matrix=np.ones((obs.size, obs.size)),
+        C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
+        C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         save_ensembles_history=True,
         std_m_prior=std_m_prior,
         random_state=123,
@@ -145,8 +146,8 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
-        md_correlation_matrix=np.ones((m_ensemble.shape[0], obs.size)),
-        dd_correlation_matrix=np.ones((obs.size, obs.size)),
+        C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
+        C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         save_ensembles_history=True,
         std_m_prior=std_m_prior,
         random_state=123,

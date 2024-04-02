@@ -8,10 +8,10 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy.sparse import spmatrix  # type: ignore
 
 from pyesmda.base import ESMDABase
 from pyesmda.inversion import ESMDAInversionType
+from pyesmda.localization import LocalizationStrategy, NoLocalization
 from pyesmda.utils import NDArrayFloat
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
@@ -78,20 +78,18 @@ class ESMDA(ESMDABase):
         Factor used to inflate the initial ensemble around its mean.
         See :cite:p:`andersonExploringNeedLocalization2007`.
         The default is 1.0 i.e., no inflation.
-    dd_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        observations and observations :math:`\rho_{DD}`. It is used to localize the
-        autocovariance matrix of predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-    md_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        parameters and observations :math:`\rho_{MD}`. It is used to localize the
-        cross-covariance matrix between the forecast state vector (parameters)
-        and predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`). . A sparse matrix
-        format can be provided to save some memory.
+    C_DD_localization: LocalizationStrategy
+        Localization operator :math:`\rho_{DD}` applied to the predictions
+        empirical auto-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
+    C_MD_localization : Optional[csr_matrix]
+        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+        empirical corss-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`LocalizationStrategy`.
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     rng: np.random.Generator
@@ -138,8 +136,8 @@ class ESMDA(ESMDABase):
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factor: float = 1.0,
-        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
-        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        C_DD_localization: LocalizationStrategy = NoLocalization(),
+        C_MD_localization: LocalizationStrategy = NoLocalization(),
         m_bounds: Optional[NDArrayFloat] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
@@ -186,21 +184,18 @@ class ESMDA(ESMDABase):
             Factor used to inflate the initial ensemble around its mean.
             See :cite:p:`andersonExploringNeedLocalization2007`.
             The default is 1.0 i.e., no inflation.
-        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            observations and observations :math:`\rho_{DD}`. It is used to localize the
-            autocovariance matrix of predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-            The default is None.
-        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            parameters and observations :math:`\rho_{MD}`. It is used to localize the
-            cross-covariance matrix between the forecast state vector (parameters)
-            and predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
-            The default is None.
+        C_DD_localization: LocalizationStrategy
+            Localization operator :math:`\rho_{DD}` applied to the predictions
+            empirical auto-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
+        C_MD_localization : Optional[csr_matrix]
+            Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+            empirical corss-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
         m_bounds : Optional[NDArrayFloat], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -253,8 +248,8 @@ class ESMDA(ESMDABase):
             n_assimilations=n_assimilations,
             inversion_type=inversion_type,
             cov_mm_inflation_factor=cov_mm_inflation_factor,
-            dd_correlation_matrix=dd_correlation_matrix,
-            md_correlation_matrix=md_correlation_matrix,
+            C_DD_localization=C_DD_localization,
+            C_MD_localization=C_MD_localization,
             m_bounds=m_bounds,
             save_ensembles_history=save_ensembles_history,
             seed=seed,
