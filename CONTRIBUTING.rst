@@ -86,7 +86,7 @@ Before you submit a merge request, check that it meets these guidelines:
 3. The CI pipelines should pass for all merge requests.
 
    - Check the status of the pipelines, the status is also reported in the merge request.
-   - flake8 linter should pass.
+   - Pre-commit should pass.
    - No degradation in code coverage.
    - Documentation should build.
 4. Ensure your merge request contains a clear description of the changes made and how it addresses the issue. If useful, add a screenshot to showcase your work to facilitate an easier review.
@@ -121,9 +121,9 @@ Ready to contribute? Here's how to set up `pyESMDA` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8, the tests and have test coverage::
+5. When you're done making changes, check that your changes pass the pre-commit hooks, the tests and have test coverage::
 
-    $ flake8 pyesmda tests
+    $ pre-commit run --all-files
     $ pytest --cov
 
   If you have worked on documentation instead of code you may want to preview how your docs look locally.
