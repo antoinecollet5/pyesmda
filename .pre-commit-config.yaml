@@ -11,20 +11,6 @@ repos:
 - repo: local
   hooks:
 
-  - id: black
-    name: black
-    entry: black
-    language: system
-    types: [python]
-    args: [--line-length=88]
-
-  - id: isort
-    name: isort
-    entry: isort
-    language: system
-    types: [python]
-    args: ["--profile", "black", "--filter-files"]
-
   - id: codespell
     name: codespell
     entry: codespell
@@ -38,27 +24,24 @@ repos:
             (?x)^(
                 bibliography.bib
             )$
-
-  - id: flake8
-    name: flake8
-    entry: flake8
+  - id: ruff check
+    name: ruff check
+    entry: ruff check
     language: python
+    types_or: [ python, pyi]
+    args: [--fix, --exit-non-zero-on-fix]
+  - id: ruff-format
+    name: ruff format
+    entry: ruff format
+    language: python
+    types_or: [ python, pyi, jupyter ]
+  - id: mypy
+    name: mypy
+    entry: mypy
+    language: system
     types: [python]
-    additional_dependencies: [
-      "flake8-black==0.3.2",
-      # "flake8-isort==4.1.1", it causes issues with black
-      # "flake8-quotes==3.3.1", it also causes issues with black
-    ]
-
-# -   repo: https://github.com/PyCQA/autoflake
-#     rev: v1.7.7
-#     hooks:
-#     - id: autoflake
-#       args: ["--remove-unused-variables", "--remove-all-unused-imports"]
-
-# - repo: https://github.com/pre-commit/mirrors-mypy
-#   rev: v0.902
-#   hooks:
-#     - id: mypy
-#       exclude: ^tests/
-#       args: [--no-strict-optional, --ignore-missing-imports]
+    exclude: |
+      (?x)(
+          ^tests/|
+          ^docs/
+      )
