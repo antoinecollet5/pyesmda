@@ -29,7 +29,7 @@
   abstract = {Good performance with small ensemble filters applied to models with many state variables may require `localizing' the impact of an observation to state variables that are `close' to the observation. As a step in developing nearly generic ensemble filter assimilation systems, a method to estimate `localization' functions is presented. Localization is viewed as a means to ameliorate sampling error when small ensembles are used to sample the statistical relation between an observation and a state variable. The impact of spurious sample correlations between an observation and model state variables is estimated using a `hierarchical ensemble filter', where an ensemble of ensemble filters is used to detect sampling error. Hierarchical filters can adapt to a wide array of ensemble sizes and observational error characteristics with only limited heuristic tuning. Hierarchical filters can allow observations to efficiently impact state variables, even when the notion of `distance' between the observation and the state variables cannot be easily defined. For instance, defining the distance between an observation of radar reflectivity from a particular radar and beam angle taken at 1133~GMT and a model temperature variable at 700~hPa 60~km north of the radar beam at 1200~GMT is challenging. The hierarchical filter estimates sampling error from a `group' of ensembles and computes a factor between 0 and 1 to minimize sampling error. An a priori notion of distance is not required. Results are shown in both a low-order model and a simple atmospheric GCM. For low-order models, the hierarchical filter produces `localization' functions that are very similar to those already described in the literature. When observations are more complex or taken at different times from the state specification (in ensemble smoothers for instance), the localization functions become increasingly distinct from those used previously. In the GCM, this complexity reaches a level that suggests that it would be difficult to define efficient localization functions a priori. There is a cost trade-off between running hierarchical filters or running a traditional filter with larger ensemble size. Hierarchical filters can be run for short training periods to develop localization statistics that can be used in a traditional ensemble filter to produce high quality assimilations at reasonable cost, even when the relation between observations and state variables is not well-known a priori. Additional research is needed to determine if it is ever cost-efficient to run hierarchical filters for large data assimilation problems instead of traditional filters with the corresponding total number of ensemble members.},
   langid = {english},
   keywords = {Data assimilation,Ensemble filters,Localization,Sampling error},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/39EI9S49/S0167278906002168.html}
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/EJAEK3G8/Anderson - 2007 - Exploring the need for localization in ensemble da.pdf}
 }
 % == BibTeX quality report for andersonExploringNeedLocalization2007:
 % ? unused Library catalog ("ScienceDirect")
@@ -69,6 +69,38 @@
 % ? Unsure about the formatting of the booktitle
 % ? Title looks like it was stored in title-case in Zotero
 
+@article{emerickHistoryMatchingTimelapse2012,
+  title = {History Matching Time-Lapse Seismic Data Using the Ensemble {{Kalman}} Filter with Multiple Data Assimilations},
+  author = {Emerick, Alexandre A. and Reynolds, Albert C.},
+  year = {2012},
+  month = jun,
+  journal = {Computational Geosciences},
+  volume = {16},
+  number = {3},
+  pages = {639--659},
+  issn = {1573-1499},
+  doi = {10.1007/s10596-012-9275-5},
+  abstract = {The ensemble Kalman filter (EnKF) has become a popular method for history matching production and seismic data in petroleum reservoir models. However, it is known that EnKF may fail to give acceptable data matches especially for highly nonlinear problems. In this paper, we introduce a procedure to improve EnKF data matches based on assimilating the same data multiple times with the covariance matrix of the measurement errors multiplied by the number of data assimilations. We prove the equivalence between single and multiple data assimilations for the linear-Gaussian case and present computational evidence that multiple data assimilations can improve EnKF estimates for the nonlinear case. The proposed procedure was tested by assimilating time-lapse seismic data in two synthetic reservoir problems, and the results show significant improvements compared to the standard EnKF. In addition, we review the inversion schemes used in the EnKF analysis and present a rescaling procedure to avoid loss of information during the truncation of small singular values.},
+  langid = {english},
+  keywords = {Ensemble Kalman filter,Multiple data assimilations,Time-lapse seismic},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/NPWDLCX3/Emerick and Reynolds - 2012 - History matching time-lapse seismic data using the.pdf}
+}
+% == BibTeX quality report for emerickHistoryMatchingTimelapse2012:
+% ? unused Journal abbreviation ("Comput Geosci")
+% ? unused Library catalog ("Springer Link")
+% ? unused Url ("https://doi.org/10.1007/s10596-012-9275-5")
+
+@misc{evensenCorrelationBasedLocalization2023,
+  title = {Correlation-{{Based Localization}}},
+  author = {Evensen, Geir},
+  year = {2023},
+  month = jan,
+  langid = {english},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/QBESIYQV/Evensen - Correlation-Based Localization.pdf}
+}
+% == BibTeX quality report for evensenCorrelationBasedLocalization2023:
+% ? Title looks like it was stored in title-case in Zotero
+
 @book{evensenDataAssimilationEnsemble2007,
   title = {Data {{Assimilation}} - {{The Ensemble Kalman Filter}}},
   author = {Evensen, Geir},
@@ -84,6 +116,27 @@
 % ? Title looks like it was stored in title-case in Zotero
 % ? unused Library catalog ("https://link.springer.comwww.infona.pl")
 % ? unused Url ("https://link.springer.com/book/10.1007/978-3-642-03711-5")
+
+@incollection{evensenLocalizationInflation2022,
+  title = {Localization and {{Inflation}}},
+  booktitle = {Data {{Assimilation Fundamentals}}: {{A Unified Formulation}} of the {{State}} and {{Parameter Estimation Problem}}},
+  author = {Evensen, Geir and Vossepoel, Femke C. and {van Leeuwen}, Peter Jan},
+  editor = {Evensen, Geir and Vossepoel, Femke C. and {van Leeuwen}, Peter Jan},
+  year = {2022},
+  series = {Springer {{Textbooks}} in {{Earth Sciences}}, {{Geography}} and {{Environment}}},
+  pages = {111--122},
+  publisher = {{Springer International Publishing}},
+  address = {{Cham}},
+  doi = {10.1007/978-3-030-96709-3_10},
+  abstract = {Localization and inflation have become essential means of mitigating the effects of the low-rank approximation in ensemble methods. Localization increases the effective rank of the ensemble covariance matrix and allows it to fit a large number of independent observations. Thus, we use localization to reduce sampling errors, in combination with inflation, to reduce the underestimation of the ensemble variance caused by the low-rank approximation. These methods are essential for high-dimensional applications, and this chapter will give a general introduction to various formulations of localization and inflation methods.},
+  isbn = {978-3-030-96709-3},
+  langid = {english},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/WNN2SJQ7/Evensen et al. - 2022 - Localization and Inflation.pdf}
+}
+% == BibTeX quality report for evensenLocalizationInflation2022:
+% ? Title looks like it was stored in title-case in Zotero
+% ? unused Library catalog ("Springer Link")
+% ? unused Url ("https://doi.org/10.1007/978-3-030-96709-3_10")
 
 @article{gaspariConstructionCorrelationFunctions1999,
   title = {Construction of Correlation Functions in Two and Three Dimensions},
@@ -106,6 +159,26 @@
 % ? unused Library catalog ("Wiley Online Library")
 % ? unused Url ("https://onlinelibrary.wiley.com/doi/abs/10.1002/qj.49712555417")
 
+@article{iglesiasAdaptiveRegularisationEnsemble2021,
+  title = {Adaptive Regularisation for Ensemble {{Kalman}} Inversion},
+  author = {Iglesias, Marco and Yang, Yuchen},
+  year = {2021},
+  month = jan,
+  journal = {Inverse Problems},
+  volume = {37},
+  number = {2},
+  pages = {025008},
+  publisher = {{IOP Publishing}},
+  issn = {0266-5611},
+  doi = {10.1088/1361-6420/abd29b},
+  abstract = {We propose a new regularisation strategy for the classical ensemble Kalman inversion (EKI) framework. The strategy consists of: (i) an adaptive choice for the regularisation parameter in the update formula in EKI, and (ii) criteria for the early stopping of the scheme. In contrast to existing approaches, our parameter choice does not rely on additional tuning parameters which often have severe effects on the efficiency of EKI. We motivate our approach using the interpretation of EKI as a Gaussian approximation in the Bayesian tempering setting for inverse problems. We show that our parameter choice controls the symmetrised Kullback\textendash Leibler divergence between consecutive tempering measures. We further motivate our choice using a heuristic statistical discrepancy principle. We test our framework using electrical impedance tomography with the complete electrode model. Parameterisations of the unknown conductivity are employed which enable us to characterise both smooth or a discontinuous (piecewise-constant) fields. We show numerically that the proposed regularisation of EKI can produce efficient, robust and accurate estimates, even for the discontinuous case which tends to require larger ensembles and more iterations to converge. We compare the proposed technique with a standard method of choice and demonstrate that the proposed method is a viable choice to address computational efficiency of EKI in practical/operational settings.},
+  langid = {english},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/CYSMAV2B/Iglesias and Yang - 2021 - Adaptive regularisation for ensemble Kalman invers.pdf}
+}
+% == BibTeX quality report for iglesiasAdaptiveRegularisationEnsemble2021:
+% ? unused Library catalog ("Institute of Physics")
+% ? unused Url ("https://dx.doi.org/10.1088/1361-6420/abd29b")
+
 @article{leAdaptiveEnsembleSmoother2016,
   title = {An {{Adaptive Ensemble Smoother With Multiple Data Assimilation}} for {{Assisted History Matching}}},
   author = {Le, Duc and Emerick, Alexandre and Reynolds, Albert},
@@ -120,6 +193,39 @@
 % == BibTeX quality report for leAdaptiveEnsembleSmoother2016:
 % ? Title looks like it was stored in title-case in Zotero
 % ? unused Library catalog ("ResearchGate")
+
+@article{luoAutomaticAdaptiveLocalization2020,
+  title = {Automatic and Adaptive Localization for Ensemble-Based History Matching},
+  author = {Luo, Xiaodong and Bhakta, Tuhin},
+  year = {2020},
+  month = jan,
+  journal = {Journal of Petroleum Science and Engineering},
+  volume = {184},
+  pages = {106559},
+  issn = {0920-4105},
+  doi = {10.1016/j.petrol.2019.106559},
+  abstract = {Ensemble-based history matching methods are among the state-of-the-art approaches to reservoir characterization. In practice, however, they often suffer from ensemble collapse, a phenomenon that deteriorates history matching performance. To prevent ensemble collapse, it is customary to equip an ensemble history matching algorithm with a certain localization scheme. In a previous study, the authors propose an adaptive localization scheme that exploits the correlations between model variables and simulated observations. Correlation-based adaptive localization not only overcomes some longstanding issues (e.g., the challenges in handling non-local or time-lapse observations) arising in the conventional distance-based localization, but also is more convenient and flexible to use in real field case studies. In applications, however, correlation-based localization is also found to be subject to two problems. One is that, it requires to run a relatively large ensemble in order to achieve decent performance in an automatic manner, which becomes computationally expensive in large-scale problems. As a result, certain empirical tuning factors are introduced to reduce the computational costs. The other problem is that, the way used to compute the tapering coefficients in the previous study may induce discontinuities, and neglect the information of certain still-influential observations for model updates. The main objective of this work is to improve the efficiency and accuracy of correlation-based adaptive localization, making it run in an automatic manner but without incurring substantial extra computational costs. To this end, we introduce two enhancements that aim to avoid the aforementioned two problems, namely, empirical tuning and discontinuities. We apply the resulting automatic and adaptive correlation-based localization with these two enhancements to a 2D and a 3D cases investigated in the previous study, and show that it leads to better history matching performance (in terms of efficiency and/or estimation accuracy) than that is achieved in the previous work.},
+  langid = {english},
+  keywords = {Big data assimilation,Correlation-based adaptive localization,Ensemble data assimilation,Iterative ensemble smoother,Seismic history matching},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/ABG2W3S5/Luo and Bhakta - 2020 - Automatic and adaptive localization for ensemble-b.pdf;/home/acollet/Documents/BIBLIOGRAPHY/storage/YCG6C3V5/S0920410519309805.html}
+}
+% == BibTeX quality report for luoAutomaticAdaptiveLocalization2020:
+% ? unused Library catalog ("ScienceDirect")
+% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0920410519309805")
+
+@article{luoContinuousHyperparameterOPtimization2022,
+  title = {Continuous {{Hyper-parameter OPtimization}} ({{CHOP}}) in an Ensemble {{Kalman}} Filter},
+  author = {Luo, Xiaodong and Xia, Chuan-An},
+  year = {2022},
+  journal = {Frontiers in Applied Mathematics and Statistics},
+  volume = {8},
+  issn = {2297-4687},
+  abstract = {Practical data assimilation algorithms often contain hyper-parameters, which may arise due to, for instance, the use of certain auxiliary techniques like covariance inflation and localization in an ensemble Kalman filter, the re-parameterization of certain quantities such as model and/or observation error covariance matrices, and so on. Given the richness of the established assimilation algorithms, and the abundance of the approaches through which hyper-parameters are introduced to the assimilation algorithms, one may ask whether it is possible to develop a sound and generic method to efficiently choose various types of (sometimes high-dimensional) hyper-parameters. This work aims to explore a feasible, although likely partial, answer to this question. Our main idea is built upon the notion that a data assimilation algorithm with hyper-parameters can be considered as a parametric mapping that links a set of quantities of interest (e.g., model state variables and/or parameters) to a corresponding set of predicted observations in the observation space. As such, the choice of hyper-parameters can be recast as a parameter estimation problem, in which our objective is to tune the hyper-parameters in such a way that the resulted predicted observations can match the real observations to a good extent. From this perspective, we propose a hyper-parameter estimation workflow and investigate the performance of this workflow in an ensemble Kalman filter. In a series of experiments, we observe that the proposed workflow works efficiently even in the presence of a relatively large amount (up to 103) of hyper-parameters, and exhibits reasonably good and consistent performance under various conditions.},
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/468XJ7BU/Luo and Xia - 2022 - Continuous Hyper-parameter OPtimization (CHOP) in .pdf}
+}
+% == BibTeX quality report for luoContinuousHyperparameterOPtimization2022:
+% ? unused Library catalog ("Frontiers")
+% ? unused Url ("https://www.frontiersin.org/articles/10.3389/fams.2022.1021551")
 
 @phdthesis{todaroAdvancedTechniquesSolving2021,
   type = {{Tesis doctoral}},
@@ -158,7 +264,7 @@
   abstract = {Ensemble Kalman filter methods have been successfully applied for data assimilation and parameter estimation through inverse modeling in various scientific fields. We have developed a new generic software package for the solution of inverse problems implementing the Ensemble Smoother with Multiple Data Assimilation (genES-MDA). It is an open-source, platform-independent Python-based program. Its aim is to facilitate the management and configuration of the ES-MDA through several programming tools that help in the preparation of the different steps of ES-MDA. genES-MDA has a flexible workflow that can be easily adapted for the implementation of different variants of the ensemble Kalman filter and for the solution of generic inverse problems. This paper presents a description of the package and some application examples. genES-MDA has been tested in three synthetic case studies: the solution of the reverse flow routing for the estimation of the inflow hydrograph to a river reach using observed water levels and a calibrated forward model of the river system, the identification of a hydraulic conductivity field using piezometric observations and a known forward flow model, and the estimation of the release history of a contaminant spill in an aquifer from measured concentration data and a known flow and transport model. The results of all these tests have demonstrated the flexibility of genES-MDA and its capabilities to efficiently solve different types of inverse problems.},
   langid = {english},
   keywords = {Covariance localization and inflation,Python,Stochastic inverse modeling,Uncertainty characterization},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/756ICPMB/S0098300422001601.html}
+  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/LBL8QEF9/Todaro et al. - 2022 - genES-MDA A generic open-source software package .pdf;/home/acollet/Documents/BIBLIOGRAPHY/storage/756ICPMB/S0098300422001601.html}
 }
 % == BibTeX quality report for todaroGenESMDAGenericOpensource2022:
 % ? unused Library catalog ("ScienceDirect")

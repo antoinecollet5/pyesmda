@@ -24,10 +24,9 @@ import errno
 import os
 import sys
 
+import pyesmda
 import sphinx.util.osutil
 from sphinx.ext.napoleon.docstring import GoogleDocstring
-
-import pyesmda
 
 sphinx.util.osutil.ENOENT = errno.ENOENT
 
@@ -150,7 +149,6 @@ release = pyesmda.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -160,7 +158,15 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["build", "_templates/*.rst'", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "build",
+    "_templates/*.rst'",
+    "Thumbs.db",
+    ".DS_Store",
+    "__pycache__",
+    "*.jpg",
+    "*.gif",
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

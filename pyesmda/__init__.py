@@ -2,7 +2,7 @@
 Purpose
 =======
 
-**pyesmda** is an open-source, pure python, and object-oriented library that provides
+**pyesmda** is an open-source, and object-oriented library that provides
 a user friendly implementation of one of the most popular ensemble based method
 for parameters estimation and data assimilation: the Ensemble Smoother with
 Multiple Data Assimilation (ES-MDA) algorithm, introduced by Emerick and Reynolds [1-2].
@@ -17,6 +17,7 @@ Classes
 
    ESMDA
    ESMDA_RS
+   ESMDA_DMC
 
 Objective functions
 ===================
@@ -24,8 +25,7 @@ Objective functions
 .. autosummary::
    :toctree: _autosummary
 
-    compute_ensemble_average_normalized_objective_function
-    compute_normalized_objective_function
+    ls_cost_function
 
 Covariance approximation
 ========================
@@ -33,8 +33,9 @@ Covariance approximation
 .. autosummary::
    :toctree: _autosummary
 
+    get_anomaly_matrix
     get_ensemble_variance
-    approximate_cov_mm
+    empirical_covariance_upper
     approximate_covariance_matrix_from_ensembles
     inflate_ensemble_around_its_mean
 
@@ -56,21 +57,24 @@ Other functions
     check_nans_in_predictions
 
 """
+
 from .__about__ import __author__, __version__
 from .esmda import ESMDA
+from .esmda_dmc import ESMDA_DMC
 from .esmda_rs import ESMDA_RS
+from .inversion import ESMDAInversionType
 from .localization import (
     distances_to_weights_beta_cumulative,
     distances_to_weights_fifth_order,
 )
 from .utils import (
-    approximate_cov_mm,
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
-    compute_ensemble_average_normalized_objective_function,
-    compute_normalized_objective_function,
+    empirical_covariance_upper,
+    get_anomaly_matrix,
     get_ensemble_variance,
     inflate_ensemble_around_its_mean,
+    ls_cost_function,
 )
 
 __all__ = [
@@ -78,11 +82,13 @@ __all__ = [
     "__author__",
     "ESMDA",
     "ESMDA_RS",
+    "ESMDA_DMC",
+    "ESMDAInversionType",
     "get_ensemble_variance",
+    "get_anomaly_matrix",
     "approximate_covariance_matrix_from_ensembles",
-    "approximate_cov_mm",
-    "compute_normalized_objective_function",
-    "compute_ensemble_average_normalized_objective_function",
+    "empirical_covariance_upper",
+    "ls_cost_function",
     "inflate_ensemble_around_its_mean",
     "check_nans_in_predictions",
     "distances_to_weights_beta_cumulative",

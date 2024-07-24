@@ -2,8 +2,8 @@ from contextlib import nullcontext as does_not_raise
 
 import numpy as np
 import pytest
-
 from pyesmda.localization import (
+    default_correlation_threshold,
     distances_to_weights_beta_cumulative,
     distances_to_weights_fifth_order,
 )
@@ -98,3 +98,11 @@ def test_distances_to_weights_fifth_order(scaling_factor, expected_exception) ->
         )
         assert res[0] == 1.0
         assert res[-1] == 0.0
+
+
+@pytest.mark.parametrize(
+    "ne,expected",
+    (((0, 1.0), (9, 1.0), (16, 0.75), (36, 0.5), (100, 0.3), (1000, 0.094868))),
+)
+def test_default_correlation_threshold(ne: int, expected: float) -> None:
+    np.testing.assert_allclose(expected, default_correlation_threshold(ne), rtol=1e-5)

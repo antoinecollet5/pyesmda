@@ -5,6 +5,7 @@ Implement the ES-MDA-RS algorithms.
 """
 
 import logging
+import math
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import numpy as np
@@ -13,23 +14,26 @@ import numpy.typing as npt
 from pyesmda.esmda import ESMDABase
 from pyesmda.inversion import ESMDAInversionType
 from pyesmda.localization import LocalizationStrategy, NoLocalization
-from pyesmda.utils import NDArrayFloat, ls_cost_function
+from pyesmda.utils import ls_cost_function
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
 
-class ESMDA_RS(ESMDABase):
+class ESMDA_DMC(ESMDABase):
     r"""
-    Restricted Step Ensemble Smoother with Multiple Data Assimilation.
+    Data Misfit Controller Ensemble Smoother with Multiple Data Assimilation.
 
     Implement an adaptative version of the original ES-MDA algorithm proposed by
     Emerick, A. A. and A. C. Reynolds
     :cite:p:`emerickEnsembleSmootherMultiple2013,
     emerickHistoryMatchingProductionSeismic2013`. This adaptative version introduced by
-    :cite:p:`leAdaptiveEnsembleSmoother2016` provides an automatic procedure for
-    choosing the inflation factor for the next data-assimilation step adaptively
-    as the history match proceeds. The procedure also decides when to stop,
-    i.e. the number of assimilation, which is no longer a user input.
+    :cite:p:`iglesiasAdaptiveRegularisationEnsemble2021` provides an automatic
+    procedure for choosing the inflation factor for the next data-assimilation
+    step adaptively as the history match proceeds. The procedure also decides
+    when to stop, i.e., the number of assimilation, which is no longer a user input.
+    Unlike the restricted step version (`ESMDA_RS`) from
+    :cite:p:`leAdaptiveEnsembleSmoother2016`, and which restcrit the amount of change in
+    the model from one iteration to the next, ESMDA_DMC controls the misfit change.
 
     Attributes
     ----------
@@ -41,10 +45,6 @@ class ESMDA_RS(ESMDABase):
     cov_obs: npt.NDArray[np.float64]
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-    std_m_prior: npt.NDArray[np.float64]
-        Vector of a priori standard deviation :math:`sigma` of the estimated
-        parameter. The expected dimension is (:math:`N_{m}`).
-        It is the diagonal of :math:`C_{M}`.
     d_obs_uc: npt.NDArray[np.float64]
         Vectors of pertubed observations with dimension
         (:math:`N_{obs}`, :math:`N_{e}`).
@@ -121,6 +121,7 @@ class ESMDA_RS(ESMDABase):
         reduction), easier to inverse.
     logger: Optional[logging.Logger]
         Optional :class:`logging.Logger` instance used for event logging.
+
     """
 
     # pylint: disable=R0902 # Too many instance attributes
@@ -134,7 +135,6 @@ class ESMDA_RS(ESMDABase):
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
-        std_m_prior: Optional[npt.NDArray[np.float64]] = None,
         inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
         cov_mm_inflation_factor: float = 1.0,
         C_DD_localization: LocalizationStrategy = NoLocalization(),
@@ -265,16 +265,6 @@ class ESMDA_RS(ESMDABase):
         # Initialize an empty list
         self.cov_obs_inflation_factors = []
 
-        # I am still wondering whether this should remain constant of if it should be
-        # updated at each iteration ? I still have a doubt. I asked the authors of the
-        # paper and I am still waiting for the answer
-        if std_m_prior is not None:
-            # in that case the user impose the ensemble variance
-            self.std_m_prior: npt.NDArray[np.float64] = std_m_prior
-        else:
-            # otherwise, it is inffered from the inflated ensemble
-            self.std_m_prior = np.std(self.m_prior, axis=1, ddof=1)
-
     @property
     def n_assimilations(self) -> int:
         """Get the number of assimilations performed. Read-only."""
@@ -308,41 +298,47 @@ class ESMDA_RS(ESMDABase):
         if self.save_ensembles_history:
             self.m_history.append(self.m_prior)  # save m_init
 
-        current_inflation_factor: float = 10.0  # to initiate the while
         m_pred = self.m_prior
-        while not self._is_unity_reached(current_inflation_factor):
+        while not is_unity_reached(self.cov_obs_inflation_factors):
             self._assimilation_step += 1
             self.loginfo(f"Assimilation # {self._assimilation_step}")
+
+            # forecast step (in parallel)
             self._forecast()
-            # Divide per 2, because it is multiplied by 2 as the beginning
-            # of the second while loop
-            current_inflation_factor = self._compute_initial_inflation_factor() / 2
-            is_valid_parameter_change: bool = False
-            while not is_valid_parameter_change:
-                current_inflation_factor *= 2  # double the inflation (dumping) factor
-                self._pertrub(current_inflation_factor)
+            # objective function computation
+            ensemble_ls_cf = ls_cost_function(
+                self.d_pred, self.obs, self.cov_obs_cholesky
+            )
+            mean_objfun = float(np.mean(ensemble_ls_cf))
+            # ddof=1 -> Bessel's correction which corrects the bias in the estimation
+            # of the population variance,
+            var_obs_fun = float(np.var(ensemble_ls_cf, ddof=1))
 
-                if self.n_batches == 1:
-                    m_pred = self._apply_bounds(self._analyse(current_inflation_factor))
-                else:
-                    # Update the prior parameter for next iteration
-                    m_pred = self._apply_bounds(
-                        self._local_analyse(current_inflation_factor)
-                    )
-
-                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
-
-            # If the criteria is reached -> Get exactly one for the sum
-            if self._is_unity_reached(current_inflation_factor):
-                current_inflation_factor = 1 / (
-                    1 - float(np.sum([1 / a for a in self.cov_obs_inflation_factors]))
+            # update inflation factir
+            self.cov_obs_inflation_factors.append(
+                dmc_inflation_factor(
+                    self.cov_obs_inflation_factors,
+                    self.obs.size,
+                    mean_objfun,
+                    var_obs_fun,
                 )
-                self._pertrub(current_inflation_factor)
-                m_pred = self._analyse(current_inflation_factor)
-                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
+            )
+            self.loginfo(
+                f"- Inflation factor = {self.cov_obs_inflation_factors[-1]:.3f}"
+            )
 
-            self.cov_obs_inflation_factors.append(current_inflation_factor)
-            self.loginfo(f"- Inflation factor = {current_inflation_factor:.3f}")
+            # observation perturbation
+            self._pertrub(self.cov_obs_inflation_factors[-1])
+
+            if self.n_batches == 1:
+                m_pred = self._apply_bounds(
+                    self._analyse(self.cov_obs_inflation_factors[-1])
+                )
+            else:
+                # Update the prior parameter for next iteration
+                m_pred = self._apply_bounds(
+                    self._local_analyse(self.cov_obs_inflation_factors[-1])
+                )
 
             # Update the prior parameter for next iteration
             self.m_prior = m_pred
@@ -354,52 +350,53 @@ class ESMDA_RS(ESMDABase):
         if self.is_forecast_for_last_assimilation:
             self._forecast()
 
-    def _compute_initial_inflation_factor(self) -> float:
-        r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
-        return (
-            0.25
-            / self.obs.size
-            * float(
-                np.mean(ls_cost_function(self.d_pred, self.obs, self.cov_obs_cholesky))
-            )
-        )
 
-    def _is_unity_reached(self, current_inflation_factor: float) -> bool:
-        """
-        Whether the sum of the inverse inflation factors is above one.
+def is_unity_reached(cov_obs_inflation_factors: Sequence[float]) -> bool:
+    """
+    Whether the sum of the inverse inflation factors is above one.
 
-        It includes all factors up to the current iteration.
+    It includes all factors up to the current iteration.
 
-        Parameters
-        ----------
-        current_inflation_factor: float
-            Multiplication factor used to inflate the covariance matrix of the
-            measurement errors for the current (last) iteration.
-        """
-        return bool(
-            np.sum([1 / a for a in self.cov_obs_inflation_factors])
-            + 1 / current_inflation_factor
-            >= 1
-        )
+    Parameters
+    ----------
+    cov_obs_inflation_factors: float
+        Multiplication factor used to inflate the covariance matrix of the
+        measurement errors for the current (last) iteration.
+    """
+    return bool(np.sum([1 / a for a in cov_obs_inflation_factors]) >= 1)
 
-    def _is_valid_parameter_change(self, m_pred: npt.NDArray[np.float64]) -> bool:
-        r"""Check if all change residuals are below 2 sigma.
 
-        Parameters
-        ----------
-        m_pred : npt.NDArray[np.float64]
-            Ensemble of predicted values with dimensions
-            (:math:`N_{s}`, :math:`N_{e}`).
+def dmc_inflation_factor(
+    past_alphas: Sequence[float],
+    n_obs: int,
+    mean_objfun: float,
+    var_objfun: float,
+) -> float:
+    """
+    Compute the inflation factor in the data misfit controller way.
 
-        Returns
-        -------
-        bool
-            Whether the parameter change is valid.
-        """
+    TODO: add math Compute the :math:`\alpha_{l}` inflation (dumping) factor.
 
-        def is_lower(residuals: NDArrayFloat) -> bool:
-            return bool(np.all(residuals < 2 * self.std_m_prior))
+    Parameters
+    ----------
+    past_alphas : Sequence[float]
+        Sequence of previous inflation factors. It can be an empty.
+    n_obs : int
+        Number of observations in d_obs.
+    mean_objfun : float
+        Ensemble average cost function.
+    var_obj_fun : float
+        Ensemble cost function variance.
 
-        return bool(
-            np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T)))  # type: ignore
-        )
+    Returns
+    -------
+    float
+        _description_
+    """
+    # beta is the sum of inverse past alphas
+    beta = np.sum([1 / a for a in past_alphas]) if len(past_alphas) != 0 else 0.0
+
+    return 1 / min(
+        max(n_obs / (2 * mean_objfun), math.sqrt(n_obs / (2 * var_objfun))),
+        1 - beta,
+    )

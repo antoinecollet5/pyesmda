@@ -3,20 +3,24 @@ Implement a base class for the ES-MDA algorithms and variants.
 
 @author: acollet
 """
+
+import logging
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy._lib._util import check_random_state  # To handle random_state
-from scipy.sparse import csr_matrix, spmatrix
+import scipy as sp  # type: ignore
+from scipy._lib._util import check_random_state  # type: ignore
 
+from pyesmda.inversion import ESMDAInversionType, inversion
+from pyesmda.localization import LocalizationStrategy, NoLocalization
 from pyesmda.utils import (
     NDArrayFloat,
-    approximate_cov_mm,
-    approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
+    get_anomaly_matrix,
+    inflate_ensemble_around_its_mean,
 )
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
@@ -42,15 +46,15 @@ class ESMDABase(ABC):
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     d_obs_uc: NDArrayFloat
         Vectors of pertubed observations with dimension
-        (:math:`N_{e}`, :math:`N_{obs}`).
+        (:math:`N_{obs}`, :math:`N_{e}`).
     d_pred: NDArrayFloat
         Vectors of predicted values (one for each ensemble member)
-        with dimensions (:math:`N_{e}`, :math:`N_{obs}`).
+        with dimensions (:math:`N_{obs}`, :math:`N_{e}`).
     d_history: List[NDArrayFloat]
         List of vectors of predicted values obtained at each assimilation step.
     m_prior:
         Vectors of parameter values (one vector for each ensemble member) used in the
-        last assimilation step. Dimensions are (:math:`N_{e}`, :math:`N_{m}`).
+        last assimilation step. Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
     m_bounds : NDArrayFloat
         Lower and upper bounds for the :math:`N_{m}` parameter values.
         Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -60,9 +64,10 @@ class ESMDABase(ABC):
     cov_md: NDArrayFloat
         Cross-covariance matrix between the forecast state vector and predicted data.
         Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_obs: csr_matrix
+    cov_dd: NDArrayFloat
         Autocovariance matrix of predicted data.
-        Dimensions are (:math:`N_{obs}, N_{obs}`).
+        Dimensions are (:math:`N_{obs}, N_{obs}`). if the matrix is diagonal, it is
+        a 1D array.
     cov_mm: NDArrayFloat
         Autocovariance matrix of estimated parameters.
         Dimensions are (:math:`N_{m}, N_{m}`).
@@ -79,26 +84,18 @@ class ESMDABase(ABC):
     cov_obs_inflation_factors : List[float]
         List of multiplication factor used to inflate the covariance matrix of the
         measurement errors.
-    cov_mm_inflation_factors: List[float]
-        List of factors used to inflate the adjusted parameters covariance among
-        iterations:
-        Each realization of the ensemble at the end of each update step i,
-        is linearly inflated around its mean.
-        See :cite:p:`andersonExploringNeedLocalization2007`.
-    dd_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        observations and observations :math:`\rho_{DD}`. It is used to localize the
-        autocovariance matrix of predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-    md_correlation_matrix : Optional[csr_matrix]
-        Correlation matrix based on spatial and temporal distances between
-        parameters and observations :math:`\rho_{MD}`. It is used to localize the
-        cross-covariance matrix between the forecast state vector (parameters)
-        and predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`). . A sparse matrix
-        format can be provided to save some memory.
+    C_DD_localization: LocalizationStrategy
+        Localization operator :math:`\rho_{DD}` applied to the predictions
+        empirical auto-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`pyesmda.LocalizationStrategy`.
+    C_MD_localization : Optional[csr_matrix]
+        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+        empirical corss-covariance matrices. Expected dimensions of the operator are
+        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :class:`pyesmda.LocalizationStrategy`.
     save_ensembles_history: bool
         Whether to save the history predictions and parameters over the assimilations.
     rng: np.random.Generator
@@ -107,27 +104,38 @@ class ESMDABase(ABC):
         Whether to compute the predictions for the ensemble obtained at the
         last assimilation step.
     batch_size: int
-            Number of parameters that are assimilated at once. This option is
-            available to overcome memory limitations when the number of parameters is
-            large. In that case, the size of the covariance matrices tends to explode
-            and the update step must be performed by chunks of parameters.
+        Number of parameters that are assimilated at once. This option is
+        available to overcome memory limitations when the number of parameters is
+        large. In that case, the size of the covariance matrices tends to explode
+        and the update step must be performed by chunks of parameters.
     is_parallel_analyse_step: bool, optional
-            Whether to use parallel computing for the analyse step if the number of
-            batch is above one. The default is True.
+        Whether to use parallel computing for the analyse step if the number of
+        batch is above one. The default is True.
     n_batches: int
-            Number of batches required during the update step.
-
+        Number of batches required during the update step.
+    truncation: float
+        A value in the range ]0, 1], used to determine the number of
+        significant singular values kept when using svd for the inversion
+        of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+        corresponding to this fraction of the sum of the nonzero singular values.
+        The goal of truncation is to deal with smaller matrices (dimensionality
+        reduction), easier to inverse.
+    logger: Optional[logging.Logger]
+        Optional :class:`logging.Logger` instance used for event logging.
     """
+
     # pylint: disable=R0902 # Too many instance attributes
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
+        "cov_obs_cholesky",
         "d_obs_uc",
         "d_pred",
         "d_history",
         "m_prior",
         "_m_bounds",
         "m_history",
+        "_inversion_type",
         "cov_md",
         "cov_dd",
         "forward_model",
@@ -135,26 +143,30 @@ class ESMDABase(ABC):
         "forward_model_kwargs",
         "_n_assimilations",
         "_assimilation_step",
-        "_dd_correlation_matrix",
-        "_md_correlation_matrix",
+        "C_DD_localization",
+        "C_MD_localization",
         "save_ensembles_history",
         "rng",
         "is_forecast_for_last_assimilation",
         "batch_size",
         "is_parallel_analyse_step",
+        "_truncation",
+        "logger",
     ]
 
     def __init__(
         self,
         obs: NDArrayFloat,
         m_init: NDArrayFloat,
-        cov_obs: Union[NDArrayFloat, csr_matrix],
+        cov_obs: NDArrayFloat,
         forward_model: Callable[..., NDArrayFloat],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        dd_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
-        md_correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
+        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
+        cov_mm_inflation_factor: float = 1.0,
+        C_DD_localization: LocalizationStrategy = NoLocalization(),
+        C_MD_localization: LocalizationStrategy = NoLocalization(),
         m_bounds: Optional[NDArrayFloat] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
@@ -164,6 +176,8 @@ class ESMDABase(ABC):
         ] = 198873,
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
+        truncation: float = 0.99,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -175,11 +189,11 @@ class ESMDABase(ABC):
             Obsevrations vector with dimension :math:`N_{obs}`.
         m_init : NDArrayFloat
             Initial ensemble of parameters vector with dimensions
-            (:math:`N_{e}`, :math:`N_{m}`).
+            (:math:`N_{m}`, :math:`N_{e}`).
         cov_obs: NDArrayFloat
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-            It can be a numpy array or a sparse matrix (scipy.linalg).
+            If a 1D array is passed, it represents a diagonal covariance matrix.
         forward_model: callable
             Function calling the non-linear observation model (forward model)
             for all ensemble members and returning the predicted data for
@@ -190,21 +204,25 @@ class ESMDABase(ABC):
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
-        dd_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            observations and observations :math:`\rho_{DD}`. It is used to localize the
-            autocovariance matrix of predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-            The default is None.
-        md_correlation_matrix : Optional[Union[NDArrayFloat, spmatrix]]
-            Correlation matrix based on spatial and temporal distances between
-            parameters and observations :math:`\rho_{MD}`. It is used to localize the
-            cross-covariance matrix between the forecast state vector (parameters)
-            and predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
-            The default is None.
+        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE
+            Type of inversion used to solve :math:`(C_DD + \alpha CD)^{-1)(d-dobs)`.
+        cov_mm_inflation_factor: float
+            Factor used to inflate the initial ensemble variance around its mean.
+            See :cite:p:`andersonExploringNeedLocalization2007`.
+            The default is 1.0, which means no inflation.
+        C_DD_localization: LocalizationStrategy
+            Localization operator :math:`\rho_{DD}` applied to the predictions
+            empirical auto-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
+        C_MD_localization : Optional[csr_matrix]
+            Localization operator :math:`\rho_{DD}` applied to the
+            parameters-prediction empirical corss-covariance matrices.
+            Expected dimensions of the operator are (:math:`N_{m}`, :math:`N_{obs}`).
+            It can be fixed (defined correlation
+            matrix used for all iterations) or adaptive and even user defined.
+            See implementations of :class:`LocalizationStrategy`.
         m_bounds : Optional[NDArrayFloat], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -236,39 +254,66 @@ class ESMDABase(ABC):
             Whether to use parallel computing for the analyse step if the number of
             batch is above one. It relies on `concurrent.futures` multiprocessing.
             The default is True.
-
+        truncation: float
+            A value in the range ]0, 1], used to determine the number of
+            significant singular values kept when using svd for the inversion
+            of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+            corresponding to this fraction of the sum of the nonzero singular values.
+            The goal of truncation is to deal with smaller matrices (dimensionality
+            reduction), easier to inverse. The default is 0.99.
+        logger: Optional[logging.Logger]
+            Optional :class:`logging.Logger` instance used for event logging.
+            The default is None.
         """
         self.obs: NDArrayFloat = obs
         self.m_prior: NDArrayFloat = m_init
         self.save_ensembles_history: bool = save_ensembles_history
         self.m_history: list[NDArrayFloat] = []
         self.d_history: list[NDArrayFloat] = []
-        self.d_pred: NDArrayFloat = np.zeros([self.n_ensemble, self.d_dim])
+        self.d_pred: NDArrayFloat = np.zeros([self.d_dim, self.n_ensemble])
         self.cov_obs = cov_obs
-        self.d_obs_uc: NDArrayFloat = np.array([])
         self.cov_md: NDArrayFloat = np.array([])
         self.cov_dd: NDArrayFloat = np.array([])
-        self.forward_model: Callable = forward_model
+        self.forward_model: Callable[..., NDArrayFloat] = forward_model
         self.forward_model_args: Sequence[Any] = forward_model_args
+        self.inversion_type = inversion_type  # type: ignore
         if forward_model_kwargs is None:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
         self._set_n_assimilations(n_assimilations)
         self._assimilation_step: int = 0
-        self.dd_correlation_matrix = dd_correlation_matrix
-        self.md_correlation_matrix = md_correlation_matrix
-        self.m_bounds = m_bounds
+        # check the localization shape correctness
+        C_DD_localization.check_localization_shape(
+            (self.d_dim, self.d_dim), "C_DD_localization"
+        )
+        C_MD_localization.check_localization_shape(
+            (self.m_dim, self.d_dim), "C_MD_localization"
+        )
+        self.C_DD_localization: LocalizationStrategy = C_DD_localization
+        self.C_MD_localization: LocalizationStrategy = C_MD_localization
+        self.m_bounds = m_bounds  # type: ignore
         if seed is not None:
             warnings.warn(
                 DeprecationWarning(
                     "The keyword `seed` is now replaced by `random_state` "
-                    "and will be dropped in 0.5.x."
+                    "and has been dropped since version 0.4.3."
                 )
             )
-        self.rng: np.random.RandomState = check_random_state(random_state)
-        self.is_forecast_for_last_assimilation = is_forecast_for_last_assimilation
+        self.rng: np.random.RandomState = check_random_state(random_state)  # type: ignore
+        self.is_forecast_for_last_assimilation: bool = is_forecast_for_last_assimilation
         self.batch_size = batch_size
-        self.is_parallel_analyse_step = is_parallel_analyse_step
+        self.is_parallel_analyse_step: bool = is_parallel_analyse_step
+        self.truncation = truncation
+
+        # Inflate the initial ensemble respecting the given bounds
+        if cov_mm_inflation_factor != 1.0:
+            self.m_prior = self._apply_bounds(
+                inflate_ensemble_around_its_mean(
+                    m_init, inflation_factor=cov_mm_inflation_factor
+                )
+            )
+
+        self.logger: Optional[logging.Logger] = logger
 
     @property
     def n_assimilations(self) -> int:
@@ -292,12 +337,12 @@ class ESMDABase(ABC):
     @property
     def n_ensemble(self) -> int:
         """Return the number of ensemble members."""
-        return self.m_prior.shape[0]
+        return self.m_prior.shape[1]  # type: ignore
 
     @property
     def m_dim(self) -> int:
         """Return the length of the parameters vector."""
-        return self.m_prior.shape[1]
+        return self.m_prior.shape[0]  # type: ignore
 
     @property
     def d_dim(self) -> int:
@@ -305,19 +350,56 @@ class ESMDABase(ABC):
         return len(self.obs)
 
     @property
-    def cov_obs(self) -> csr_matrix:
+    def cov_obs(self) -> NDArrayFloat:
         """Get the observation errors covariance matrix."""
         return self._cov_obs
 
     @cov_obs.setter
-    def cov_obs(self, s: Union[NDArrayFloat, csr_matrix]) -> None:
-        """Set the observation errors covariance matrix."""
-        if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
-            raise ValueError(
-                "cov_obs must be a 2D square matrix with "
-                f"dimensions ({self.d_dim}, {self.d_dim})."
-            )
-        self._cov_obs: csr_matrix = csr_matrix(s)
+    def cov_obs(self, cov: NDArrayFloat) -> None:
+        """
+        Set the observation errors covariance matrix.
+
+        It must be a 2D array, or a 1D array if the covariance matrix is diagonal.
+        """
+        error = ValueError(
+            "cov_obs must be a 2D matrix with "
+            f"dimensions ({self.d_dim}, {self.d_dim})."
+        )
+        if len(cov.shape) > 2:
+            raise error
+        if cov.shape[0] != self.obs.size:  # type: ignore
+            raise error
+        if cov.ndim == 2:
+            if cov.shape[0] != cov.shape[1]:  # type: ignore
+                raise error
+
+        # From iterative_ensemble_smoother code
+        # Only compute the covariance factorization once
+        # If it's a full matrix, we gain speedup by only computing cholesky once
+        # If it's a diagonal, we gain speedup by never having to compute cholesky
+        if cov.ndim == 2:
+            self.cov_obs_cholesky: NDArrayFloat = sp.linalg.cholesky(cov, lower=False)
+        else:
+            self.cov_obs_cholesky = np.sqrt(cov)  # type: ignore
+
+        self._cov_obs: NDArrayFloat = cov
+
+    @property
+    def anomalies(self) -> NDArrayFloat:
+        r"""
+        Return the matrix of anomalies.
+
+        The anomaly matrix is defined as.
+
+
+        Or in matrix form:
+
+        .. math::
+
+                \bm{A} = \bm{X}\left(\bm{I_{N_{e}}} - \dfrac{1}{N_{e}} \bm{11}^{T}
+                \right) / \sqrt{N_{e}-1}.
+        """
+        return get_anomaly_matrix(self.m_prior)
 
     @property
     def cov_mm(self) -> NDArrayFloat:
@@ -336,7 +418,7 @@ class ESMDABase(ABC):
         with :math:`\overline{m^{l}}`, the parameters
         ensemble means, at iteration :math:`l`.
         """
-        return approximate_cov_mm(self.m_prior)
+        return self.anomalies @ self.anomalies.T
 
     @property
     def m_bounds(self) -> NDArrayFloat:
@@ -349,8 +431,9 @@ class ESMDABase(ABC):
         if mb is None:
             # In that case, create an array of nan.
             self._m_bounds: NDArrayFloat = np.empty([self.m_dim, 2], dtype=np.float64)
-            self._m_bounds[:] = np.nan
-        elif mb.shape[0] != self.m_dim:
+            self._m_bounds[:, 0] = -np.inf
+            self._m_bounds[:, 1] = np.inf
+        elif mb.shape[0] != self.m_dim:  # type: ignore
             raise ValueError(
                 f"m_bounds is of shape {mb.shape} while it "
                 f"should be of shape ({self.m_dim}, 2)"
@@ -359,50 +442,43 @@ class ESMDABase(ABC):
             self._m_bounds = mb
 
     @property
-    def dd_correlation_matrix(self) -> Optional[csr_matrix]:
-        """Get the observations-observations localization matrix."""
-        return self._dd_correlation_matrix
+    def inversion_type(self) -> ESMDAInversionType:
+        """Get the inversion_type."""
+        return self._inversion_type
 
-    @dd_correlation_matrix.setter
-    def dd_correlation_matrix(self, s: Optional[Union[NDArrayFloat, spmatrix]]) -> None:
-        """Set the observations-observations localization matrix."""
-        if s is None:
-            self._dd_correlation_matrix = None
-            return
-        if len(s.shape) != 2 or s.shape[0] != s.shape[1] or s.shape[0] != self.d_dim:
+    @inversion_type.setter
+    def inversion_type(self, inversion_type: Union[ESMDAInversionType, str]) -> None:
+        """Set the inversion type."""
+        if str(inversion_type) not in [v.value for v in ESMDAInversionType.to_list()]:
             raise ValueError(
-                "dd_correlation_matrix must be a 2D square matrix with "
-                f"dimensions ({self.d_dim}, {self.d_dim})."
+                f"{str(inversion_type)} is not a supported inversion type! "
+                f"Choose among {[v.value for v in ESMDAInversionType.to_list()]}"
             )
-        self._dd_correlation_matrix: Optional[csr_matrix] = csr_matrix(s)
-
-    @property
-    def md_correlation_matrix(self) -> Optional[csr_matrix]:
-        """Get the parameters-observations localization matrix."""
-        return self._md_correlation_matrix
-
-    @md_correlation_matrix.setter
-    def md_correlation_matrix(self, s: Optional[Union[NDArrayFloat, spmatrix]]) -> None:
-        """Set the parameters-observations localization matrix."""
-        if s is None:
-            self._md_correlation_matrix = None
-            return
-        if len(s.shape) != 2:
-            raise ValueError(
-                "md_correlation_matrix must be a 2D matrix with "
-                f"dimensions ({self.m_dim}, {self.d_dim})."
-            )
-        if s.shape[0] != self.m_dim or s.shape[1] != self.d_dim:
-            raise ValueError(
-                "md_correlation_matrix must be a 2D matrix with "
-                f"dimensions ({self.m_dim}, {self.d_dim})."
-            )
-        self._md_correlation_matrix: Optional[csr_matrix] = csr_matrix(s)
+        self._inversion_type: ESMDAInversionType = ESMDAInversionType(
+            str(inversion_type)
+        )
 
     @property
     def n_batches(self) -> int:
         """Number of batch used in the optimization."""
-        return int(self.m_dim / self.batch_size) + 1
+        return int(np.ceil(self.m_dim / self.batch_size))
+
+    @property
+    def truncation(self) -> float:
+        """Return the truncation number for the svd in inversion."""
+        return self._truncation
+
+    @truncation.setter
+    def truncation(self, truncation: float) -> None:
+        """Return the truncation number for the svd in inversion."""
+        if truncation > 1 or truncation <= 0:
+            raise ValueError("The truncation number should be in ]0, 1]!")
+        self._truncation = float(truncation)
+
+    def loginfo(self, msg: str) -> None:
+        """Log the message."""
+        if self.logger is not None:
+            self.logger.info(msg)
 
     @abstractmethod
     def solve(self) -> None:
@@ -454,62 +530,23 @@ class ESMDABase(ABC):
         -----
         To get reproducible behavior, use a seed when creating the ESMDA instance.
 
+        Draw samples from zero-centered multivariate normal with cov=alpha * C_D,
+        and add them to the observations. Notice that
+        if C_D = L L.T by the cholesky factorization, then drawing y from
+        a zero cented normal means that y := L @ z, where z ~ norm(0, 1)
+        Therefore, scaling C_D by alpha is equivalent to scaling L with sqrt(alpha)
+
         """
-        self.d_obs_uc = np.zeros([self.n_ensemble, self.d_dim])
-        for i in range(self.d_dim):
-            self.d_obs_uc[:, i] = self.obs[i] + np.sqrt(
+        shape = (self.d_dim, self.n_ensemble)
+
+        if self._cov_obs.ndim == 2:
+            self.d_obs_uc = self.obs.reshape(-1, 1) + np.sqrt(
                 inflation_factor
-            ) * self.rng.normal(0, np.abs(self.cov_obs.diagonal()[i]), self.n_ensemble)
-
-    def _approximate_covariance_matrices(self) -> None:
-        r"""
-        Approximate the covariance matrices.
-
-        The covariance matrices :math:`C^{l}_{MD}` and :math:`C^{l}_{DD}`
-        are approximated from the ensemble in the standard way of EnKF
-        :cite:p:`evensenDataAssimilationEnsemble2007,aanonsenEnsembleKalmanFilter2009`:
-
-        .. math::
-           C^{l}_{MD} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(m^{l}_{j} -
-           \overline{m^{l}}\right)\left(d^{l}_{j}
-           - \overline{d^{l}} \right)^{T}
-
-        .. math::
-           C^{l}_{DD} = \frac{1}{N_{e} - 1} \sum_{j=1}^{N_{e}}\left(d^{l}_{j}
-           -\overline{d^{l}} \right)\left(d^{l}_{j}
-           - \overline{d^{l}} \right)^{T}
-
-        with :math:`\overline{m^{l}}` and :math:`\overline{d^{l}}`, the
-        the ensemble means, at iteration :math:`l`, of parameters and predictions,
-        respectively.
-
-        If defined by the user, covariances localization is applied by element-wise
-        multiplication (Schur product or Hadamard product) of the original
-        covariance matrix and a distance dependent correlation function
-        that smoothly reduces the correlations between points for increasing distances
-        and cuts off long-range correlations above a specific distance:
-
-        .. math::
-           \tilde{C}^{l}_{MD} = \rho_{MD} \odot C^{l}_{MD}
-
-        .. math::
-           \tilde{C}^{l}_{DD} = \rho_{DD} \odot C^{l}_{DD}
-
-        with :math:`\odot` the element wise multiplication.
-        """
-        self.cov_md = approximate_covariance_matrix_from_ensembles(
-            self.m_prior, self.d_pred
-        )
-        self.cov_dd = approximate_covariance_matrix_from_ensembles(
-            self.d_pred, self.d_pred
-        )
-
-        # Spatial and temporal localization: obs - obs
-        if self.dd_correlation_matrix is not None:
-            self.cov_dd = self.dd_correlation_matrix.multiply(self.cov_dd).toarray()
-        # Spatial and temporal localization: parameters - obs
-        if self.md_correlation_matrix is not None:
-            self.cov_md = self.md_correlation_matrix.multiply(self.cov_md).toarray()
+            ) * self.cov_obs_cholesky @ self.rng.normal(size=shape)
+        else:
+            self.d_obs_uc = self.obs.reshape(-1, 1) + np.sqrt(
+                inflation_factor
+            ) * self.rng.normal(size=shape) * self.cov_obs_cholesky.reshape(-1, 1)
 
     def _analyse(self, inflation_factor: float) -> NDArrayFloat:
         r"""
@@ -532,15 +569,19 @@ class ESMDABase(ABC):
 
         """
         # predicted parameters
-        return (
-            self.m_prior
-            + (
-                self.cov_md
-                @ np.linalg.solve(
-                    self.cov_dd + inflation_factor * self.cov_obs,
-                    (self.d_obs_uc - self.d_pred).T,
-                )
-            ).T
+        return self.m_prior + (
+            inversion(
+                self.inversion_type,  # type: ignore
+                inflation_factor,
+                self.cov_obs,
+                self.cov_obs_cholesky,
+                self.d_obs_uc,
+                self.d_pred,
+                self.m_prior,
+                C_DD_localization=self.C_DD_localization,
+                C_MD_localization=self.C_MD_localization,
+                truncation=self.truncation,
+            )
         )
 
     def _local_analyse(self, inflation_factor: float) -> NDArrayFloat:
@@ -574,43 +615,43 @@ class ESMDABase(ABC):
                 )
                 for index, res in enumerate(results):
                     _slice = slice(
-                        index * self.batch_size, (index + 1) * self.batch_size
+                        index * self.batch_size,
+                        max([(index + 1) * self.batch_size, self.m_dim]),
                     )
-                    m_pred[:, _slice] = res
-            # self.simu_n += n_ensemble
+                    m_pred[_slice, :] = res
         else:
             for index in range(self.n_batches):
-                _slice = slice(index * self.batch_size, (index + 1) * self.batch_size)
-                m_pred[:, _slice] = self._get_batch_m_update(index, inflation_factor)
+                _slice = slice(
+                    index * self.batch_size,
+                    max([(index + 1) * self.batch_size, self.m_dim]),
+                )
+                m_pred[_slice, :] = self._get_batch_m_update(index, inflation_factor)
 
         return m_pred
 
     def _get_batch_m_update(self, index: int, inflation_factor: float) -> NDArrayFloat:
-        _slice = slice(index * self.batch_size, (index + 1) * self.batch_size)
-        batch_cov_md = approximate_covariance_matrix_from_ensembles(
-            self.m_prior[:, _slice], self.d_pred
+        _slice = slice(
+            index * self.batch_size, max([(index + 1) * self.batch_size, self.m_dim])
         )
-        # apply localization
-        if self.md_correlation_matrix is not None:
-            batch_cov_md = self.md_correlation_matrix[_slice, :].multiply(batch_cov_md)
-        return (
-            self.m_prior[:, _slice]
-            + (
-                batch_cov_md
-                @ np.linalg.solve(
-                    self.cov_dd + inflation_factor * self.cov_obs,
-                    (self.d_obs_uc - self.d_pred).T,
-                )
-            ).T
+
+        return self.m_prior[_slice, :] + (
+            inversion(
+                self.inversion_type,  # type: ignore
+                inflation_factor,
+                self.cov_obs,
+                self.cov_obs_cholesky,
+                self.d_obs_uc,
+                self.d_pred,
+                self.m_prior[_slice, :].reshape(
+                    -1, self.m_prior.shape[-1]
+                ),  # ensure 2d array
+                C_DD_localization=self.C_DD_localization,
+                C_MD_localization=self.C_MD_localization,
+                truncation=1.0,
+                batch_slice=_slice,
+            )
         )
 
     def _apply_bounds(self, m_pred: NDArrayFloat) -> NDArrayFloat:
         """Apply bounds constraints to the adjusted parameters."""
-        m_pred = np.where(
-            m_pred < self.m_bounds[:, 0], self.m_bounds[:, 0], m_pred
-        )  # lower bounds
-        m_pred = np.where(
-            m_pred > self.m_bounds[:, 1], self.m_bounds[:, 1], m_pred
-        )  # upper bounds
-
-        return m_pred
+        return np.clip(m_pred.T, self.m_bounds[:, 0], self.m_bounds[:, 1]).T
