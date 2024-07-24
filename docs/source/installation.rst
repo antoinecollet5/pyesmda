@@ -26,19 +26,19 @@ you through the process.
 From sources
 ------------
 
-The sources for pyESMDA can be downloaded from the `Gitlab repo`_.
+The sources for pyESMDA can be downloaded from the `GitHub repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://gitlab.com/antoinecollet5/pyesmda
+    $ git clone git://github.com/antoinecollet5/pyesmda
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://gitlab.com/antoinecollet5/pyesmda/tarball/master
+    $ curl -OJL https://github.com/antoinecollet5/pyesmda/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Gitlab repo: https://gitlab.com/antoinecollet5/pyesmda
-.. _tarball: https://gitlab.com/antoinecollet5/pyesmda/tarball/master
+.. _GitHub repo: https://github.com/antoinecollet5/pyesmda
+.. _tarball: https://github.com/antoinecollet5/pyesmda/tarball/master

@@ -204,16 +204,16 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     # "google_analytics_id": "UA-140243896-1",
     "show_prev_next": False,
-    "gitlab_url": "https://gitlab.com/antoinecollet5/pyesmda/",
+    "github_url": "https://github.com/antoinecollet5/pyesmda/",
     "icon_links": [
         {
             "name": "Support",
-            "url": "https://gitlab.com/antoinecollet5/pyesmda/-/issues",
+            "url": "https://github.com/antoinecollet5/pyesmda/issues",
             "icon": "fa fa-comment fa-fw",
         },
         {
             "name": "Contributing",
-            "url": "https://gitlab.com/antoinecollet5/pyesmda/CONTRIBUTING.rst",
+            "url": "https://github.com/antoinecollet5/pyesmda/CONTRIBUTING.rst",
             "icon": "fa fa-gavel fa-fw",
         },
         # {

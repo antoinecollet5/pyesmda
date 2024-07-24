@@ -16,7 +16,7 @@ Reporting of Bugs and Defects
 
 A defect is any variance between actual and expected result, this can include bugs in the code or defects in the documentation or visualization.
 
-Please report defects to the `the GitLab Tracker <https://gitlab.com/antoinecollet5/pyesmdaissues>`_
+Please report defects to the `the GitHub Tracker <https://github.com/antoinecollet5/pyesmda/issues>`_
 using the **Defect** description template.
 
 `Merge Request Guidelines`_ for details on best developmental practices.
@@ -24,7 +24,7 @@ using the **Defect** description template.
 Features
 ~~~~~~~~
 
-If you wish to propose a feature, please file an issue on `the GitLab Tracker <https://gitlab.com/antoinecollet5/pyesmdaissues>`_ using the **Feature** description template. Community members will help refine and design your idea until it is ready for implementation.
+If you wish to propose a feature, please file an issue on `the GitHub Tracker <https://github.com/antoinecollet5/pyesmda/issues>`_ using the **Feature** description template. Community members will help refine and design your idea until it is ready for implementation.
 Via these early reviews, we hope to steer contributors away from producing work outside of the project boundaries.
 
 Please see the `Merge Request Guidelines`_ for details on best developmental practices.
@@ -39,14 +39,14 @@ For docstrings, please use the `numpy docstring format <https://numpydoc.readthe
 Working on issues
 -----------------
 
-After an issue is created, the progress of the issues is tracked on the `GitLab issue board <https://gitlab.com/antoinecollet5/pyesmdaboards>`_.
-The maintainers will update the state using `labels <https://gitlab.com/antoinecollet5/pyesmdalabels>`_ .
+After an issue is created, the progress of the issues is tracked on the `GitHub issue board <https://github.com/antoinecollet5/pyesmda/issues>`_.
+The maintainers will update the state using `labels <https://github.com/antoinecollet5/pyesmda/labels>`_ .
 Once an issue is ready for review a Merge Request can be opened.
 
 Code Style
 ~~~~~~~~~~
 
-The code is formatted with `black <https://github.com/psf/black>`__ so you don't have to worry about code formatting.
+The code is formatted with `Ruff <https://docs.astral.sh/ruff/>`__ so you don't have to worry about code formatting.
 Docstrings follow `NumPy's style guide <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`__ and all public
 functions, classes and methods must come with a full description of input parameters and return outputs.
 To format both code and docstrings, simply run the command:
@@ -103,10 +103,10 @@ Setting up pyESMDA for local development
 
 Ready to contribute? Here's how to set up `pyESMDA` for local development.
 
-1. Fork the `pyesmda` repo on GitLab.
+1. Fork the `pyesmda` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@gitlab.com:your_name_here/pyesmda.git
+    $ git clone git@hublab.com:your_name_here/pyesmda.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
@@ -137,13 +137,13 @@ Ready to contribute? Here's how to set up `pyESMDA` for local development.
   The docs will be located in `pyesmda/docs/build`.
 
 
-6. Commit your changes and push your branch to GitLab::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a merge request through the GitLab website.
+7. Submit a merge request through the GitHub website.
 
 
 .. tip:: Autobuild documentation

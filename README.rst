@@ -4,7 +4,7 @@ pyESMDA
 
 
 .. image:: https://img.shields.io/badge/License-MIT license-blue.svg
-    :target: https://gitlab.com/antoinecollet5/pyesmda/-/blob/master/LICENSE
+    :target: https://github.com/antoinecollet5/pyesmda/-/blob/master/LICENSE
 
 .. image:: https://img.shields.io/badge/dynamic/json?color=green&label=gitlab%20stars&query=%24.star_count&url=https%3A%2F%2Fgitlab.com%2Fapi%2Fv4%2Fprojects%2F31672379
     :target: https://img.shields.io/badge/dynamic/json?color=green&label=gitlab%20stars&query=%24.star_count&url=https%3A%2F%2Fgitlab.com%2Fapi%2Fv4%2Fprojects%2F31672379`
