@@ -124,6 +124,8 @@ def get_anomaly_matrix(
     ------
     The anomaly matrix with with shape ($N_{e}$, $N_{m}$).
     """
+    # Note: this is the same as
+    # 1 / np.sqrt(ne - 1) * (a @ np.identity(ne) - a @ np.ones((ne, 1)) / ne)
     return (ensemble - np.mean(ensemble, axis=1, keepdims=True)) / np.sqrt(
         ensemble.shape[1] - 1  # type: ignore
     )
