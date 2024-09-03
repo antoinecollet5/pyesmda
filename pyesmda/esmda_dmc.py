@@ -348,6 +348,7 @@ class ESMDA_DMC(ESMDABase):
 
         # Last assimilation
         if self.is_forecast_for_last_assimilation:
+            self.loginfo("Forecast for the final ensemble")
             self._forecast()
 
 

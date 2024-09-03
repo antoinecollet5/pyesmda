@@ -352,6 +352,7 @@ class ESMDA_RS(ESMDABase):
 
         # Last assimilation
         if self.is_forecast_for_last_assimilation:
+            self.loginfo("Forecast for the final ensemble")
             self._forecast()
 
     def _compute_initial_inflation_factor(self) -> float:
