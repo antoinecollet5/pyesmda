@@ -285,7 +285,7 @@ class ESMDA(ESMDABase):
         """Set the inflation factors the covariance matrix of the measurement errors."""
         if a is None:
             self._cov_obs_inflation_factors: List[float] = [
-                1 / self.n_assimilations
+                self.n_assimilations
             ] * self.n_assimilations
         elif len(a) != self.n_assimilations:
             raise ValueError(
