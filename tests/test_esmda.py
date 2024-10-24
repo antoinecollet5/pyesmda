@@ -332,8 +332,11 @@ def test_constructor(args, kwargs, expected_exception) -> ESMDA:
         esmda = ESMDA(*args, **kwargs)
 
         if "cov_obs_inflation_factors " not in kwargs.keys():
+            _sum = 0
             for val in esmda.cov_obs_inflation_factors:
-                assert val == 1 / esmda.n_assimilations
+                _sum += 1 / val
+                assert val == esmda.n_assimilations
+            assert _sum == 1.0
 
 
 def exponential(p, x) -> NDArrayFloat:
