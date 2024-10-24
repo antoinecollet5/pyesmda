@@ -102,7 +102,12 @@ def test_distances_to_weights_fifth_order(scaling_factor, expected_exception) ->
 
 @pytest.mark.parametrize(
     "ne,expected",
-    (((0, 1.0), (9, 1.0), (16, 0.75), (36, 0.5), (100, 0.3), (1000, 0.094868))),
+    (((9, 1.0), (16, 0.75), (36, 0.5), (100, 0.3), (1000, 0.094868))),
 )
 def test_default_correlation_threshold(ne: int, expected: float) -> None:
     np.testing.assert_allclose(expected, default_correlation_threshold(ne), rtol=1e-5)
+
+
+def test_default_correlation_threshold_zero() -> None:
+    with pytest.raises(ValueError, match="The ensemble size cannot be zero!"):
+        default_correlation_threshold(0)

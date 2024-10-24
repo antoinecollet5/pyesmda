@@ -189,6 +189,8 @@ def default_correlation_threshold(ensemble_size: int) -> float:
     >>> AdaptiveESMDA.correlation_threshold(100)
     0.3
     """
+    if ensemble_size == 0:
+        raise ValueError("The ensemble size cannot be zero!")
     return float(min(1, max(0, 3 / np.sqrt(ensemble_size))))
 
 
