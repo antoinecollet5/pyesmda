@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, Optional, Sequence, Union
 
 import numpy as np
-from scipy.sparse import csr_matrix, spmatrix  # type: ignore
+from scipy.sparse import csr_matrix, spmatrix
 
 from pyesmda.utils import NDArrayFloat, empirical_cross_covariance, get_anomaly_matrix
 
@@ -116,7 +116,7 @@ class FixedLocalization(LocalizationStrategy):
         """Apply the localization to the covariance matrix."""
         cov_mat = empirical_cross_covariance(X, Y)
         if self.correlation_matrix is not None:
-            return self.correlation_matrix[batch_slice, :].multiply(cov_mat)  # type: ignore
+            return self.correlation_matrix[batch_slice, :].multiply(cov_mat)
         return cov_mat
 
     def localize_multi_dot(
@@ -143,17 +143,15 @@ class FixedLocalization(LocalizationStrategy):
         X_shift = get_anomaly_matrix(X)
         Y_shift = get_anomaly_matrix(Y)
         if self.correlation_matrix is not None:
-            return np.linalg.multi_dot(  # type: ignore
+            return np.linalg.multi_dot(
                 [
                     self.correlation_matrix[batch_slice, :]
-                    .multiply(  # type: ignore
-                        X_shift.dot(Y_shift.T)  # type: ignore
-                    )
+                    .multiply(X_shift.dot(Y_shift.T))
                     .toarray(),
                     *args,
                 ]
             )
-        return np.linalg.multi_dot([X_shift, Y_shift.T, *args])  # type: ignore
+        return np.linalg.multi_dot([X_shift, Y_shift.T, *args])
 
 
 class NoLocalization(FixedLocalization):
@@ -226,7 +224,7 @@ def cov_to_corr(
             f"The min and max values are: {cov_XY.min()} and {cov_XY.max()}"
         )
 
-    return np.clip(cov_XY, a_min=-1, a_max=1, out=cov_XY)  # type: ignore
+    return np.clip(cov_XY, a_min=-1, a_max=1, out=cov_XY)
 
 
 class CorrelationTransform(ABC):
@@ -282,7 +280,7 @@ class CorrelationThresholding(CorrelationTransform):
         if callable(correlation_threshold):
             _correlation_threshold: Callable[[int], float] = correlation_threshold
         elif is_float:
-            corr_threshold: float = correlation_threshold  # type: ignore
+            corr_threshold: float = correlation_threshold
 
             def _correlation_threshold(ensemble_size: int) -> float:
                 return corr_threshold
@@ -294,9 +292,9 @@ class CorrelationThresholding(CorrelationTransform):
         else:
             _correlation_threshold = default_correlation_threshold
 
-        assert callable(
-            _correlation_threshold
-        ), "`correlation_threshold` should be callable"
+        assert callable(_correlation_threshold), (
+            "`correlation_threshold` should be callable"
+        )
 
         # Add as an attribute
         self.correlation_threshold: Callable[[int], float] = _correlation_threshold
@@ -332,9 +330,9 @@ class CorrelationTempering(CorrelationTransform):
             are lower than the correlation threshold will be set to zero.
             If None, the default 3/sqrt(ensemble_size) is used. The default is None.
         """
-        assert callable(
-            tempering_function
-        ), "`correlation_threshold` should be callable"
+        assert callable(tempering_function), (
+            "`correlation_threshold` should be callable"
+        )
 
         # Add as an attribute
         self.tempering_function = tempering_function
@@ -402,7 +400,7 @@ class CorrelationBasedLocalization(LocalizationStrategy):
         NDArrayFloat
             _description_
         """
-        return np.linalg.multi_dot(  # type: ignore
+        return np.linalg.multi_dot(
             [
                 self.localize(X, Y),
                 *args,
@@ -450,7 +448,7 @@ def gc_correlation_tempering(corr_mat: NDArrayFloat, ne: int) -> NDArrayFloat:
     Apply the Gaspari-Cohn tempering to the correlation matrix.
 
     See section 2.3, Localization in the CHOP problem from
-    :cite:t:`ContinuousHyperparameterOPtimization2022`.
+    :cite:t:`luoContinuousHyperparameterOPtimization2022`.
 
     .. math::
         (TODO) 1 - \dfrac{1}{1 + \left(\dfrac{d}{s - d}\right)^{-\beta}}
@@ -576,7 +574,7 @@ def distances_to_weights_fifth_order(
         0.0,
         np.where(
             distances2 >= 1.0,
-            _part2(np.where(distances2 <= 0.0, np.nan, distances2)),  # type: ignore
+            _part2(np.where(distances2 <= 0.0, np.nan, distances2)),
             _part1(distances2),
         ),
     )

@@ -401,6 +401,4 @@ class ESMDA_RS(ESMDABase):
         def is_lower(residuals: NDArrayFloat) -> bool:
             return bool(np.all(residuals < 2 * self.std_m_prior))
 
-        return bool(
-            np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T)))  # type: ignore
-        )
+        return bool(np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T))))

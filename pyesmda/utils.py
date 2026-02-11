@@ -9,7 +9,7 @@ from typing import List
 
 import numpy as np
 import numpy.typing as npt
-import scipy as sp  # type: ignore
+import scipy as sp
 
 NDArrayFloat = npt.NDArray[np.float64]
 
@@ -56,8 +56,8 @@ def np_cache(*args, **kwargs):
                 return np_array
 
         # copy lru_cache attributes over too
-        wrapper.cache_info = cached_wrapper.cache_info
-        wrapper.cache_clear = cached_wrapper.cache_clear
+        wrapper.cache_info = cached_wrapper.cache_info  # ty:ignore[unresolved-attribute]
+        wrapper.cache_clear = cached_wrapper.cache_clear  # ty:ignore[unresolved-attribute]
 
         return wrapper
 
@@ -92,7 +92,7 @@ def get_ensemble_variance(
         raise ValueError("The ensemble must be a 2D matrix!")
     return np.sum(
         ((ensemble - np.mean(ensemble, axis=1, keepdims=True)) ** 2), axis=1
-    ) / (ensemble.shape[1] - 1.0)  # type: ignore
+    ) / (ensemble.shape[1] - 1.0)
 
 
 @np_cache()
@@ -127,7 +127,7 @@ def get_anomaly_matrix(
     # Note: this is the same as
     # 1 / np.sqrt(ne - 1) * (a @ np.identity(ne) - a @ np.ones((ne, 1)) / ne)
     return (ensemble - np.mean(ensemble, axis=1, keepdims=True)) / np.sqrt(
-        ensemble.shape[1] - 1  # type: ignore
+        ensemble.shape[1] - 1
     )
 
 
@@ -222,7 +222,7 @@ def approximate_covariance_matrix_from_ensembles(
     is_issue = False
     if ensemble_1.ndim != 2 or ensemble_2.ndim != 2:
         is_issue = True
-    elif ensemble_1.shape[1] != ensemble_2.shape[1]:  # type: ignore
+    elif ensemble_1.shape[1] != ensemble_2.shape[1]:
         is_issue = True
     if is_issue:
         raise ValueError(
@@ -284,11 +284,7 @@ def ls_cost_function(
         )
     elif cov_obs_cholesky.ndim == 1:
         return (
-            1
-            / 2
-            * np.square(
-                residuals / cov_obs_cholesky.reshape(-1, 1)  # type: ignore
-            ).sum(axis=0)
+            1 / 2 * np.square(residuals / cov_obs_cholesky.reshape(-1, 1)).sum(axis=0)
         )
     raise ValueError("cov_obs_cholesky must be a 2D array or a 1D array.")
 

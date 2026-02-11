@@ -11,7 +11,7 @@ import pytest
 from pyesmda import ESMDA_DMC
 from pyesmda.localization import FixedLocalization
 
-from .test_esmda import exponential, forward_model
+from .test_esmda import exponential, forward_model  # ty:ignore[unresolved-import]
 
 
 @pytest.mark.parametrize(

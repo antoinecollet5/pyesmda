@@ -337,6 +337,7 @@ def test_constructor(args, kwargs, expected_exception) -> ESMDA:
                 _sum += 1 / val
                 assert val == esmda.n_assimilations
             assert _sum == 1.0
+    return esmda
 
 
 def exponential(p, x) -> NDArrayFloat:

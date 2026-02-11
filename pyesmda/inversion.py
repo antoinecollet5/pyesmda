@@ -32,8 +32,8 @@ from enum import Enum
 from typing import List, Optional
 
 import numpy as np
-import scipy as sp  # type: ignore
-from scipy.sparse import spmatrix  # type: ignore
+import scipy as sp
+from scipy.sparse import spmatrix
 
 from pyesmda.localization import LocalizationStrategy, NoLocalization
 from pyesmda.utils import (
@@ -86,7 +86,7 @@ class ESMDAInversionType(str, Enum):
             return False
         return self.value == other
 
-    @classmethod  # type: ignore
+    @classmethod
     def to_list(cls) -> List[ESMDAInversionType]:
         """Return all enums as a list."""
         return list(cls)
@@ -107,7 +107,7 @@ def get_localized_cdd(Y: NDArrayFloat, dd_corr_mat: Optional[spmatrix]) -> NDArr
     """
     C_DD = empirical_cross_covariance(Y, Y)
     if dd_corr_mat is not None:
-        return dd_corr_mat.multiply(C_DD)  # type: ignore
+        return dd_corr_mat.multiply(C_DD)  # ty:ignore[unresolved-attribute]
     return C_DD
 
 
@@ -137,15 +137,13 @@ def get_localized_cmd_multi_dot(
     Y_shift = get_anomaly_matrix(Y)
 
     if md_corr_mat is not None:
-        return np.linalg.multi_dot(  # type: ignore
+        return np.linalg.multi_dot(
             [
-                md_corr_mat.multiply(  # type: ignore
-                    X_shift.dot(Y_shift.T)  # type: ignore
-                ).toarray(),
+                md_corr_mat.multiply(X_shift.dot(Y_shift.T)).toarray(),  # ty:ignore[unresolved-attribute]
                 *args,
             ]
         )
-    return np.linalg.multi_dot([X_shift, Y_shift.T, *args])  # type: ignore
+    return np.linalg.multi_dot([X_shift, Y_shift.T, *args])
 
 
 @np_cache()
@@ -215,7 +213,7 @@ def inversion(
     NDArrayFloat
         The update :math:`\delta X`.
     """
-    return {  # type: ignore
+    return {
         ESMDAInversionType.NAIVE: inversion_exact_naive,
         ESMDAInversionType.EXACT_CHOLESKY: inversion_exact_cholesky,
         ESMDAInversionType.EXACT_LSTSQ: inversion_exact_lstsq,
@@ -257,7 +255,7 @@ def inversion_exact_naive(
     C_MD = C_MD_localization.localize(X, Y, batch_slice=batch_slice)
     C_DD = C_DD_localization.localize(Y, Y)
     C_D = np.diag(C_D) if C_D.ndim == 1 else C_D
-    return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D) @ (D - Y)  # type: ignore
+    return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D) @ (D - Y)
 
 
 def inversion_exact_cholesky(
@@ -427,9 +425,9 @@ def singular_values_to_keep(
     2
 
     """
-    assert np.all(
-        np.diff(singular_values) <= 0
-    ), "Singular values must be sorted decreasing"
+    assert np.all(np.diff(singular_values) <= 0), (
+        "Singular values must be sorted decreasing"
+    )
     assert 0 < truncation <= 1, "Threshold must be in range (0, 1]"
     singular_values = np.array(singular_values, dtype=float)
 

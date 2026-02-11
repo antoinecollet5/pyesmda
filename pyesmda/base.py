@@ -11,8 +11,8 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
 import numpy as np
-import scipy as sp  # type: ignore
-from scipy._lib._util import check_random_state  # type: ignore
+import scipy as sp
+from scipy._lib._util import check_random_state
 
 from pyesmda.inversion import ESMDAInversionType, inversion
 from pyesmda.localization import LocalizationStrategy, NoLocalization
@@ -276,7 +276,7 @@ class ESMDABase(ABC):
         self.cov_dd: NDArrayFloat = np.array([])
         self.forward_model: Callable[..., NDArrayFloat] = forward_model
         self.forward_model_args: Sequence[Any] = forward_model_args
-        self.inversion_type = inversion_type  # type: ignore
+        self.inversion_type = inversion_type
         if forward_model_kwargs is None:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
@@ -291,7 +291,7 @@ class ESMDABase(ABC):
         )
         self.C_DD_localization: LocalizationStrategy = C_DD_localization
         self.C_MD_localization: LocalizationStrategy = C_MD_localization
-        self.m_bounds = m_bounds  # type: ignore
+        self.m_bounds = m_bounds
         if seed is not None:
             warnings.warn(
                 DeprecationWarning(
@@ -299,7 +299,7 @@ class ESMDABase(ABC):
                     "and has been dropped since version 0.4.3."
                 )
             )
-        self.rng: np.random.RandomState = check_random_state(random_state)  # type: ignore
+        self.rng: np.random.RandomState = check_random_state(random_state)
         self.is_forecast_for_last_assimilation: bool = is_forecast_for_last_assimilation
         self.batch_size = batch_size
         self.is_parallel_analyse_step: bool = is_parallel_analyse_step
@@ -337,12 +337,12 @@ class ESMDABase(ABC):
     @property
     def n_ensemble(self) -> int:
         """Return the number of ensemble members."""
-        return self.m_prior.shape[1]  # type: ignore
+        return self.m_prior.shape[1]
 
     @property
     def m_dim(self) -> int:
         """Return the length of the parameters vector."""
-        return self.m_prior.shape[0]  # type: ignore
+        return self.m_prior.shape[0]
 
     @property
     def d_dim(self) -> int:
@@ -362,15 +362,14 @@ class ESMDABase(ABC):
         It must be a 2D array, or a 1D array if the covariance matrix is diagonal.
         """
         error = ValueError(
-            "cov_obs must be a 2D matrix with "
-            f"dimensions ({self.d_dim}, {self.d_dim})."
+            f"cov_obs must be a 2D matrix with dimensions ({self.d_dim}, {self.d_dim})."
         )
         if len(cov.shape) > 2:
             raise error
-        if cov.shape[0] != self.obs.size:  # type: ignore
+        if cov.shape[0] != self.obs.size:
             raise error
         if cov.ndim == 2:
-            if cov.shape[0] != cov.shape[1]:  # type: ignore
+            if cov.shape[0] != cov.shape[1]:
                 raise error
 
         # From iterative_ensemble_smoother code
@@ -380,7 +379,7 @@ class ESMDABase(ABC):
         if cov.ndim == 2:
             self.cov_obs_cholesky: NDArrayFloat = sp.linalg.cholesky(cov, lower=False)
         else:
-            self.cov_obs_cholesky = np.sqrt(cov)  # type: ignore
+            self.cov_obs_cholesky = np.sqrt(cov)
 
         self._cov_obs: NDArrayFloat = cov
 
@@ -433,7 +432,7 @@ class ESMDABase(ABC):
             self._m_bounds: NDArrayFloat = np.empty([self.m_dim, 2], dtype=np.float64)
             self._m_bounds[:, 0] = -np.inf
             self._m_bounds[:, 1] = np.inf
-        elif mb.shape[0] != self.m_dim:  # type: ignore
+        elif mb.shape[0] != self.m_dim:
             raise ValueError(
                 f"m_bounds is of shape {mb.shape} while it "
                 f"should be of shape ({self.m_dim}, 2)"
@@ -571,7 +570,7 @@ class ESMDABase(ABC):
         # predicted parameters
         return self.m_prior + (
             inversion(
-                self.inversion_type,  # type: ignore
+                self.inversion_type,
                 inflation_factor,
                 self.cov_obs,
                 self.cov_obs_cholesky,
@@ -636,7 +635,7 @@ class ESMDABase(ABC):
 
         return self.m_prior[_slice, :] + (
             inversion(
-                self.inversion_type,  # type: ignore
+                self.inversion_type,
                 inflation_factor,
                 self.cov_obs,
                 self.cov_obs_cholesky,
