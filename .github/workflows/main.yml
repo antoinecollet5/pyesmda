@@ -4,7 +4,7 @@ on:
   push:
     # on every branch
     branches:
-      - '*'
+      - '**'
 
 env:
   PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
@@ -13,7 +13,7 @@ env:
 
 jobs:
   static_analysis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,16 +21,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.13
 
-      - name: Install dependencies
-        run: pip install -r requirements_dev.txt
-
-      - name: Run pre-commit
+      - name: Install dependencies with uv
         run: |
-          pip install pre-commit
-          pre-commit run --all-files
-        continue-on-error: true
+          pip install uv
+          uv venv
+          uv pip install -e ".[all]"
+
+      - name: Run pre-commit hooks
+        run: |
+          uv run pre-commit run --all-files  # Run pre-commit inside the uv virtual environment
+
+        continue-on-error: false
 
       - name: Upload pre-commit report
         if: ${{ failure() }}
@@ -39,70 +42,86 @@ jobs:
           name: pre-commit-report
           path: pre-commit-report
 
-  test:
-    runs-on: ubuntu-latest
-    env:
-      NUMBA_DISABLE_JIT : 1
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-
-      - name: Install dependencies
-        run: pip install -r requirements_dev.txt
-
-      - name: Install project
-        run: pip install -e .
-
-      - name: Set up xvfb
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          sleep 3
-
-      - name: Run tests with coverage
-        run: |
-          xvfb-run py.test -s --cov=pyesmda --cov-report xml --cov-report html --cov-report term --cov-config=.coveragerc --color=yes
-        continue-on-error: false
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.0.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  tox:
-    runs-on: ubuntu-latest
+  tests:
+    runs-on: ubuntu-22.04
+    needs:
+      - static_analysis
     strategy:
-      max-parallel: 10
+      fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+    env:
+      NUMBA_DISABLE_JIT: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install tox
-        run: python3 -m pip install tox
-
-      - name: Set up xvfb
+      - name: Install uv + deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          sleep 3
+          pip install uv
+          uv venv
+          uv pip install -e .[all]
 
-      - name: Run tox
-        run: xvfb-run tox
 
-      - name: Upload distribution artifacts
-        uses: actions/upload-artifact@v4
+      - name: Run tests with coverage
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.python-version }}
+        run: |
+          uv run pytest \
+            --cov=pyesmda \
+            --cov-config=.coveragerc \
+            --cov-report=term \
+            --color=yes
+
+      - name: find
+        run: find . -type f -name '.coverage*'
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v6
         with:
-          name: ubuntu-python-package-${{matrix.python-version}}
-          path: dist/*.whl
+          name: coverage-${{ matrix.python-version }}
+          path: ${{ github.workspace }}/.coverage.${{ matrix.python-version }}
+          include-hidden-files: true
+          if-no-files-found: error
+
+
+  coverage-merge:
+    runs-on: ubuntu-22.04
+    needs:
+      - tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install coverage
+        run: pip install coverage
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: coverage-data
+
+      - name: Combine coverage
+        run: |
+          find coverage-data -name '.coverage*' -print
+          coverage combine $(find coverage-data -name '.coverage*')
+          coverage report -m
+          coverage html
+          coverage xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
