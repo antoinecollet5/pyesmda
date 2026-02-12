@@ -248,6 +248,34 @@ class CorrelationTransform(ABC):
         ...
 
 
+def make_correlation_threshold_callable(
+    correlation_threshold: Union[Callable[[int], float], float, None],
+) -> Callable:
+
+    # Default value
+    if correlation_threshold is None:
+        return default_correlation_threshold
+
+    # Create `correlation_threshold` if the argument is a float
+    if correlation_threshold is not None:
+        if callable(correlation_threshold):
+            return correlation_threshold
+
+    # Check the correlation threshold
+    if (
+        isinstance(correlation_threshold, numbers.Real)
+        and correlation_threshold >= 0  # ty:ignore[unsupported-operator]
+        and correlation_threshold <= 1
+    ):
+
+        def _correlation_threshold(ensemble_size: int) -> float:
+            return correlation_threshold  # ty:ignore[invalid-return-type]
+
+        return _correlation_threshold
+
+    raise TypeError("`correlation_threshold` must be a callable or a float in [0, 1]")
+
+
 class CorrelationThresholding(CorrelationTransform):
     """Apply a thresholding to the adaptive correlation matrix."""
 
@@ -269,35 +297,12 @@ class CorrelationThresholding(CorrelationTransform):
             are lower than the correlation threshold will be set to zero.
             If None, the default 3/sqrt(ensemble_size) is used. The default is None.
         """
-        # Check the correlation threshold
-        is_float = (
-            isinstance(correlation_threshold, numbers.Real)
-            and correlation_threshold >= 0
-            and correlation_threshold <= 1
+        self.correlation_threshold: Callable[[int], float] = (
+            make_correlation_threshold_callable(correlation_threshold)
         )
-
-        # Create `correlation_threshold` if the argument is a float
-        if callable(correlation_threshold):
-            _correlation_threshold: Callable[[int], float] = correlation_threshold
-        elif is_float:
-            corr_threshold: float = correlation_threshold
-
-            def _correlation_threshold(ensemble_size: int) -> float:
-                return corr_threshold
-
-        elif correlation_threshold is not None:
-            raise TypeError(
-                "`correlation_threshold` must be a callable or a float in [0, 1]"
-            )
-        else:
-            _correlation_threshold = default_correlation_threshold
-
-        assert callable(_correlation_threshold), (
+        assert callable(self.correlation_threshold), (
             "`correlation_threshold` should be callable"
         )
-
-        # Add as an attribute
-        self.correlation_threshold: Callable[[int], float] = _correlation_threshold
 
     def __call__(self, correlation_matrix: NDArrayFloat, ne: int) -> NDArrayFloat:
         """Transform the correlation matrix."""

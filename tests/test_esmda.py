@@ -327,7 +327,7 @@ def empty_forward_model(*args, **kwargs) -> None:
         ),
     ],
 )
-def test_constructor(args, kwargs, expected_exception) -> ESMDA:
+def test_constructor(args, kwargs, expected_exception) -> None:
     with expected_exception:
         esmda = ESMDA(*args, **kwargs)
 
@@ -337,7 +337,6 @@ def test_constructor(args, kwargs, expected_exception) -> ESMDA:
                 _sum += 1 / val
                 assert val == esmda.n_assimilations
             assert _sum == 1.0
-    return esmda
 
 
 def exponential(p, x) -> NDArrayFloat:
