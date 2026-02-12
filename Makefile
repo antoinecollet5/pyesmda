@@ -50,17 +50,24 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .mypy_cache
 
 
-lint: ## check style with ruff
-	ruff check
+precommit: ## run pre-commit hooks
+    pre-commit run --all-files
 
-test: ## run tests quickly with the default Python
-	pytest
+lint: ## check style with ruff
+	ruff check pyesmda tests
+
+test-unitary: ## run tests quickly with the default Python
+	pytest tests
+
+test-notebook:
+	pytest --nbmake **/*ipynb
 
 test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source pyesmda -m pytest
+	tox
+	coverage combine
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
