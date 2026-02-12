@@ -423,7 +423,7 @@ We welcome contributions!
     :target: https://codecov.io/gh/antoinecollet5/pyesmda
     :alt: Coverage
 
-.. |Codacy| image:: https://app.codacy.com/project/badge/Grade/c41f65d98b824de394162520b0d8a17a
+.. |Codacy| image:: https://app.codacy.com/project/badge/Grade/d581e8505fbb470a8e9ea08475e393ae
     :target: https://app.codacy.com/gh/antoinecollet5/pyesmda/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
     :alt: codacy
 
