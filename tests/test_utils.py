@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 import numpy as np
 import pytest
-from pyesmda.utils import (
+from pyesmda._utils import (
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
     empirical_covariance_upper,

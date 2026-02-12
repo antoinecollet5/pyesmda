@@ -8,8 +8,7 @@ from typing import List
 
 import numpy as np
 import pytest
-from pyesmda import ESMDA_DMC
-from pyesmda.localization import FixedLocalization
+from pyesmda import ESMDA_DMC, FixedLocalization
 
 from .test_esmda import exponential, forward_model  # ty:ignore[unresolved-import]
 

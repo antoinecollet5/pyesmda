@@ -35,8 +35,8 @@ import numpy as np
 import scipy as sp
 from scipy.sparse import spmatrix
 
-from pyesmda.localization import LocalizationStrategy, NoLocalization
-from pyesmda.utils import (
+from pyesmda._localization import LocalizationStrategy, NoLocalization
+from pyesmda._utils import (
     NDArrayFloat,
     empirical_cross_covariance,
     get_anomaly_matrix,

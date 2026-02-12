@@ -14,9 +14,9 @@ import numpy as np
 import scipy as sp
 from scipy._lib._util import check_random_state
 
-from pyesmda.inversion import ESMDAInversionType, inversion
-from pyesmda.localization import LocalizationStrategy, NoLocalization
-from pyesmda.utils import (
+from pyesmda._inversion import ESMDAInversionType, inversion
+from pyesmda._localization import LocalizationStrategy, NoLocalization
+from pyesmda._utils import (
     NDArrayFloat,
     check_nans_in_predictions,
     get_anomaly_matrix,

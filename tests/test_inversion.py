@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-from pyesmda.inversion import ESMDAInversionType, get_localized_cmd_multi_dot
+from pyesmda._inversion import ESMDAInversionType, get_localized_cmd_multi_dot
 
 
 def test_inversion_type() -> None:

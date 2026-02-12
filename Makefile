@@ -49,9 +49,8 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .ruff_cache
 	rm -fr .mypy_cache
 
-
 precommit: ## run pre-commit hooks
-    pre-commit run --all-files
+	pre-commit run --all-files
 
 lint: ## check style with ruff
 	ruff check pyesmda tests

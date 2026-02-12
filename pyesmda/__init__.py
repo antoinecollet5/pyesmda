@@ -39,6 +39,18 @@ Covariance approximation
     approximate_covariance_matrix_from_ensembles
     inflate_ensemble_around_its_mean
 
+Localization
+============
+
+Classes to parametrize the localization in a flexible way.
+
+.. autosummary::
+   :toctree: _autosummary
+
+    LocalizationStrategy
+    NoLocalization
+    FixedLocalization
+
 Correlation functions
 =====================
 
@@ -58,16 +70,20 @@ Other functions
 
 """
 
-from .__about__ import __author__, __version__
-from .esmda import ESMDA
-from .esmda_dmc import ESMDA_DMC
-from .esmda_rs import ESMDA_RS
-from .inversion import ESMDAInversionType
-from .localization import (
+from pyesmda.__about__ import __author__, __version__
+from pyesmda._esmda import ESMDA
+from pyesmda._esmda_dmc import ESMDA_DMC
+from pyesmda._esmda_rs import ESMDA_RS
+from pyesmda._inversion import ESMDAInversionType
+from pyesmda._localization import (
+    FixedLocalization,
+    LocalizationStrategy,
+    NoLocalization,
     distances_to_weights_beta_cumulative,
     distances_to_weights_fifth_order,
 )
-from .utils import (
+
+from ._utils import (
     approximate_covariance_matrix_from_ensembles,
     check_nans_in_predictions,
     empirical_covariance_upper,
@@ -93,4 +109,7 @@ __all__ = [
     "check_nans_in_predictions",
     "distances_to_weights_beta_cumulative",
     "distances_to_weights_fifth_order",
+    "FixedLocalization",
+    "LocalizationStrategy",
+    "NoLocalization",
 ]

@@ -2,7 +2,7 @@ from contextlib import nullcontext as does_not_raise
 
 import numpy as np
 import pytest
-from pyesmda.localization import (
+from pyesmda._localization import (
     default_correlation_threshold,
     distances_to_weights_beta_cumulative,
     distances_to_weights_fifth_order,

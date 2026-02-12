@@ -8,9 +8,8 @@ from contextlib import contextmanager
 
 import numpy as np
 import pytest
-from pyesmda import ESMDA, ESMDAInversionType
-from pyesmda.localization import FixedLocalization
-from pyesmda.utils import NDArrayFloat
+from pyesmda import ESMDA, ESMDAInversionType, FixedLocalization
+from pyesmda._utils import NDArrayFloat
 
 
 @contextmanager

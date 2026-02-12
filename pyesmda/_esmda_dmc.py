@@ -11,10 +11,10 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 import numpy as np
 import numpy.typing as npt
 
-from pyesmda.esmda import ESMDABase
-from pyesmda.inversion import ESMDAInversionType
-from pyesmda.localization import LocalizationStrategy, NoLocalization
-from pyesmda.utils import ls_cost_function
+from pyesmda._esmda import ESMDABase
+from pyesmda._inversion import ESMDAInversionType
+from pyesmda._localization import LocalizationStrategy, NoLocalization
+from pyesmda._utils import ls_cost_function
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 

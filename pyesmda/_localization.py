@@ -12,7 +12,7 @@ from typing import Callable, Optional, Sequence, Union
 import numpy as np
 from scipy.sparse import csr_matrix, spmatrix
 
-from pyesmda.utils import NDArrayFloat, empirical_cross_covariance, get_anomaly_matrix
+from pyesmda._utils import NDArrayFloat, empirical_cross_covariance, get_anomaly_matrix
 
 
 class LocalizationStrategy(ABC):
