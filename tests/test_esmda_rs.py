@@ -6,6 +6,7 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 
 from typing import List
 
+import covmats
 import numpy as np
 import pytest
 from pyesmda import ESMDA_RS, FixedLocalization
@@ -15,7 +16,7 @@ from .test_esmda import exponential, forward_model  # ty:ignore[unresolved-impor
 
 @pytest.mark.parametrize(
     "is_use_std_m_prior,expected_uncertainties,expected_n_assimilations",
-    [(True, [1.1e-1, 6.69e-5], 4), (False, [9.57e-2, 5.10e-5], 8)],
+    [(True, [9.82e-2, 4.74e-5], 4), (False, [0.119, 0.00012], 8)],
 )
 def test_esmda_rs_exponential_case(
     is_use_std_m_prior: bool,
@@ -40,7 +41,7 @@ def test_esmda_rs_exponential_case(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.diag([1.0] * obs.shape[0])
+    cov_obs = covmats.CovViaDiagonal(np.ones(obs.shape[0]))
 
     # A priori estimated parameters standard deviation
     if is_use_std_m_prior:
@@ -63,6 +64,7 @@ def test_esmda_rs_exponential_case(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
+        inversion_type="exact_cholesky",
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
         C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         save_ensembles_history=True,
@@ -96,9 +98,9 @@ def test_esmda_rs_exponential_case(
     "batch_size, is_parallel_analyse_step, "
     "expected_uncertainties, expected_n_assimilations",
     [
-        (1, False, [1.1e-1, 6.69e-5], 4),
-        (2, False, [1.1e-1, 6.69e-5], 4),
-        (2, True, [1.1e-1, 6.69e-5], 4),
+        (1, False, [9.82e-02, 4.76e-05], 4),
+        (2, False, [9.82e-02, 4.76e-05], 4),
+        (2, True, [9.82e-02, 4.76e-05], 4),
     ],
 )
 def test_esmda_exponential_case_batch(
@@ -125,7 +127,7 @@ def test_esmda_exponential_case_batch(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.diag([1.0] * obs.shape[0])
+    cov_obs = covmats.CovViaDiagonal(np.ones(obs.shape[0]))
 
     std_m_prior = np.array([30, 0.01])
 
@@ -144,6 +146,7 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
+        inversion_type="exact_cholesky",
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
         C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         save_ensembles_history=True,

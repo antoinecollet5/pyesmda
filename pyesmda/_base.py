@@ -10,8 +10,8 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
 
+import covmats
 import numpy as np
-import scipy as sp
 from scipy._lib._util import check_random_state
 
 from pyesmda._inversion import ESMDAInversionType, inversion
@@ -41,7 +41,7 @@ class ESMDABase(ABC):
         predicted values.
     obs : NDArrayFloat
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: NDArrayFloat
+    cov_obs: covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     d_obs_uc: NDArrayFloat
@@ -128,7 +128,6 @@ class ESMDABase(ABC):
     __slots__: List[str] = [
         "obs",
         "_cov_obs",
-        "cov_obs_cholesky",
         "d_obs_uc",
         "d_pred",
         "d_history",
@@ -158,7 +157,7 @@ class ESMDABase(ABC):
         self,
         obs: NDArrayFloat,
         m_init: NDArrayFloat,
-        cov_obs: NDArrayFloat,
+        cov_obs: covmats.CovarianceMatrix,
         forward_model: Callable[..., NDArrayFloat],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -190,7 +189,7 @@ class ESMDABase(ABC):
         m_init : NDArrayFloat
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{m}`, :math:`N_{e}`).
-        cov_obs: NDArrayFloat
+        cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
             If a 1D array is passed, it represents a diagonal covariance matrix.
@@ -350,38 +349,27 @@ class ESMDABase(ABC):
         return len(self.obs)
 
     @property
-    def cov_obs(self) -> NDArrayFloat:
+    def cov_obs(self) -> covmats.CovarianceMatrix:
         """Get the observation errors covariance matrix."""
         return self._cov_obs
 
     @cov_obs.setter
-    def cov_obs(self, cov: NDArrayFloat) -> None:
+    def cov_obs(self, cov: covmats.CovarianceMatrix) -> None:
         """
         Set the observation errors covariance matrix.
 
         It must be a 2D array, or a 1D array if the covariance matrix is diagonal.
         """
         error = ValueError(
-            f"cov_obs must be a 2D matrix with dimensions ({self.d_dim}, {self.d_dim})."
+            "`cov_obs` must be an implementation of `covmats.CovarianceMatrix`"
+            f" with dimensions ({self.d_dim}, {self.d_dim})."
         )
-        if len(cov.shape) > 2:
+        if not isinstance(cov, covmats.CovarianceMatrix):
             raise error
-        if cov.shape[0] != self.obs.size:
+        if cov.shape != (self.obs.size, self.obs.size):
             raise error
-        if cov.ndim == 2:
-            if cov.shape[0] != cov.shape[1]:
-                raise error
 
-        # From iterative_ensemble_smoother code
-        # Only compute the covariance factorization once
-        # If it's a full matrix, we gain speedup by only computing cholesky once
-        # If it's a diagonal, we gain speedup by never having to compute cholesky
-        if cov.ndim == 2:
-            self.cov_obs_cholesky: NDArrayFloat = sp.linalg.cholesky(cov, lower=False)
-        else:
-            self.cov_obs_cholesky = np.sqrt(cov)
-
-        self._cov_obs: NDArrayFloat = cov
+        self._cov_obs: covmats.CovarianceMatrix = cov
 
     @property
     def anomalies(self) -> NDArrayFloat:
@@ -536,16 +524,11 @@ class ESMDABase(ABC):
         Therefore, scaling C_D by alpha is equivalent to scaling L with sqrt(alpha)
 
         """
-        shape = (self.d_dim, self.n_ensemble)
-
-        if self._cov_obs.ndim == 2:
-            self.d_obs_uc = self.obs.reshape(-1, 1) + np.sqrt(
-                inflation_factor
-            ) * self.cov_obs_cholesky @ self.rng.normal(size=shape)
-        else:
-            self.d_obs_uc = self.obs.reshape(-1, 1) + np.sqrt(
-                inflation_factor
-            ) * self.rng.normal(size=shape) * self.cov_obs_cholesky.reshape(-1, 1)
+        self.d_obs_uc = (
+            self.obs.reshape(-1, 1)
+            + np.sqrt(inflation_factor)
+            * self.cov_obs.sample_mvnormal((self.n_ensemble,), self.rng).T
+        )
 
     def _analyse(self, inflation_factor: float) -> NDArrayFloat:
         r"""
@@ -573,7 +556,6 @@ class ESMDABase(ABC):
                 self.inversion_type,
                 inflation_factor,
                 self.cov_obs,
-                self.cov_obs_cholesky,
                 self.d_obs_uc,
                 self.d_pred,
                 self.m_prior,
@@ -638,7 +620,6 @@ class ESMDABase(ABC):
                 self.inversion_type,
                 inflation_factor,
                 self.cov_obs,
-                self.cov_obs_cholesky,
                 self.d_obs_uc,
                 self.d_pred,
                 self.m_prior[_slice, :].reshape(

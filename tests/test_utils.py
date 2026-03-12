@@ -4,8 +4,10 @@ Test for the Ensemble-Smoother with Multiple Data Assimilation utils.
 @author: acollet
 """
 
+import re
 from contextlib import contextmanager
 
+import covmats
 import numpy as np
 import pytest
 from pyesmda._utils import (
@@ -71,29 +73,33 @@ def test_empirical_covariance_upper() -> None:
         (
             np.ones((20)),
             np.ones((20)) * 2.0,
-            cholesky(np.diag((np.ones((20)) * 0.5) ** 2), lower=False),
+            covmats.CovViaDiagonal(np.ones((20)) * 0.5),
             20.0,
             does_not_raise(),
         ),
         (
             np.ones((20)),
             np.ones((20)) * 2.0,
-            cholesky(np.diag((np.ones((20)) * 2.0) ** 2), lower=False),
-            5.0,
+            covmats.CovViaCholesky(
+                cholesky(np.diag((np.ones((20)) * 2.0) ** 2), lower=True)
+            ),
+            2.5,
             does_not_raise(),
         ),
         (
             np.ones((20, 10)),
             np.ones((20)) * 2.0,
-            cholesky(np.diag((np.ones((20)) * 0.5) ** 2), lower=False),
+            covmats.CovViaCholesky(
+                cholesky(np.diag((np.ones((20)) * 0.5)), lower=True)
+            ),
             np.ones(10) * 20.0,
             does_not_raise(),
         ),
         (
             np.ones((20, 10)),
             np.ones((20)) * 2.0,
-            np.sqrt(np.ones((20)) * 2),
-            np.ones(10) * 5.0,
+            covmats.CovViaDiagonal(np.sqrt(np.ones((20)) * 2)),
+            np.ones(10) * 5.0 * np.sqrt(2),
             does_not_raise(),
         ),
         (
@@ -102,7 +108,11 @@ def test_empirical_covariance_upper() -> None:
             np.sqrt(np.ones((20, 20, 20)) * 2),
             np.ones(20) * 5.0,
             pytest.raises(
-                ValueError, match="cov_obs_cholesky must be a 2D array or a 1D array."
+                ValueError,
+                match=re.escape(
+                    "cov_obs must be an implementation of "
+                    "`covmats.CovarianceMatrix` with dimensions (20, 20)."
+                ),
             ),
         ),
     ],

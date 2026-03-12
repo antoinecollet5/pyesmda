@@ -116,7 +116,7 @@ class FixedLocalization(LocalizationStrategy):
         """Apply the localization to the covariance matrix."""
         cov_mat = empirical_cross_covariance(X, Y)
         if self.correlation_matrix is not None:
-            return self.correlation_matrix[batch_slice, :].multiply(cov_mat)
+            return self.correlation_matrix[batch_slice, :].multiply(cov_mat).toarray()
         return cov_mat
 
     def localize_multi_dot(

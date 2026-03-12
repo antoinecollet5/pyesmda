@@ -6,6 +6,7 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 
 from typing import List
 
+import covmats
 import numpy as np
 import pytest
 from pyesmda import ESMDA_DMC, FixedLocalization
@@ -15,7 +16,7 @@ from .test_esmda import exponential, forward_model  # ty:ignore[unresolved-impor
 
 @pytest.mark.parametrize(
     "expected_uncertainties,expected_n_assimilations",
-    [([1.16e-1, 5.69e-5], 6)],
+    [([1.16e-1, 5.12e-5], 6)],
 )
 def test_esmda_dmc_exponential_case(
     expected_uncertainties: List[float],
@@ -39,7 +40,7 @@ def test_esmda_dmc_exponential_case(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.diag([1.0] * obs.shape[0])
+    cov_obs = covmats.CovViaDiagonal(np.ones(obs.shape[0]))
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -54,6 +55,7 @@ def test_esmda_dmc_exponential_case(
         cov_obs,
         forward_model,
         forward_model_args=(x,),
+        inversion_type="exact_cholesky",
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
@@ -88,9 +90,9 @@ def test_esmda_dmc_exponential_case(
     "batch_size, is_parallel_analyse_step, "
     "expected_uncertainties, expected_n_assimilations",
     [
-        (1, False, [1.15e-1, 5.69e-5], 6),
-        (2, False, [1.15e-1, 5.69e-5], 6),
-        (2, True, [1.15e-1, 5.69e-5], 6),
+        (1, False, [1.214e-1, 5.12e-5], 6),
+        (2, False, [1.214e-1, 5.12e-5], 6),
+        (2, True, [1.214e-1, 5.12e-5], 6),
     ],
 )
 def test_esmda_exponential_case_batch(
@@ -117,7 +119,7 @@ def test_esmda_exponential_case_batch(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.diag([1.0] * obs.shape[0])
+    cov_obs = covmats.CovViaDiagonal(np.ones(obs.shape[0]))
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -134,6 +136,7 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
+        inversion_type="exact_cholesky",
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
         C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
         save_ensembles_history=True,

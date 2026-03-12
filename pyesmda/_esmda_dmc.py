@@ -8,6 +8,7 @@ import logging
 import math
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+import covmats
 import numpy as np
 import numpy.typing as npt
 
@@ -42,7 +43,7 @@ class ESMDA_DMC(ESMDABase):
         predicted values.
     obs : npt.NDArray[np.float64]
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: npt.NDArray[np.float64]
+    cov_obs: covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     d_obs_uc: npt.NDArray[np.float64]
@@ -131,7 +132,7 @@ class ESMDA_DMC(ESMDABase):
         self,
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
-        cov_obs: npt.NDArray[np.float64],
+        cov_obs: covmats.CovarianceMatrix,
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -162,7 +163,7 @@ class ESMDA_DMC(ESMDABase):
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{m}`, :math:`N_{e}`).
-        cov_obs: npt.NDArray[np.float64]
+        cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
         forward_model: callable
@@ -306,9 +307,7 @@ class ESMDA_DMC(ESMDABase):
             # forecast step (in parallel)
             self._forecast()
             # objective function computation
-            ensemble_ls_cf = ls_cost_function(
-                self.d_pred, self.obs, self.cov_obs_cholesky
-            )
+            ensemble_ls_cf = ls_cost_function(self.d_pred, self.obs, self.cov_obs)
             mean_objfun = float(np.mean(ensemble_ls_cf))
             # ddof=1 -> Bessel's correction which corrects the bias in the estimation
             # of the population variance,

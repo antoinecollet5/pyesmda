@@ -28,9 +28,11 @@ The methods can be classified as
 # inversion_<exact/approximate>_<name>
 from __future__ import annotations
 
+import functools
 from enum import Enum
 from typing import List, Optional
 
+import covmats
 import numpy as np
 import scipy as sp
 from scipy.sparse import spmatrix
@@ -40,8 +42,13 @@ from pyesmda._utils import (
     NDArrayFloat,
     empirical_cross_covariance,
     get_anomaly_matrix,
-    np_cache,
 )
+
+
+@functools.cache
+def get_cholesky(cov: covmats.CovarianceMatrix) -> NDArrayFloat:
+    """Get the inversed matrix."""
+    return sp.linalg.cholesky(cov.todense(), lower=False)
 
 
 class ESMDAInversionType(str, Enum):
@@ -146,17 +153,10 @@ def get_localized_cmd_multi_dot(
     return np.linalg.multi_dot([X_shift, Y_shift.T, *args])
 
 
-@np_cache()
-def get_inv(input: NDArrayFloat) -> NDArrayFloat:
-    """Get the inversed matrix."""
-    return np.linalg.inv(input)
-
-
 def inversion(
     invertion_type: ESMDAInversionType,
     inflation_factor: float,
-    cov_obs: NDArrayFloat,
-    cov_obs_cholesky: NDArrayFloat,
+    cov_obs: covmats.CovarianceMatrix,
     obs_uc: NDArrayFloat,
     d_pred: NDArrayFloat,
     s_ens: NDArrayFloat,
@@ -175,11 +175,9 @@ def inversion(
     inflation_factor : float
         Inflation factor :math:`\alpha` for `cov_obs`, the covariance matrix of
         observed data measurement errors.
-    cov_obs : NDArrayFloat
+    cov_obs : covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-    cov_obs_cholesky : NDArrayFloat
-        Cholesky factorization (upper) of :variable:`cov_obs`.
     obs_uc : NDArrayFloat
         Matrix of perturbed observations with shape (:math:`N_{obs}`, :math:`N_{e}`).
     d_pred : NDArrayFloat
@@ -224,7 +222,6 @@ def inversion(
     }[invertion_type](
         inflation_factor=inflation_factor,
         C_D=cov_obs,
-        C_D_L=cov_obs_cholesky,
         D=obs_uc,
         Y=d_pred,
         X=s_ens,
@@ -238,7 +235,7 @@ def inversion(
 def inversion_exact_naive(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -254,14 +251,13 @@ def inversion_exact_naive(
     # Naive implementation of Equation (3) in Emerick (2013)
     C_MD = C_MD_localization.localize(X, Y, batch_slice=batch_slice)
     C_DD = C_DD_localization.localize(Y, Y)
-    C_D = np.diag(C_D) if C_D.ndim == 1 else C_D
-    return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D) @ (D - Y)
+    return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D.todense()) @ (D - Y)
 
 
 def inversion_exact_cholesky(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -291,14 +287,14 @@ def inversion_exact_cholesky(
     }
 
     # Compute K := sp.linalg.inv(C_DD + alpha * C_D) @ (D - Y)
-    if C_D.ndim == 2:
+    if not isinstance(C_D, covmats.CovViaDiagonal):
         # C_D is a covariance matrix
-        C_DD += inflation_factor * C_D  # Save memory by mutating
+        C_DD += inflation_factor * C_D.todense()  # Save memory by mutating
         K: NDArrayFloat = sp.linalg.solve(C_DD, (D - Y), **solver_kwargs)
     # A diagonal covariance matrix was given as a vector
     else:
         # C_D is an array, so add it to the diagonal without forming diag(C_D)
-        C_DD.flat[:: C_DD.shape[1] + 1] += inflation_factor * C_D
+        C_DD.flat[:: C_DD.shape[1] + 1] += inflation_factor * C_D.get_diagonal()
         K = sp.linalg.solve(C_DD, (D - Y), **solver_kwargs)
 
     return C_MD_localization.localize_multi_dot(X, Y, K, batch_slice=batch_slice)
@@ -307,7 +303,7 @@ def inversion_exact_cholesky(
 def inversion_exact_lstsq(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -322,11 +318,12 @@ def inversion_exact_lstsq(
     C_DD = C_DD_localization.localize(Y, Y)
 
     # A covariance matrix was given
-    if C_D.ndim == 2:
-        C_DD += inflation_factor * C_D  # Save memory by mutating
+    # TODO: add method inflated.
+    if not isinstance(C_D, covmats.CovViaDiagonal):
+        C_DD += inflation_factor * C_D.todense()  # Save memory by mutating
     # A diagonal covariance matrix was given as a vector
     else:
-        C_DD.flat[:: C_DD.shape[0] + 1] += inflation_factor * C_D
+        C_DD.flat[:: C_DD.shape[0] + 1] += inflation_factor * C_D.get_diagonal()
 
     # K = lhs^-1 @ (D - Y)
     # lhs @ K = (D - Y)
@@ -339,7 +336,7 @@ def inversion_exact_lstsq(
 def inversion_exact_woodbury(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -365,38 +362,20 @@ def inversion_exact_woodbury(
     # and then to use cholesky afterwards ?
     Y_shift = get_anomaly_matrix(Y)
 
-    # A full covariance matrix was given
-    if C_D.ndim == 2:
-        # Invert C_D -> we use a cached function
-        C_D_inv = get_inv(C_D) / inflation_factor
+    # Compute the center part of the rhs in woodburry
+    center = Y_shift.T @ C_D.solve(Y_shift / inflation_factor)
+    center.flat[:: center.shape[0] + 1] += 1.0  # Add to diagonal
 
-        # Compute the center part of the rhs in woodburry
-        center = np.linalg.multi_dot([Y_shift.T, C_D_inv, Y_shift])
-        center.flat[:: center.shape[0] + 1] += 1.0  # Add to diagonal
+    # Compute the symmetric term of the rhs in woodbury
+    term = C_D.solve(Y_shift / inflation_factor)
 
-        # Compute the symmetric term of the rhs in woodbury
-        term = C_D_inv @ Y_shift
-
-        # Compute the woodbury inversion, then return
-        inverted = C_D_inv - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T])
-
-        return C_MD_localization.localize_multi_dot(
-            X, Y, inverted, (D - Y), batch_slice=batch_slice
-        )
-
-    # A diagonal covariance matrix was given as a 1D array.
-    # Same computation as above, but exploit the diagonal structure
-    else:
-        C_D_inv = 1 / (C_D * inflation_factor)  # Invert diagonal
-        center = np.linalg.multi_dot([Y_shift.T * C_D_inv, Y_shift])
-        center.flat[:: center.shape[0] + 1] += 1.0
-        UT_D = Y_shift.T * C_D_inv
-        inverted = np.diag(C_D_inv) - np.linalg.multi_dot(
-            [UT_D.T, sp.linalg.inv(center), UT_D]
-        )
-        return C_MD_localization.localize_multi_dot(
-            X, Y, inverted, (D - Y), batch_slice=batch_slice
-        )
+    return C_MD_localization.localize_multi_dot(
+        X,
+        Y,
+        C_D.solve((D - Y) / inflation_factor)
+        - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T]) @ (D - Y),
+        batch_slice=batch_slice,
+    )
 
 
 def singular_values_to_keep(
@@ -440,8 +419,7 @@ def singular_values_to_keep(
 def inversion_rescaled(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
-    C_D_L: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -458,7 +436,17 @@ def inversion_rescaled(
     """
     C_DD = C_DD_localization.localize_multi_dot(Y, Y)
 
-    if C_D.ndim == 2:
+    # TODO: see if we can get the same with covmats ?
+    # TODO: add an inflate
+
+    # Eqn (59). Form C_tilde
+    # C_tilde = C_D.whiten(C_D.whiten(C_DD / inflation_factor))
+    # C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
+
+    if not isinstance(C_D, covmats.CovViaDiagonal):
+        # TODO change that
+        C_D_L = get_cholesky(C_D)
+
         C_D_L_inv, _ = sp.linalg.lapack.dtrtri(
             C_D_L, lower=0, overwrite_c=0
         )  # Invert lower triangular using BLAS routine
@@ -473,7 +461,7 @@ def inversion_rescaled(
     # When C_D is a diagonal covariance matrix, there is no need to perform
     # the cholesky factorization
     else:
-        C_D_L_inv = 1 / np.sqrt(C_D * inflation_factor)
+        C_D_L_inv = 1.0 / np.sqrt(C_D.get_diagonal() * inflation_factor)
         C_tilde = (C_D_L_inv * (C_DD * C_D_L_inv).T).T
         C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
 
@@ -495,7 +483,12 @@ def inversion_rescaled(
 
     # Eqn (61). Compute symmetric term once first, then multiply together and
     # finally multiply with (D - Y)
-    term = C_D_L_inv.T @ U_r if C_D.ndim == 2 else (C_D_L_inv * U_r.T).T
+    term = (
+        C_D_L_inv.T @ U_r
+        if not isinstance(C_D, covmats.CovViaDiagonal)
+        else (C_D_L_inv * U_r.T).T
+    )
+    # term = C_D.whiten(U_r)
 
     return C_MD_localization.localize_multi_dot(
         X, Y, term / s_r, term.T, (D - Y), batch_slice=batch_slice
@@ -505,7 +498,7 @@ def inversion_rescaled(
 def inversion_subspace(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -568,14 +561,7 @@ def inversion_subspace(
 
     # Eqn (70). First compute the symmetric term, then form X
     U_r_w_inv = U_r / w_r
-    if C_D.ndim == 1:
-        X1 = (N_e - 1) * np.linalg.multi_dot(
-            [U_r_w_inv.T * C_D * inflation_factor, U_r_w_inv]
-        )
-    else:
-        X1 = (N_e - 1) * np.linalg.multi_dot(
-            [U_r_w_inv.T, inflation_factor * C_D, U_r_w_inv]
-        )
+    X1 = (N_e - 1) * inflation_factor * U_r_w_inv.T @ (C_D @ U_r_w_inv)
 
     # Eqn (72)
     # Z, T, _ = sp.linalg.svd(X, overwrite_a=True, full_matrices=False)
@@ -603,8 +589,7 @@ def inversion_subspace(
 def inversion_rescaled_subspace(
     *,
     inflation_factor: float,
-    C_D: NDArrayFloat,
-    C_D_L: NDArrayFloat,
+    C_D: covmats.CovarianceMatrix,
     D: NDArrayFloat,
     Y: NDArrayFloat,
     X: NDArrayFloat,
@@ -621,11 +606,11 @@ def inversion_rescaled_subspace(
     """
     N_n, N_e = Y.shape
     Y_shift = Y - np.mean(Y, axis=1, keepdims=True)  # Subtract average
-
-    if C_D.ndim == 2:
+    if not isinstance(C_D, covmats.CovViaDiagonal):
+        # TODO: change that
+        C_D_L = get_cholesky(C_D)
         # Here C_D_L is C^{1/2} in equation (57)
         # assert np.allclose(C_D_L @ C_D_L.T, C_D * alpha)
-        print(inflation_factor)
         C_D_L_inv, _ = sp.linalg.lapack.dtrtri(
             C_D_L * np.sqrt(inflation_factor), lower=0, overwrite_c=0
         )  # Invert upper triangular
@@ -641,7 +626,7 @@ def inversion_rescaled_subspace(
     else:
         # Same as above, but C_D is a vector
         C_D_L_inv = 1 / np.sqrt(
-            inflation_factor * C_D
+            inflation_factor * C_D.get_diagonal()
         )  # Invert the Cholesky factor a diagonal
         C_D_L_times_Y_shift = (Y_shift.T * C_D_L_inv).T
 
@@ -653,7 +638,11 @@ def inversion_rescaled_subspace(
     U_r, w_r = U[:, :N_r], w[:N_r]
 
     # Eqn (78) - taking into account that C_D_L_inv could be an array
-    term = C_D_L_inv.T @ (U_r / w_r) if C_D.ndim == 2 else ((U_r / w_r).T * C_D_L_inv).T
+    term = (
+        C_D_L_inv.T @ (U_r / w_r)
+        if not isinstance(C_D, covmats.CovViaDiagonal)
+        else ((U_r / w_r).T * C_D_L_inv).T
+    )
     T_r = (N_e - 1) / w_r**2  # Equation (79)
     diag = 1 / (1 + T_r)
 

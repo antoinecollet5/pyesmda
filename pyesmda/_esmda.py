@@ -7,6 +7,7 @@ Implement the ES-MDA algorithms.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+import covmats
 import numpy as np
 
 from pyesmda._base import ESMDABase
@@ -32,7 +33,7 @@ class ESMDA(ESMDABase):
         predicted values.
     obs : NDArrayFloat
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: NDArrayFloat
+    cov_obs: covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     d_obs_uc: NDArrayFloat
@@ -128,7 +129,7 @@ class ESMDA(ESMDABase):
         self,
         obs: NDArrayFloat,
         m_init: NDArrayFloat,
-        cov_obs: NDArrayFloat,
+        cov_obs: covmats.CovarianceMatrix,
         forward_model: Callable[..., NDArrayFloat],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -161,7 +162,7 @@ class ESMDA(ESMDABase):
         m_init : NDArrayFloat
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{m}`, :math:`N_{e}`).
-        cov_obs: NDArrayFloat
+        cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
             It can be a numpy array or a sparse matrix (scipy.linalg).
@@ -175,6 +176,22 @@ class ESMDA(ESMDABase):
             Additional kwargs for the callable forward_model. The default is None.
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
+        inversion_type: Union[ESMDAInversionType, str]
+            Inversion type for the computation of
+            $C_{md} (C_{dd} + \alpha * C_{d})^{-1} (d - Y)$.
+            It is a hashable string enum and can be iterated.
+            Available inversion types are:
+            - naive: direct inversion of C_DD + alpha * C_D;
+            - exact_cholesky: perform the cholesky factorization of C_DD + alpha * C_D;
+            - exact_lstq: Computes inversion using least squares. While this method can
+            deal with rank-deficient C_D, it should not be used since it's very slow;
+            - exact_woodbury: Rely on woodbury lemma to reformulate the problem.
+            - rescaled: rely on truncated singular value decomposition TSVD of C_DD;
+            - subspace: rely on TSVD of U with C_DD = UU^{T};
+            - subspace_rescaled: Same as subspace but with a rescaling procedure to
+            avoid loss of information during truncation of small singular values
+            (see :cite:t:`evensenSamplingStrategiesSquare2004`);
+            The inversion type used to solve .The default is ESMDAInversionType.NAIVE.
         cov_obs_inflation_factors : Optional[Sequence[float]]
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors.

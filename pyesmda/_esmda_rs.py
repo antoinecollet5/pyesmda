@@ -7,6 +7,7 @@ Implement the ES-MDA-RS algorithms.
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+import covmats
 import numpy as np
 import numpy.typing as npt
 
@@ -38,7 +39,7 @@ class ESMDA_RS(ESMDABase):
         predicted values.
     obs : npt.NDArray[np.float64]
         Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: npt.NDArray[np.float64]
+    cov_obs: covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
     std_m_prior: npt.NDArray[np.float64]
@@ -130,7 +131,7 @@ class ESMDA_RS(ESMDABase):
         self,
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
-        cov_obs: npt.NDArray[np.float64],
+        cov_obs: covmats.CovarianceMatrix,
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
@@ -162,7 +163,7 @@ class ESMDA_RS(ESMDABase):
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{m}`, :math:`N_{e}`).
-        cov_obs: npt.NDArray[np.float64]
+        cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
             (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
         forward_model: callable
@@ -360,9 +361,7 @@ class ESMDA_RS(ESMDABase):
         return (
             0.25
             / self.obs.size
-            * float(
-                np.mean(ls_cost_function(self.d_pred, self.obs, self.cov_obs_cholesky))
-            )
+            * float(np.mean(ls_cost_function(self.d_pred, self.obs, self.cov_obs)))
         )
 
     def _is_unity_reached(self, current_inflation_factor: float) -> bool:

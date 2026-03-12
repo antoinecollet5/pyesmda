@@ -6,8 +6,10 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 
 from contextlib import contextmanager
 
+import covmats
 import numpy as np
 import pytest
+import scipy as sp
 from pyesmda import ESMDA, ESMDAInversionType, FixedLocalization
 from pyesmda._utils import NDArrayFloat
 
@@ -28,7 +30,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones(20)),
+                covmats.CovViaDiagonal(np.ones((20))),
                 empty_forward_model,
             ),
             {},
@@ -38,13 +40,16 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((8))),
+                covmats.CovViaDiagonal(np.ones((8,))),
                 empty_forward_model,
             ),
             {},
             pytest.raises(
                 ValueError,
-                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+                match=(
+                    r"`cov_obs` must be an implementation of `covmats.CovarianceMatrix`"
+                    r" with dimensions \(20, 20\)."
+                ),
             ),
         ),
         (  # issue with stdev_d
@@ -52,7 +57,10 @@ def empty_forward_model(*args, **kwargs) -> None:
             {},
             pytest.raises(
                 ValueError,
-                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+                match=(
+                    r"`cov_obs` must be an implementation of `covmats.CovarianceMatrix`"
+                    r" with dimensions \(20, 20\)."
+                ),
             ),
         ),
         (  # issue with stdev_d
@@ -60,31 +68,48 @@ def empty_forward_model(*args, **kwargs) -> None:
             {},
             pytest.raises(
                 ValueError,
-                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+                match=(
+                    r"`cov_obs` must be an implementation of `covmats.CovarianceMatrix`"
+                    r" with dimensions \(20, 20\)."
+                ),
             ),
         ),
         (  # issue with stdev_d
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.ones((20, 20, 20)),
+                covmats.CovViaDiagonal(np.ones((19,))),
                 empty_forward_model,
             ),
             {},
             pytest.raises(
                 ValueError,
-                match=(r"cov_obs must be a 2D matrix with " r"dimensions \(20, 20\)."),
+                match=(
+                    r"`cov_obs` must be an implementation of `covmats.CovarianceMatrix`"
+                    r" with dimensions \(20, 20\)."
+                ),
             ),
         ),
+        # OOPS
         (  # normal working with n_assimilations
-            (np.zeros(20), np.zeros((10, 8)), np.ones((20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((10, 8)),
+                covmats.CovViaDiagonal(np.ones((20,))),
+                empty_forward_model,
+            ),
             {
                 "n_assimilations": 4,
             },
             does_not_raise(),
         ),
         (
-            (np.zeros(20), np.zeros((10, 8)), np.ones((20)), empty_forward_model),
+            (
+                np.zeros(20),
+                np.zeros((10, 8)),
+                covmats.CovViaDiagonal(np.ones((20,))),
+                empty_forward_model,
+            ),
             {
                 "n_assimilations": 4.5,  # Not a valid number of assimilations
             },
@@ -97,7 +122,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20,))),
                 empty_forward_model,
             ),
             {
@@ -110,7 +135,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20,))),
                 empty_forward_model,
             ),
             {
@@ -124,7 +149,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20,))),
                 empty_forward_model,
             ),
             {
@@ -136,7 +161,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20,))),
                 empty_forward_model,
             ),
             {
@@ -154,7 +179,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20))),
                 empty_forward_model,
             ),
             {
@@ -173,7 +198,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones((20))),
                 empty_forward_model,
             ),
             {
@@ -185,7 +210,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -197,7 +222,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -209,7 +234,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -221,7 +246,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -239,7 +264,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -257,7 +282,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -275,7 +300,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -293,7 +318,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -313,7 +338,7 @@ def empty_forward_model(*args, **kwargs) -> None:
             (
                 np.zeros(20),
                 np.zeros((10, 8)),
-                np.diag(np.ones((20, 20))),
+                covmats.CovViaDiagonal(np.ones(20)),
                 empty_forward_model,
             ),
             {
@@ -432,9 +457,15 @@ def test_esmda_exponential_case(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.ones(obs.size, dtype=np.float64)
+    cov_obs = covmats.CovViaDiagonal(
+        np.ones(
+            obs.size,
+        )
+    )
     if is_cov_obs_2D:
-        cov_obs = np.diag(cov_obs)
+        cov_obs = covmats.CovViaCholesky(
+            sp.linalg.cholesky(np.diag(cov_obs.get_diagonal()), lower=True)
+        )
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -525,9 +556,11 @@ def test_esmda_exponential_case_batch(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.ones(obs.shape[0])
+    cov_obs = covmats.CovViaDiagonal(np.ones((obs.size,)))
     if cov_obs_dim == 2:
-        cov_obs = np.diag(cov_obs)
+        cov_obs = covmats.CovViaCholesky(
+            sp.linalg.cholesky(np.diag(cov_obs.get_diagonal()), lower=True)
+        )
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
@@ -597,7 +630,7 @@ def test_esmda_exponential_case_batch(
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.01266593e-01, 5.73889089e-05]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.015e-01, 6.85e-05]), rtol=5e-2
     ).all()
 
     # The sum of the inverse of inflation factors should be 1.0

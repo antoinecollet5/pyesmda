@@ -7,6 +7,7 @@ Implement the ES-MDA algorithms.
 from functools import lru_cache, wraps
 from typing import List
 
+import covmats
 import numpy as np
 import numpy.typing as npt
 import scipy as sp
@@ -238,7 +239,7 @@ empirical_cross_covariance = approximate_covariance_matrix_from_ensembles
 def ls_cost_function(
     pred: NDArrayFloat,
     obs: NDArrayFloat,
-    cov_obs_cholesky: NDArrayFloat,
+    cov_obs: covmats.CovarianceMatrix,
 ) -> NDArrayFloat:
     r"""
     Compute the normalized objective function for a given member :math:`j`.
@@ -256,7 +257,7 @@ def ls_cost_function(
         single vector with shape :math:`(N_{obs},)`.
     obs : NDArrayFloat
         Vector of observed values.
-    cov_obs_cholesky
+    cov_obs
         Cholesky upper factorisation of the covariance matrix of observed data
         measurement errors with dimensions
         (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. Or 1D vector if
@@ -268,25 +269,15 @@ def ls_cost_function(
         The objective function for each ensemble realization.
 
     """
+    if not isinstance(cov_obs, covmats.CovarianceMatrix):
+        n = np.shape(obs)[0]
+        raise ValueError(
+            "cov_obs must be an implementation of `covmats.CovarianceMatrix`"
+            f" with dimensions ({n}, {n})."
+        )
+
     residuals: NDArrayFloat = (pred.T - obs).T  # still has shape (N_obs, N_e)
-    # case of dense array
-    if cov_obs_cholesky.ndim == 2:
-        return (
-            1
-            / 2
-            * np.sum(
-                residuals
-                * sp.linalg.solve(
-                    cov_obs_cholesky, residuals, assume_a="pos", lower=False
-                ),
-                axis=0,
-            )
-        )
-    elif cov_obs_cholesky.ndim == 1:
-        return (
-            1 / 2 * np.square(residuals / cov_obs_cholesky.reshape(-1, 1)).sum(axis=0)
-        )
-    raise ValueError("cov_obs_cholesky must be a 2D array or a 1D array.")
+    return 0.5 * np.sum(residuals * cov_obs.solve(residuals), axis=0)
 
 
 def inflate_ensemble_around_its_mean(
