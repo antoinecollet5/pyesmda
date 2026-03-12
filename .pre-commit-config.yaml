@@ -39,4 +39,4 @@ repos:
     name: ty check
     entry: ty check .
     language: system
-    types: [python]
+    types: [python, pyi]
