@@ -591,6 +591,7 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         forward_model_kwargs={},
         n_assimilations=n_assimilations,
+        inversion_type="exact_woodbury",
         cov_obs_inflation_factors=cov_obs_inflation_factors,
         cov_mm_inflation_factor=1.2,
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
