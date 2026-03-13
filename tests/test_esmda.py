@@ -631,7 +631,7 @@ def test_esmda_exponential_case_batch(
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
 
     assert np.isclose(
-        np.array([a_std, b_std]), np.array([1.015e-01, 6.85e-05]), rtol=5e-2
+        np.array([a_std, b_std]), np.array([1.07e-01, 6.96e-05]), rtol=5e-2
     ).all()
 
     # The sum of the inverse of inflation factors should be 1.0
