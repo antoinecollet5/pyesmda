@@ -25,99 +25,6 @@ class ESMDA(ESMDABase):
     Implement the ES-MDA as proposed by  Emerick, A. A. and A. C. Reynolds
     :cite:p:`emerickEnsembleSmootherMultiple2013,
     emerickHistoryMatchingProductionSeismic2013`.
-
-    Attributes
-    ----------
-    d_dim : int
-        Number of observation values :math:`N_{obs}`, and consequently of
-        predicted values.
-    obs : NDArrayFloat
-        Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: covmats.CovarianceMatrix
-        Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-    d_obs_uc: NDArrayFloat
-        Vectors of pertubed observations with dimension
-        (:math:`N_{obs}`, :math:`N_{e}`).
-    d_pred: NDArrayFloat
-        Vectors of predicted values (one for each ensemble member)
-        with dimensions (:math:`N_{obs}`, :math:`N_{e}`).
-    d_history: List[NDArrayFloat]
-        List of vectors of predicted values obtained at each assimilation step.
-    m_prior:
-        Vectors of parameter values (one vector for each ensemble member) used in the
-        last assimilation step. Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
-    m_bounds : NDArrayFloat
-        Lower and upper bounds for the :math:`N_{m}` parameter values.
-        Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
-        column and upper on the second one.
-    m_history: List[NDArrayFloat]
-        List of successive `m_prior`.
-    cov_md: NDArrayFloat
-        Cross-covariance matrix between the forecast state vector and predicted data.
-        Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_obs: csr_matrix
-        Autocovariance matrix of predicted data.
-        Dimensions are (:math:`N_{obs}, N_{obs}`).
-    cov_mm: NDArrayFloat
-        Autocovariance matrix of estimated parameters.
-        Dimensions are (:math:`N_{m}, N_{m}`).
-    forward_model: callable
-        Function calling the non-linear observation model (forward model)
-        for all ensemble members and returning the predicted data for
-        each ensemble member.
-    forward_model_args: Tuple[Any]
-        Additional args for the callable forward_model.
-    forward_model_kwargs: Dict[str, Any]
-        Additional kwargs for the callable forward_model.
-    n_assimilations : int
-        Number of data assimilations (:math:`N_{a}`).
-    cov_obs_inflation_factors : List[float]
-        List of multiplication factor used to inflate the covariance matrix of the
-        measurement errors.
-    cov_mm_inflation_factor: float
-        Factor used to inflate the initial ensemble around its mean.
-        See :cite:p:`andersonExploringNeedLocalization2007`.
-        The default is 1.0 i.e., no inflation.
-    C_DD_localization: LocalizationStrategy
-        Localization operator :math:`\rho_{DD}` applied to the predictions
-        empirical auto-covariance matrices. Expected dimensions of the operator are
-        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
-        matrix used for all iterations) or adaptive and even user defined.
-        See implementations of :class:`LocalizationStrategy`.
-    C_MD_localization : Optional[csr_matrix]
-        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
-        empirical corss-covariance matrices. Expected dimensions of the operator are
-        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
-        matrix used for all iterations) or adaptive and even user defined.
-        See implementations of :class:`LocalizationStrategy`.
-    save_ensembles_history: bool
-        Whether to save the history predictions and parameters over the assimilations.
-    rng: np.random.Generator
-        The random number generator used in the predictions perturbation step.
-    is_forecast_for_last_assimilation: bool
-        Whether to compute the predictions for the ensemble obtained at the
-        last assimilation step.
-    batch_size: int
-        Number of parameters that are assimilated at once. This option is
-        available to overcome memory limitations when the number of parameters is
-        large. In that case, the size of the covariance matrices tends to explode
-        and the update step must be performed by chunks of parameters.
-    is_parallel_analyse_step: bool, optional
-        Whether to use parallel computing for the analyse step if the number of
-        batch is above one. The default is True.
-    n_batches: int
-        Number of batches required during the update step.
-    truncation: float
-        A value in the range ]0, 1], used to determine the number of
-        significant singular values kept when using svd for the inversion
-        of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
-        corresponding to this fraction of the sum of the nonzero singular values.
-        The goal of truncation is to deal with smaller matrices (dimensionality
-        reduction), easier to inverse.
-    logger: Optional[logging.Logger]
-        Optional :class:`logging.Logger` instance used for event logging.
-
     """
 
     # pylint: disable=R0902 # Too many instance attributes
@@ -134,7 +41,9 @@ class ESMDA(ESMDABase):
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        inversion_type: Union[ESMDAInversionType, str] = ESMDAInversionType.NAIVE,
+        inversion_type: Union[
+            ESMDAInversionType, str
+        ] = ESMDAInversionType.SUBSPACE_RESCALED,
         cov_obs_inflation_factors: Optional[Sequence[float]] = None,
         cov_mm_inflation_factor: float = 1.0,
         C_DD_localization: LocalizationStrategy = NoLocalization(),
@@ -158,13 +67,14 @@ class ESMDA(ESMDABase):
         Parameters
         ----------
         obs : NDArrayFloat
-            Obsevrations vector with dimension :math:`N_{obs}`.
+            Obsevrations vector with dimension :math:`N_{\mathrm{obs}}`.
         m_init : NDArrayFloat
             Initial ensemble of parameters vector with dimensions
             (:math:`N_{m}`, :math:`N_{e}`).
         cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
-            (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+            (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`).
+            Also denoted :math:`R`.
             It can be a numpy array or a sparse matrix (scipy.linalg).
         forward_model: callable
             Function calling the non-linear observation model (forward model)
@@ -177,21 +87,8 @@ class ESMDA(ESMDABase):
         n_assimilations : int, optional
             Number of data assimilations (:math:`N_{a}`). The default is 4.
         inversion_type: Union[ESMDAInversionType, str]
-            Inversion type for the computation of
-            $C_{md} (C_{dd} + \alpha * C_{d})^{-1} (d - Y)$.
-            It is a hashable string enum and can be iterated.
-            Available inversion types are:
-            - naive: direct inversion of C_DD + alpha * C_D;
-            - exact_cholesky: perform the cholesky factorization of C_DD + alpha * C_D;
-            - exact_lstq: Computes inversion using least squares. While this method can
-            deal with rank-deficient C_D, it should not be used since it's very slow;
-            - exact_woodbury: Rely on woodbury lemma to reformulate the problem.
-            - rescaled: rely on truncated singular value decomposition TSVD of C_DD;
-            - subspace: rely on TSVD of U with C_DD = UU^{T};
-            - subspace_rescaled: Same as subspace but with a rescaling procedure to
-            avoid loss of information during truncation of small singular values
-            (see :cite:t:`evensenSamplingStrategiesSquare2004`);
-            The inversion type used to solve .The default is ESMDAInversionType.NAIVE.
+            See :py:class:`ESMDAInversionType` for more details.
+            The default is :py:attr:`ESMDAInversionType.SUBSPACE_RESCALED`.
         cov_obs_inflation_factors : Optional[Sequence[float]]
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors.
@@ -204,16 +101,17 @@ class ESMDA(ESMDABase):
         C_DD_localization: LocalizationStrategy
             Localization operator :math:`\rho_{DD}` applied to the predictions
             empirical auto-covariance matrices. Expected dimensions of the operator are
-            (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
-            matrix used for all iterations) or adaptive and even user defined.
-            See implementations of :class:`LocalizationStrategy`.
+            (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). It can be fixed
+            (defined correlation matrix used for all iterations) or adaptive and even
+            user defined.
+            See implementations of :py:class:`LocalizationStrategy`.
         C_MD_localization : Optional[csr_matrix]
             Localization operator :math:`\rho_{DD}` applied to the
             parameters-predictions empirical corss-covariance matrices.
             Expected dimensions of the operator are
-            (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
-            matrix used for all iterations) or adaptive and even user defined.
-            See implementations of :class:`LocalizationStrategy`.
+            (:math:`N_{m}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined
+            correlation matrix used for all iterations) or adaptive and even user
+            defined. See implementations of :py:class:`LocalizationStrategy`.
         m_bounds : Optional[NDArrayFloat], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -248,12 +146,12 @@ class ESMDA(ESMDABase):
         truncation: float
             A value in the range ]0, 1], used to determine the number of
             significant singular values kept when using svd for the inversion
-            of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
-            corresponding to this fraction of the sum of the nonzero singular values.
-            The goal of truncation is to deal with smaller matrices (dimensionality
-            reduction), easier to inverse. The default is 0.99.
+            of :math:`(C_{dd} + \alpha C_{d})`: Only the largest singular values are
+            kept, corresponding to this fraction of the sum of the nonzero singular
+            values. The goal of truncation is to deal with smaller matrices
+            (dimensionality reduction), easier to inverse. The default is 0.99.
         logger: Optional[logging.Logger]
-            Optional :class:`logging.Logger` instance used for event logging.
+            Optional :py:class:`logging.Logger` instance used for event logging.
             The default is None.
         """
         super().__init__(

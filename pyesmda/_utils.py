@@ -253,15 +253,14 @@ def ls_cost_function(
     Parameters
     ----------
     pred : NDArrayFloat
-        Ensemble of prediction vector with shape (:math:`N_{obs}, N_{e}`), or
-        single vector with shape :math:`(N_{obs},)`.
+        Ensemble of prediction vector with shape (:math:`N_{\mathrm{obs}}, N_{e}`), or
+        single vector with shape :math:`(N_{\mathrm{obs}},)`.
     obs : NDArrayFloat
         Vector of observed values.
     cov_obs
         Cholesky upper factorisation of the covariance matrix of observed data
         measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`. Or 1D vector if
-        the covariance matrix is diagonal.
+        (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). Also denoted :math:`R`.
 
     Returns
     -------

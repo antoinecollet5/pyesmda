@@ -60,17 +60,17 @@ class LocalizationStrategy(ABC):
 
 
 class FixedLocalization(LocalizationStrategy):
-    """
+    r"""
     Fixed localization strategy.
 
     Attributes
     ----------
-    correlation_matrix : Optional[csr_matrix]
+    correlation_matrix : Optional[Union[sp.sparse.sparray, NDArrayFloat]]
         Correlation matrix based on spatial and temporal distances between
         observations and :math:`\rho_{DD}`. It is used to localize the
         autocovariance matrix of predicted data by applying an elementwise
         multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
+        Expected dimensions are (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`).
 
     """
 
@@ -78,7 +78,7 @@ class FixedLocalization(LocalizationStrategy):
         self,
         correlation_matrix: Optional[Union[NDArrayFloat, spmatrix]] = None,
     ) -> None:
-        """
+        r"""
         Initialize the instance.
 
         Parameters
@@ -88,9 +88,9 @@ class FixedLocalization(LocalizationStrategy):
             observations/parameters :math:`\rho_{DD}` or :math:`\rho_{MD}`.
             It is used to localize the empirical cross-covariance matrices
             by applying an elementwise multiplication by this matrix.
-            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`) for
-            :math:`\rho_{DD}` and
-            (:math:`N_{m}`, :math:`N_{obs}`) for :math:`\rho_{DD}`. It None, no
+            Expected dimensions are (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`)
+            for :math:`\rho_{DD}` and
+            (:math:`N_{m}`, :math:`N_{\mathrm{obs}}`) for :math:`\rho_{DD}`. It None, no
             localization is performed. The default is None.
         """
 

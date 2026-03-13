@@ -1,27 +1,49 @@
+..
+   Template for the html class rendering
+
+   Modified from
+   https://github.com/sphinx-doc/sphinx/tree/master/sphinx/ext/autosummary/templates/autosummary/class.rst
+
 {{ fullname | escape | underline}}
 
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
-   :members:                                    <-- add at least this line
-   :private-members:
-   :show-inheritance:                           <-- plus I want to show inheritance...
-   :inherited-members:                          <-- ...and inherited members too
 
    {% block methods %}
    .. automethod:: __init__
-
-   {% if methods %}
-   .. rubric:: {{ _('Public methods summary') }}
-
-   .. autosummary::
-   {% for item in methods %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% for item in _methods %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% endif %}
    {% endblock %}
 
-   .. rubric:: {{ _('Methods definition') }}
+   {% if attributes %}
+   .. rubric:: {{ _('Properties') }}
+
+   .. autosummary::
+      :nosignatures:
+      :toctree: generated
+
+      {% for item in attributes if not item.startswith('_') %}
+      ~{{ objname }}.{{ item }}
+      {% endfor %}
+   {% endif %}
+
+   {% if methods %}
+   .. rubric:: {{ _('Methods') }}
+
+   .. autosummary::
+      :nosignatures:
+      :toctree: generated
+
+      {% for item in methods if not item.startswith('_') %}
+      ~{{ objname }}.{{ item }}
+      {% endfor %}
+   {% endif %}
+
+   {% if examples %}
+   .. rubric:: {{ _('Examples') }}
+
+   .. code-block:: python
+
+      {% for line in examples %}
+      {{ line }}
+      {% endfor %}
+   {% endif %}

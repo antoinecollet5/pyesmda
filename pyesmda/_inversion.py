@@ -52,23 +52,24 @@ def get_cholesky(cov: covmats.CovarianceMatrix) -> NDArrayFloat:
 
 
 class ESMDAInversionType(str, Enum):
-    """
+    r"""
     Inversion type for the computation of
-    $C_{md} (C_{dd} + \alpha * C_{d})^{-1} (d - Y)$.
+    :math:`\mathbf{C}_{\mathrm{md}} (\mathbf{C}_{\mathrm{dd}} +
+    \alpha \mathbf{C}_{\mathrm{d}})^{-1} (\mathbf{d} - \mathbf{Y})`.
 
     It is a hashable string enum and can be iterated.
 
     Available inversion types are:
-    - naive: direct inversion of C_DD + alpha * C_D;
-    - exact_cholesky: perform the cholesky factorization of C_DD + alpha * C_D;
-    - exact_lstq: Computes inversion using least squares. While this method can deal
-    with rank-deficient C_D, it should not be used since it's very slow;
-    - exact_woodbury: Rely on woodbury lemma to reformulate the problem.
-    - rescaled: rely on truncated singular value decomposition TSVD of C_DD;
-    - subspace: rely on TSVD of U with C_DD = UU^{T};
-    - subspace_rescaled: Same as subspace but with a rescaling procedure to avoid
-    loss of information during truncation of small singular values
-    (see :cite:t:`evensenSamplingStrategiesSquare2004`);
+        - **naive**: direct inversion of C_DD + alpha * C_D
+        - **exact_cholesky**: perform the cholesky factorization of C_DD + alpha * C_D
+        - **exact_lstq**: Computes inversion using least squares. While this method can
+          deal with rank-deficient C_D, it should not be used since it's very slow
+        - **exact_woodbury**: Rely on woodbury lemma to reformulate the problem
+        - **rescaled**: rely on truncated singular value decomposition TSVD of C_DD
+        - **subspace**: rely on TSVD of U with C_DD = UU^{T}
+        - **subspace_rescaled**: Same as subspace but with a rescaling procedure to
+          avoid loss of information during truncation of small singular values
+          (see :cite:t:`evensenSamplingStrategiesSquare2004`)
     """
 
     NAIVE = "naive"
@@ -100,7 +101,7 @@ class ESMDAInversionType(str, Enum):
 
 
 def get_localized_cdd(Y: NDArrayFloat, dd_corr_mat: Optional[spmatrix]) -> NDArrayFloat:
-    """
+    r"""
     Get the empirical auto-correlation matrix $C_{dd}$.
 
     If provided, the matrix is masked with the provided localization matrix.
@@ -109,7 +110,7 @@ def get_localized_cdd(Y: NDArrayFloat, dd_corr_mat: Optional[spmatrix]) -> NDArr
     ----------
     m_pred : npt.NDArray[np.float64]
         Ensemble of predicted values with dimensions
-        (:math:`N_{obs}`, :math:`N_{e}`).
+        (:math:`N_{\mathrm{obs}}`, :math:`N_{e}`).
 
     """
     C_DD = empirical_cross_covariance(Y, Y)
@@ -171,32 +172,34 @@ def inversion(
     Parameters
     ----------
     invertion_type : ESMDAInversionType
-        Type of inversion. See :class:`ESMDAInversionType` for available methods.
+        Type of inversion. See :py:class:`ESMDAInversionType` for available methods.
     inflation_factor : float
         Inflation factor :math:`\alpha` for `cov_obs`, the covariance matrix of
         observed data measurement errors.
     cov_obs : covmats.CovarianceMatrix
         Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+        (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). Also denoted :math:`R`.
     obs_uc : NDArrayFloat
-        Matrix of perturbed observations with shape (:math:`N_{obs}`, :math:`N_{e}`).
+        Matrix of perturbed observations with shape (:math:`N_{\mathrm{obs}}`,
+        :math:`N_{e}`).
     d_pred : NDArrayFloat
-        Ensemble of predicted values with shape (:math:`N_{obs}`, :math:`N_{e}`).
+        Ensemble of predicted values with shape (:math:`N_{\mathrm{obs}}`,
+        :math:`N_{e}`).
     m_pred : npt.NDArray[np.float64]
         Ensemble of adjusted parameters with dimensions
         (:math:`N_{m}`, :math:`N_{e}`).
     C_DD_localization: LocalizationStrategy
         Localization operator :math:`\rho_{DD}` applied to the predictions
         empirical auto-covariance matrices. Expected dimensions of the operator are
-        (:math:`N_{obs}`, :math:`N_{obs}`). It can be fixed (defined correlation
-        matrix used for all iterations) or adaptive and even user defined.
-        See implementations of :class:`LocalizationStrategy`.
+        (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined
+        correlation matrix used for all iterations) or adaptive and even user defined.
+        See implementations of :py:class:`LocalizationStrategy`.
     C_MD_localization : Optional[csr_matrix]
         Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
         empirical corss-covariance matrices. Expected dimensions of the operator are
-        (:math:`N_{m}`, :math:`N_{obs}`). It can be fixed (defined correlation
+        (:math:`N_{m}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined correlation
         matrix used for all iterations) or adaptive and even user defined.
-        See implementations of :class:`LocalizationStrategy`.
+        See implementations of :py:class:`LocalizationStrategy`.
     truncation : float, optional
         truncation: float
         A value in the range ]0, 1], used to determine the number of

@@ -12,12 +12,21 @@ The following functionalities are directly provided on module-level.
 Classes
 =======
 
+ESMDA implementations.
+
 .. autosummary::
    :toctree: _autosummary
 
    ESMDA
    ESMDA_RS
    ESMDA_DMC
+
+Selection of the inversion computation:
+
+.. autosummary::
+   :toctree: _autosummary
+
+    ESMDAInversionType
 
 Objective functions
 ===================
