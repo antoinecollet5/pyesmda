@@ -156,3 +156,7 @@ docstring-code-line-length = "dynamic"
 # Format style used to check logging format string. `old` means using %
 # formatting, `new` is for `{}` formatting,and `fstr` is for f-strings.
 logging-format-style = "fstr"
+
+# skip assert warnings with codacy
+[tool.bandit]
+skips = ["B101"]
