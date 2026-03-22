@@ -24,19 +24,19 @@ To install `pyesmda`, the easiest way is through `pip`:
 
 .. code-block::
 
-    pip install pyesmda
+    pip install pyesmda[examples]
 
 Or alternatively using `conda`
 
 .. code-block::
 
-    conda install pyesmda
+    conda install pyesmda[examples]
 
 You might also clone the repository and install from source
 
 .. code-block::
 
-    pip install -e .
+    pip install -e .[examples]
 
 Once the installation is done, the `ESMDA` interface is ready to use. Let's illustrate
 how to use the lib with is a simple example where amplitude and change factor parameters
@@ -47,6 +47,7 @@ of n exponential function are estimated:
     import numpy as np
     from pyesmda import ESMDA, ESMDA_RS, ESMDA_DMC, ESMDAInversionType, FixedLocalization
     import logging
+    import scipy as sp
 
     # set logging level
     logging.basicConfig(level=logging.INFO)
@@ -126,9 +127,11 @@ The optimal solution (a, b) can be found following:
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = np.ones(obs.size) * 2.0
-    # cov_obs = np.diag([0.5] * obs.shape[0])
-    # cov_obs = np.ones(obs.size)
+    A = rng.normal(loc=0, scale=0.25, size=((obs.size, obs.size)))
+    # make it PSD by adding strong weight on the diagonal
+    A.flat[:: A.shape[0] + 1] += 15.0
+    # perform cholesky factorization
+    cov_obs = covmats.CovViaCholesky(sp.linalg.cholesky(A, lower=True))
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
