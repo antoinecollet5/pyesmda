@@ -30,6 +30,20 @@
   file = {/home/acollet/Documents/ZOTERO/storage/T7RDNA6D/Anderson - 2007 - Exploring the need for localization in ensemble da.pdf}
 }
 
+@inproceedings{bonet-cunhaHybridMarkovChain1996,
+  title = {A {{Hybrid Markov Chain Monte Carlo Method}} for {{Generating Permeability Fields Conditioned}} to {{Multiwell Pressure Data}} and {{Prior Information}}},
+  booktitle = {{{SPE Annual Technical Conference}} and {{Exhibition}}},
+  author = {{Bonet-Cunha}, L. and Oliver, D. S. and Redner, R. A. and Reynolds, A. C.},
+  year = 1996,
+  month = oct,
+  publisher = {OnePetro},
+  doi = {10.2118/36566-MS},
+  urldate = {2024-01-11},
+  abstract = {Abstract. In order to properly evaluate the uncertainty in reservoir performance predictions, it is necessary to construct and sample the a posteriori probability density functions for the rock property fields. In this work, the a posteriori probability density function is constructed based on prior means and variograms (covariance function) for log-permeability and multiwell pressure data. Within the context of sampling the probability density function, we argue that the notion of equally probable realizations is the wrong paradigm for reservoir characterization. If the simulation of Gaussian random fields with a known variogram is the objective, it is shown that the variogram should not be incorporated directly into the objective function if simulated annealing is applied either to sample the a posteriori probability density function or to estimate a global minimum of the associated objective function. It is shown that the hybrid Markov chain Monte Carlo method provides a way to explore more fully the set of plausible log-permeability fields and does not suffer from the high rejection rates of more standard Markov chain Monte Carlo methods.Introduction. To characterize the uncertainty in predicted reservoir performance, one wishes to simulate performance with a set of reservoir descriptions which honor all available data. Although simulated annealing represents a popular technique for generating reservoir descriptions which honor diverse data sets, our requirements are more strict. We do not simply wish to construct rock property fields which honor all data, we wish to generate a set of realizations of the rock property fields such that this set represents a correct sampling of the a posteriori probability density function for the rock property fields, i.e., we wish to derive the correct a posteriori probability density function conditioned to all data and then sample this probability distribution correctly. If one generates a set of N realizations which represent a proper sampling of the a posteriori probability density function, then one can characterize the uncertainty in performance predictions. To do this, we simply use each reservoir description (each realization) as input data for a reservoir simulation and generate the resulting reservoir performance. From these N flow simulations, one can compute the statistics (mean, median, variance, histogram) for each parameter or variable predicted by the flow simulations to provide a measure of the uncertainty or variability in predicted performance. Having characterized the uncertainty in predicted performance, one can make reservoir management decisions that account for our lack of complete knowledge of the true reservoir.For the problem considered here, the objective is to determine realizations of the log-permeability field defined on reservoir simulator gridblocks. These realizations are obtained by sampling the probability density function conditioned to prior means, variograms (covariance function) and multiwell pressure data. Unlike other work, we use the pressure data directly instead of using pressure data to estimate an},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/IWUR95YH/Bonet-Cunha et al. - 1996 - A Hybrid Markov Chain Monte Carlo Method for Gener.pdf}
+}
+
 @phdthesis{colletAssistedHistoryMatching2024,
   type = {{{PhD}} Manuscript},
   title = {Assisted History Matching in Reactive Transport : {{Application}} to Uranium in Situ Recovery},
@@ -92,6 +106,24 @@
   file = {/home/acollet/Documents/ZOTERO/storage/5K8CJ4QP/Emerick and Reynolds - 2012 - History matching time-lapse seismic data using the.pdf}
 }
 
+@article{emerickInvestigationSamplingPerformance2013,
+  title = {Investigation of the Sampling Performance of Ensemble-Based Methods with a Simple Reservoir Model},
+  author = {Emerick, Alexandre A. and Reynolds, Albert C.},
+  year = 2013,
+  month = apr,
+  journal = {Computational Geosciences},
+  volume = {17},
+  number = {2},
+  pages = {325--350},
+  issn = {1573-1499},
+  doi = {10.1007/s10596-012-9333-z},
+  urldate = {2024-01-11},
+  abstract = {The application of the ensemble Kalman filter (EnKF) for history matching petroleum reservoir models has been the subject of intense investigation during the past 10~years. Unfortunately, EnKF often fails to provide reasonable data matches for highly nonlinear problems. This fact motivated the development of several iterative ensemble-based methods in the last few years. However, there exists no study comparing the performance of these methods in the literature, especially in terms of their ability to quantify uncertainty correctly. In this paper, we compare the performance of nine ensemble-based methods in terms of the quality of the data matches, quantification of uncertainty, and computational cost. For this purpose, we use a small but highly nonlinear reservoir model so that we can generate the reference posterior distribution of reservoir properties using a very long chain generated by a Markov chain Monte Carlo sampling algorithm. We also consider one adjoint-based implementation of the randomized maximum likelihood method in the comparisons.},
+  langid = {english},
+  keywords = {Ensemble Kalman filter,Ensemble smoother,History matching,Markov chain Monte Carlo,Randomized maximum likelihood,Uncertainty quantification},
+  file = {/home/acollet/Documents/ZOTERO/storage/74LP2QGM/Emerick and Reynolds - 2013 - Investigation of the sampling performance of ensem.pdf}
+}
+
 @misc{evensenCorrelationBasedLocalization2023,
   title = {Correlation-{{Based Localization}}},
   author = {Evensen, Geir},
@@ -113,6 +145,19 @@
   isbn = {978-3-642-03710-8},
   langid = {english},
   file = {/home/acollet/Documents/ZOTERO/storage/FT5WI3H9/bwmeta1.element.html}
+}
+
+@article{evensenEfficientImplementationIterative2019,
+  title = {Efficient {{Implementation}} of an {{Iterative Ensemble Smoother}} for {{Data Assimilation}} and {{Reservoir History Matching}}},
+  author = {Evensen, Geir and Raanes, Patrick and Stordal, Andreas and Hove, Joakim},
+  year = 2019,
+  month = oct,
+  journal = {Frontiers in Applied Mathematics and Statistics},
+  volume = {5},
+  pages = {47},
+  doi = {10.3389/fams.2019.00047},
+  abstract = {Raanes et al. [1] revised the iterative ensemble smoother of Chen and Oliver [2, 3], denoted Ensemble Randomized Maximum Likelihood (EnRML), using the property that the EnRML solution is contained in the ensemble subspace. They analyzed EnRML and demonstrated how to implement the method without the use of expensive pseudo inversions of the low-rank state covariance matrix or the ensemble-anomaly matrix. The new algorithm produces the same result, realization by realization, as the original EnRML method. However, the new formulation is simpler to implement, numerically stable, and computationally more efficient. The purpose of this document is to present a simple derivation of the new algorithm and demonstrate its practical implementation and use for reservoir history matching. An additional focus is to customize the algorithm to be suitable for big-data assimilation of measurements with correlated errors. The computational cost of the resulting ``ensemble sub-space'' algorithm is linear in both the dimension of the state space and the number of measurements, also when the measurements have correlated errors. The final algorithm is implemented in the Ensemble Reservoir Tool (ERT) for running and conditioning ensembles of reservoir models. Several verification experiments are presented.},
+  file = {/home/acollet/Documents/ZOTERO/storage/X5YZA579/Evensen et al. - 2019 - Efficient Implementation of an Iterative Ensemble .pdf}
 }
 
 @incollection{evensenLocalizationInflation2022,
@@ -169,6 +214,20 @@
   file = {/home/acollet/Documents/ZOTERO/storage/IAQPCV6K/Gaspari and Cohn - 1999 - Construction of correlation functions in two and t.pdf;/home/acollet/Documents/ZOTERO/storage/LHRLT7MJ/qj.html}
 }
 
+@book{golubMatrixComputations1996,
+  title = {Matrix Computations},
+  author = {Golub, Gene H. and Van Loan, Charles F.},
+  year = 1996,
+  series = {Johns {{Hopkins}} Studies in the Mathematical Sciences},
+  edition = {3rd ed},
+  publisher = {Johns Hopkins University Press},
+  address = {Baltimore},
+  isbn = {978-0-8018-5413-2 978-0-8018-5414-9},
+  lccn = {QA188 .G65 1996},
+  keywords = {Data processing,Matrices},
+  file = {/home/acollet/Documents/ZOTERO/storage/2I2TCKYP/Golub_VanLoan.Matr_comp_3ed.pdf}
+}
+
 @article{iglesiasAdaptiveRegularisationEnsemble2021,
   title = {Adaptive Regularisation for Ensemble {{Kalman}} Inversion},
   author = {Iglesias, Marco and Yang, Yuchen},
@@ -187,6 +246,22 @@
   file = {/home/acollet/Documents/ZOTERO/storage/MGIGKCNR/Iglesias and Yang - 2021 - Adaptive regularisation for ensemble Kalman invers.pdf}
 }
 
+@article{kitanidisQuasiLinearGeostatisticalTheory1995,
+  title = {Quasi-{{Linear Geostatistical Theory}} for {{Inversing}}},
+  author = {Kitanidis, Peter K.},
+  year = 1995,
+  journal = {Water Resources Research},
+  volume = {31},
+  number = {10},
+  pages = {2411--2419},
+  issn = {1944-7973},
+  doi = {10.1029/95WR01945},
+  urldate = {2022-05-07},
+  abstract = {A quasi-linear theory is presented for the geostatistical solution to the inverse problem. The archetypal problem is to estimate the log transmissivity function from observations of head and log transmissivity at selected locations. The unknown is parameterized as a realization of a random field, and the estimation problem is solved in two phases: structural analysis, where the random field is characterized, followed by estimation of the log transmissivity conditional on all observations. The proposed method generalizes the linear approach of Kitanidis and Vomvoris (1983). The generalized method is superior to the linear method in cases of large contrast in formation properties but informative measurements, i.e., there are enough observations that the variance of estimation error of the log transmissivity is small. The methodology deals rigorously with unknown drift coefficients and yields estimates of covariance parameters that are unbiased and grid independent. The applicability of the methodology is demonstrated through an example that includes structural analysis, determination of best estimates, and conditional simulations.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/K8PDYA2S/Kitanidis - 1995 - Quasi-Linear Geostatistical Theory for Inversing.pdf}
+}
+
 @article{leAdaptiveEnsembleSmoother2016,
   title = {An {{Adaptive Ensemble Smoother With Multiple Data Assimilation}} for {{Assisted History Matching}}},
   author = {Le, Duc and Emerick, Alexandre and Reynolds, Albert},
@@ -197,6 +272,22 @@
   doi = {10.2118/173214-PA},
   abstract = {Recently, Emerick and Reynolds (2012) introduced the ensemble smoother with multiple data assimilations (ES-MDA) for assisted history matching. With computational examples, they demonstrated that ES-MDA provides both a better data match and a better quantification of uncertainty than is obtained with the ensemble Kalman filter (EnKF). However, similar to EnKF, ESMDA can experience near ensemble collapse and results in too many extreme values of rock-property fields for complex problems. These negative effects can be avoided by a judicious choice of the ES-MDA inflation factors, but, before this work, the optimal inflation factors could only be determined by trial and error. Here, we provide two automatic procedures for choosing the inflation factor for the next data-assimilation step adaptively as the history match proceeds. Both methods are motivated by knowledge of regularization procedures---the first is intuitive and heuristical; the second is motivated by existing theory on the regularization of least-squares inverse problems. We illustrate that the adaptive ES-MDA algorithms are superior to the original ES-MDA algorithm by history matching three-phase-flow production data for a complicated synthetic problem in which the reservoir-model parameters include the porosity, horizontal and vertical permeability fields, depths of the initial fluid contacts, and the parameters of power-law permeability curves.},
   file = {/home/acollet/Documents/ZOTERO/storage/2778TCMK/Le et al. - 2016 - An Adaptive Ensemble Smoother With Multiple Data A.pdf}
+}
+
+@article{lepineUncertaintyAnalysisPredictive1999,
+  title = {Uncertainty {{Analysis}} in {{Predictive Reservoir Simulation Using Gradient Information}}},
+  author = {Lepine, O.J. and Bissell, R.C. and Aanonsen, S.I. and Pallister, I.C. and Barker, J.W.},
+  year = 1999,
+  month = sep,
+  journal = {SPE Journal},
+  volume = {4},
+  number = {03},
+  pages = {251--259},
+  issn = {1086-055X},
+  doi = {10.2118/57594-PA},
+  urldate = {2021-08-20},
+  abstract = {We demonstrate how gradient-based techniques can be used to estimate uncertainty in predictive reservoir simulations made following history matching. We discuss how the gradient calculations can help in finding the parameters that make the largest contributions to the uncertainty, estimating the uncertainty on these parameters, and estimating the uncertainty in predicted quantities by use of a linear analysis. The methodology is illustrated on two field examples, and compared with other methods of uncertainty quantification.Reservoir simulation is used to forecast oil and gas production profiles under selected development scenarios. Almost all the data used in reservoir simulation are subject to uncertainty. This uncertainty may be quite large, as is usually the case for the distribution of rock properties (porosity and permeability) away from the wells. Consequently, the production profile associated with any development scheme cannot be predicted exactly; the best that can be done is to calculate a range of possible profiles.Of course, this is well recognized within the industry.1 When new field developments are being considered, it is standard practice to consider a range of possible reservoir models and to run reservoir simulations for each one to produce a range of production profiles. Each of these models would respect the data available for the reservoir under consideration, which would generally include seismic data, log, core and well-test data from exploration and appraisal wells, and geological knowledge of the region or from analog reservoirs. The number of such models varies from case to case, but sufficient computing power is generally available that it is perfectly feasible to construct several different models and to run the corresponding reservoir simulations within a reasonable time frame.When it comes to assessing incremental developments of fields already in production, however, the situation is more complicated. In addition to the sources of data mentioned above, there will be "historical" production data available, i.e., measurements of pressure and of oil, gas and water rates throughout the time that the reservoir has been in production. To forecast future production profiles in such cases, the standard procedure consists of three steps:construct an initial reservoir model;adjust this model until the simulated production data matches the historical production data;use this adjusted model to simulate the future production.Step 2 is known as history matching and is often a very time-consuming procedure that may require up to several months of work by the reservoir engineer (even longer for large fields with a long production history).2This standard procedure leads only to a single production forecast for each development scenario. It does not permit any assessment of uncertainty. Although the historical production data should contain information on the reservoir that will reduce the uncertainty in future performance,3,4 substantial uncertainty usually remains even after long periods of production.An obvious method of estimating the uncertainty would be to generate multiple initial reservoir models, history match each one of them and simulate future production on all of them.5--7 A refinement of this approach has been presented by Oliver et al.8 who estimate the probability density of the parameters by using a combination of stochastic reservoir realizations and automatic history matching with uncertainty on the data. However, we are not aware of any company that has adopted an approach of this type. The reason it has not caught on is undoubtedly that it is so expensive. In the near future, we may expect that it will be possible to consider a small number of different models built in this way. But even this requires a decision to use additional resources to match multiple models rather than to fine-tune the match of a single model (or simply to use more grid blocks in the model).In this paper, we consider an alternative way of estimating uncertainty in the future performance of reservoirs already in production.9 It is based on the recognition that, once the values of the parameters of the reservoir model have been adjusted to obtain an acceptable history match, it will probably be possible to perturb these values slightly and still have a match that would be considered acceptable. If the same perturbations are applied during the predictive simulations, a range of possible future production profiles will be obtained. Further, provided that the perturbations are sufficiently small, a linear perturbation analysis can be used to derive confidence intervals for the future production performance. All that is required to do this is a single reservoir simulation of the historical and predictive periods, provided that the derivatives (gradients) of the production variables with respect to the parameter values are known. If the calculation of these gradients has been coded in the simulation model, they may also be obtained from the same simulation run at the cost of a relatively small increase in computing time.10It should be noted that none of the ideas behind this approach are new. The theoretical basis is described in standard textbooks;11,12 its application in the context of reservoir simulation has been described by Dogru et al.13 for single phase flow and by Kalogerakis9 for multiphase flow, although he applied it only to a simple single-well coning problem. The gradient calculation was first published in the SPE literature over a decade ago.10 However, it is only recently that software tools have become available that enable this approach to be used in practice.},
+  file = {/home/acollet/Documents/ZOTERO/storage/9QGZHCGC/Lepine et al. - 1999 - Uncertainty Analysis in Predictive Reservoir Simul.pdf;/home/acollet/Documents/ZOTERO/storage/U7RB3IL3/Uncertainty-Analysis-in-Predictive-Reservoir.html}
 }
 
 @article{luoAutomaticAdaptiveLocalization2020,
@@ -226,6 +317,100 @@
   urldate = {2024-01-14},
   abstract = {Practical data assimilation algorithms often contain hyper-parameters, which may arise due to, for instance, the use of certain auxiliary techniques like covariance inflation and localization in an ensemble Kalman filter, the re-parameterization of certain quantities such as model and/or observation error covariance matrices, and so on. Given the richness of the established assimilation algorithms, and the abundance of the approaches through which hyper-parameters are introduced to the assimilation algorithms, one may ask whether it is possible to develop a sound and generic method to efficiently choose various types of (sometimes high-dimensional) hyper-parameters. This work aims to explore a feasible, although likely partial, answer to this question. Our main idea is built upon the notion that a data assimilation algorithm with hyper-parameters can be considered as a parametric mapping that links a set of quantities of interest (e.g., model state variables and/or parameters) to a corresponding set of predicted observations in the observation space. As such, the choice of hyper-parameters can be recast as a parameter estimation problem, in which our objective is to tune the hyper-parameters in such a way that the resulted predicted observations can match the real observations to a good extent. From this perspective, we propose a hyper-parameter estimation workflow and investigate the performance of this workflow in an ensemble Kalman filter. In a series of experiments, we observe that the proposed workflow works efficiently even in the presence of a relatively large amount (up to 103) of hyper-parameters, and exhibits reasonably good and consistent performance under various conditions.},
   file = {/home/acollet/Documents/ZOTERO/storage/HIQ5PZ84/Luo and Xia - 2022 - Continuous Hyper-parameter OPtimization (CHOP) in .pdf}
+}
+
+@inproceedings{oliverConditioningPermeabilityFields1996,
+  title = {Conditioning {{Permeability Fields}} to {{Pressure Data}}},
+  booktitle = {{{ECMOR V}} - 5th {{European Conference}} on the {{Mathematics}} of {{Oil Recovery}}},
+  author = {Oliver, D. S. and He, N. and Reynolds, A. C.},
+  year = 1996,
+  month = sep,
+  pages = {cp},
+  publisher = {European Association of Geoscientists \& Engineers},
+  issn = {2214-4609},
+  doi = {10.3997/2214-4609.201406884},
+  urldate = {2024-01-11},
+  abstract = {Generating realizations of the permeability field drawn from a probability density function conditioned on inaccurate pressure or saturation data is difficult, even if the unconditional realizations are Gaussian random fields, because the problem is highly nonlinear. Inefficient methods that generate large numbers of rejected images, such as simulated annealing, must be ruled out as impractical because of the repeated need for reservoir flow simulation.},
+  isbn = {978-3-9500542-0-0},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/6TYWLPVB/Oliver et al. - 1996 - Conditioning Permeability Fields to Pressure Data.pdf;/home/acollet/Documents/ZOTERO/storage/4FZ7JFXR/2214-4609.html}
+}
+
+@article{oliverMarkovChainMonte1997,
+  title = {Markov Chain {{Monte Carlo}} Methods for Conditioning a Permeability Field to Pressure Data},
+  author = {Oliver, Dean S. and Cunha, Luciane B. and Reynolds, Albert C.},
+  year = 1997,
+  month = mar,
+  journal = {Mathematical Geology},
+  volume = {29},
+  number = {1},
+  pages = {61--91},
+  issn = {1573-8868},
+  doi = {10.1007/BF02769620},
+  urldate = {2024-01-11},
+  abstract = {Generating one realization of a random permeability field that is consistent with observed pressure data and a known variogram model is not a difficult problem. If, however, one wants to investigate the uncertainty of reservior behavior, one must generate a large number of realizations and ensure that the distribution of realizations properly reflects the uncertainty in reservoir properties. The most widely used method for conditioning permeability fields to production data has been the method of simulated annealing, in which practitioners attempt to minimize the difference between the ' 'true and simulated production data, and ``true'' and simulated variograms. Unfortunately, the meaning of the resulting realization is not clear and the method can be extremely slow. In this paper, we present an alternative approach to generating realizations that are conditional to pressure data, focusing on the distribution of realizations and on the efficiency of the method. Under certain conditions that can be verified easily, the Markov chain Monte Carlo method is known to produce states whose frequencies of appearance correspond to a given probability distribution, so we use this method to generate the realizations. To make the method more efficient, we perturb the states in such a way that the variogram is satisfied automatically and the pressure data are approximately matched at every step. These perturbations make use of sensitivity coefficients calculated from the reservoir simulator.},
+  langid = {english},
+  keywords = {conditional simulation,Markov chain,Monte Carlo,pressure data,sampling,sensitivity,well test},
+  file = {/home/acollet/Documents/ZOTERO/storage/6HNGAAMG/Oliver et al. - 1997 - Markov chain Monte Carlo methods for conditioning .pdf}
+}
+
+@misc{petersenMatrixCookbook2008,
+  title = {The {{Matrix Cookbook}}},
+  author = {Petersen, Kaare Brandt and Pedersen, Michael Syskind},
+  year = 2008,
+  month = nov,
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/85LY7J7I/Petersen and Pedersen - [ httpmatrixcookbook.com ].pdf}
+}
+
+@article{ren-puConvergenceVariableMetric1983,
+  title = {The Convergence of Variable Metric Matrices in Unconstrained Optimization},
+  author = {{Ren-pu}, Ge and Powell, M. J. D.},
+  year = 1983,
+  month = oct,
+  journal = {Mathematical Programming},
+  volume = {27},
+  number = {2},
+  pages = {123--143},
+  issn = {1436-4646},
+  doi = {10.1007/BF02591941},
+  urldate = {2024-01-12},
+  abstract = {It is proved that, if the DFP or BFGS algorithm with step-lengths of one is applied to a functionF(x) that has a Lipschitz continuous second derivative, and if the calculated vectors of variables converge to a point at which ∇F is zero and ∇2F is positive definite, then the sequence of variable metric matrices also converges. The limit of this sequence is identified in the case whenF(x) is a strictly convex quadratic function.},
+  langid = {english},
+  keywords = {Convergence,Quasi-Newton Methods,Unconstrained Optimization,Variable Metric Methods},
+  file = {/home/acollet/Documents/ZOTERO/storage/IQ4XXZXH/Ren-pu and Powell - 1983 - The convergence of variable metric matrices in unc.pdf}
+}
+
+@article{saibabaFastComputationUncertainty2015,
+  title = {Fast Computation of Uncertainty Quantification Measures in the Geostatistical Approach to Solve Inverse Problems},
+  author = {Saibaba, Arvind K. and Kitanidis, Peter K.},
+  year = 2015,
+  month = aug,
+  journal = {Advances in Water Resources},
+  volume = {82},
+  pages = {124--138},
+  issn = {0309-1708},
+  doi = {10.1016/j.advwatres.2015.04.012},
+  urldate = {2021-08-26},
+  abstract = {We consider the computational challenges associated with uncertainty quantification involved in parameter estimation such as seismic slowness and hydraulic transmissivity fields. The reconstruction of these parameters can be mathematically described as inverse problems which we tackle using the geostatistical approach. The quantification of uncertainty in the geostatistical approach involves computing the posterior covariance matrix which is prohibitively expensive to fully compute and store. We consider an efficient representation of the posterior covariance matrix at the maximum a posteriori (MAP) point as the sum of the prior covariance matrix and a low-rank update that contains information from the dominant generalized eigenmodes of the data misfit part of the Hessian and the inverse covariance matrix. The rank of the low-rank update is typically independent of the dimension of the unknown parameter. The cost of our method scales as O(mlogm) where m dimension of unknown parameter vector space. Furthermore, we show how to efficiently compute measures of uncertainty that are based on scalar functions of the posterior covariance matrix. The performance of our algorithms is demonstrated by application to model problems in synthetic travel-time tomography and steady-state hydraulic tomography. We explore the accuracy of the posterior covariance on different experimental parameters and show that the cost of approximating the posterior covariance matrix depends on the problem size and is not sensitive to other experimental parameters.},
+  langid = {english},
+  keywords = {Geostatistical approach,Hydraulic tomography,Inverse problems,Seismic tomography,Uncertainty quantification},
+  file = {/home/acollet/Documents/ZOTERO/storage/FXQF8ZCM/Saibaba and Kitanidis - 2015 - Fast computation of uncertainty quantification mea.pdf;/home/acollet/Documents/ZOTERO/storage/ZRYXNBZL/S030917081500086X.html}
+}
+
+@book{tarantolaInverseProblemTheory2005,
+  title = {Inverse {{Problem Theory}} and {{Methods}} for {{Model Parameter Estimation}}},
+  author = {Tarantola, Albert},
+  year = 2005,
+  month = jan,
+  series = {Other {{Titles}} in {{Applied Mathematics}}},
+  publisher = {{Society for Industrial and Applied Mathematics}},
+  doi = {10.1137/1.9780898717921},
+  urldate = {2021-07-28},
+  abstract = {Physical theories allow us to make predictions: given a complete description of a physical system, we can predict the outcome of some measurements. This problem of predicting the result of measurements is called the modelization problem, the simulation problem, or the forward problem. The inverse problem consists of using the actual result of some measurements to infer the values of the parameters that characterize the system. While the forward problem has (in deterministic physics) a unique solution, the inverse problem does not. As an example, consider measurements of the gravity field around a planet: given the distribution of mass inside the planet, we can uniquely predict the values of the gravity field around the planet (forward problem), but there are different distributions of mass that give exactly the same gravity field in the space outside the planet. Therefore, the inverse problem --- of inferring the mass distribution from observations of the gravity field --- has multiple solutions (in fact, an infinite number). Because of this, in the inverse problem, one needs tomake explicit any available a priori information on the model parameters. One also needs to be careful in the representation of the data uncertainties. The most general (and simple) theory is obtained when using a probabilistic point of view, where the a priori information on the model parameters is represented by a probability distribution over the `model space.' The theory developed here explains how this a priori probability distribution is transformed into the a posteriori probability distribution, by incorporating a physical theory (relating the model parameters to some observable parameters) and the actual result of the observations (with their uncertainties). To develop the theory, we shall need to examine the different types of parameters that appear in physics and to be able to understand what a total absence of a priori information on a given parameter may mean. Although the notion of the inverse problem could be based on conditional probabilities and Bayes's theorem, I choose to introduce a more general notion, that of the `combination of states of information,' that is, in principle, free from the special difficulties appearing in the use of conditional probability densities (like the well-known Borel paradox).},
+  isbn = {978-0-89871-572-9},
+  keywords = {inverse methods,Inverse problems,least-squares,probability,uncertainties},
+  file = {/home/acollet/Documents/ZOTERO/storage/VTH536DT/Tarantola - 2005 - Inverse Problem Theory and Methods for Model Param.pdf}
 }
 
 @phdthesis{todaroAdvancedTechniquesSolving2021,
