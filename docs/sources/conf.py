@@ -66,6 +66,7 @@ extensions = [
     # enables running code embedded in Sphinx documentation and embedding output
     # of that code into the resulting document
     "jupyter_sphinx",
+    "sphinxcontrib.pseudocode",  # Latex algorithms
 ]
 
 # -----------------------------------------------------------------------------

@@ -66,6 +66,7 @@ docs = [
     "sphinxcontrib-bibtex",
     "sphinx_math_dollar",
     "jupytext",
+    "sphinxcontrib-pseudocode"
 ]
 tests = [
     "twine==1.14.0",
