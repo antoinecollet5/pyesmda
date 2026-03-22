@@ -46,15 +46,20 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+	rm -fr .ruff_cache
+	rm -fr .mypy_cache
 
-lint: ## check style with flake8
-	flake8 pyesmda tests
+precommit: ## run pre-commit hooks
+	pre-commit run --all-files
 
-test: ## run tests quickly with the default Python
-	pytest
+lint: ## check style with ruff
+	ruff check pyesmda tests
 
-test-all: ## run tests on every Python version with tox
-	tox
+test-unitary: ## run tests quickly with the default Python
+	pytest tests
+
+test-notebook:
+	pytest --nbmake **/*ipynb
 
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source pyesmda -m pytest
@@ -62,8 +67,15 @@ coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
+coverage_all: ## check code coverage quickly with the default Python
+	tox
+	coverage combine
+	coverage report -m
+	coverage html
+	$(BROWSER) htmlcov/index.html
+
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -fr docs/source/_autosummary/
+	rm -fr docs/sources/_autosummary/
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/build/html/index.html

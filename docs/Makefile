@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
 SPHINXPROJ    = pyesmda
-SOURCEDIR     = source
+SOURCEDIR     = sources
 BUILDDIR      = build
 
 # Put it first so that "make" without argument is like "make help".

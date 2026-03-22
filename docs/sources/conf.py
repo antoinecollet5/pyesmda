@@ -18,19 +18,10 @@
 # absolute, like shown here.
 
 import datetime
-
-# FIX: https://github.com/mgaitan/sphinxcontrib-mermaid/issues/72
-import errno
 import os
 import sys
 
-import sphinx.util.osutil
-from sphinx.ext.napoleon.docstring import GoogleDocstring
-
 import pyesmda
-
-sphinx.util.osutil.ENOENT = errno.ENOENT
-
 
 package_path = os.path.abspath("..")
 sys.path.insert(0, package_path)
@@ -75,6 +66,7 @@ extensions = [
     # enables running code embedded in Sphinx documentation and embedding output
     # of that code into the resulting document
     "jupyter_sphinx",
+    "sphinxcontrib.pseudocode",  # Latex algorithms
 ]
 
 # -----------------------------------------------------------------------------
@@ -150,7 +142,6 @@ release = pyesmda.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -160,7 +151,15 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["build", "_templates/*.rst'", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "build",
+    "_templates/*.rst'",
+    "Thumbs.db",
+    ".DS_Store",
+    "__pycache__",
+    "*.jpg",
+    "*.gif",
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -204,16 +203,16 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     # "google_analytics_id": "UA-140243896-1",
     "show_prev_next": False,
-    "gitlab_url": "https://gitlab.com/antoinecollet5/pyesmda/",
+    "github_url": "https://github.com/antoinecollet5/pyesmda/",
     "icon_links": [
         {
             "name": "Support",
-            "url": "https://gitlab.com/antoinecollet5/pyesmda/-/issues",
+            "url": "https://github.com/antoinecollet5/pyesmda/issues",
             "icon": "fa fa-comment fa-fw",
         },
         {
             "name": "Contributing",
-            "url": "https://gitlab.com/antoinecollet5/pyesmda/CONTRIBUTING.rst",
+            "url": "https://github.com/antoinecollet5/pyesmda/CONTRIBUTING.rst",
             "icon": "fa fa-gavel fa-fw",
         },
         # {
@@ -416,45 +415,3 @@ bibtex_bibfiles = ["./../../bibliography.bib"]
 bibtex_default_style = "unsrt"
 bibtex_reference_style = "author_year"
 suppress_warnings = ["bibtex.duplicate_citation", "autosectionlabel.*"]
-
-# Issue with attributes section, see:
-# https://github.com/sphinx-doc/sphinx/issues/2115
-# Solution:
-# https://michaelgoerz.net/notes/extending-sphinx-napoleon-docstring-sections.html
-# -- Extensions to the  Napoleon GoogleDocstring class ---------------------
-
-# first, we define new methods for any new sections and add them to the class
-
-
-def parse_keys_section(self, section):
-    return self._format_fields("Keys", self._consume_fields())
-
-
-GoogleDocstring._parse_keys_section = parse_keys_section
-
-
-def parse_attributes_section(self, section):
-    return self._format_fields("Attributes", self._consume_fields())
-
-
-GoogleDocstring._parse_attributes_section = parse_attributes_section
-
-
-def parse_class_attributes_section(self, section):
-    return self._format_fields("Class Attributes", self._consume_fields())
-
-
-GoogleDocstring._parse_class_attributes_section = parse_class_attributes_section
-
-# we now patch the parse method to guarantee that the the above methods are
-# assigned to the _section dict
-
-
-def patched_parse(self):
-    self._sections["keys"] = self._parse_keys_section
-    self._sections["class attributes"] = self._parse_class_attributes_section
-    self._unpatched_parse()
-
-
-GoogleDocstring._unpatched_parse = GoogleDocstring._parse
-GoogleDocstring._parse = patched_parse

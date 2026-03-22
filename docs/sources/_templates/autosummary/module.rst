@@ -1,3 +1,9 @@
+..
+   Template for the html module rendering
+
+   Modified from
+   https://github.com/sphinx-doc/sphinx/tree/master/sphinx/ext/autosummary/templates/autosummary/module.rst
+
 {{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
@@ -8,17 +14,6 @@
 
    .. autosummary::
    {% for item in attributes %}
-      {{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
-
-   {% block functions %}
-   {% if functions %}
-   .. rubric:: {{ _('Functions') }}
-
-   .. autosummary::
-   {% for item in functions %}
       {{ item }}
    {%- endfor %}
    {% endif %}

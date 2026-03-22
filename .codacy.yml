@@ -1,4 +1,4 @@
 ---
 exclude_paths:
-  - '.gitlab/**'
-  - 'doc/source/conf.py'
+  - '.github/**'
+  - 'docs/conf.py'

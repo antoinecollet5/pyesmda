@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    # on every branch
+    branches:
+      - '**'
+
+env:
+  PIP_CACHE_DIR: ${{ github.workspace }}/.cache/pip
+  QT_DEBUG_PLUGINS: 1
+  QT_QPA_PLATFORM: offscreen
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install dependencies with uv
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e ".[all]"
+
+      - name: Run pre-commit hooks
+        run: |
+          uv run pre-commit run --all-files  # Run pre-commit inside the uv virtual environment
+
+        continue-on-error: false
+
+      - name: Upload pre-commit report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-commit-report
+          path: pre-commit-report
+
+  tests:
+    runs-on: ubuntu-22.04
+    needs:
+      - static_analysis
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    env:
+      NUMBA_DISABLE_JIT: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv + deps
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e .[all]
+
+
+      - name: Run tests with coverage
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.python-version }}
+        run: |
+          uv run pytest \
+            --cov=pyesmda \
+            --cov-config=.coveragerc \
+            --cov-report=term \
+            --color=yes
+
+      - name: find
+        run: find . -type f -name '.coverage*'
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: ${{ github.workspace }}/.coverage.${{ matrix.python-version }}
+          include-hidden-files: true
+          if-no-files-found: error
+
+
+  coverage-merge:
+    runs-on: ubuntu-22.04
+    needs:
+      - tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install coverage
+        run: pip install coverage
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: coverage-data
+
+      - name: Combine coverage
+        run: |
+          find coverage-data -name '.coverage*' -print
+          coverage combine $(find coverage-data -name '.coverage*')
+          coverage report -m
+          coverage html
+          coverage xml
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml

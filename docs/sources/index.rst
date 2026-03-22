@@ -1,5 +1,5 @@
 Welcome to pyESMDA's documentation!
-======================================
+===================================
 
 .. include:: readme.rst
 
@@ -7,25 +7,14 @@ Welcome to pyESMDA's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   readme
    installation
+   theory
+   api_reference
    usage
    contributing
    bibliography
-   authors
    changelog
-
-API Reference
-===================
-
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API reference
-
-   api_reference
-
+   authors
 
 Indices and tables
 ==================

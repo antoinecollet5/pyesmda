@@ -3,18 +3,18 @@ Implement the ES-MDA-RS algorithms.
 
 @author: acollet
 """
+
+import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+import covmats
 import numpy as np
 import numpy.typing as npt
 
-from pyesmda.esmda import ESMDABase
-from pyesmda.utils import (
-    approximate_covariance_matrix_from_ensembles,
-    compute_ensemble_average_normalized_objective_function,
-    get_ensemble_variance,
-    inflate_ensemble_around_its_mean,
-)
+from pyesmda._esmda import ESMDABase
+from pyesmda._inversion import ESMDAInversionType
+from pyesmda._localization import LocalizationStrategy, NoLocalization
+from pyesmda._utils import NDArrayFloat, ls_cost_function
 
 # pylint: disable=C0103 # Does not conform to snake_case naming style
 
@@ -31,84 +31,6 @@ class ESMDA_RS(ESMDABase):
     choosing the inflation factor for the next data-assimilation step adaptively
     as the history match proceeds. The procedure also decides when to stop,
     i.e. the number of assimilation, which is no longer a user input.
-
-    Attributes
-    ----------
-    d_dim : int
-        Number of observation values :math:`N_{obs}`, and consequently of
-        predicted values.
-    obs : npt.NDArray[np.float64]
-        Obsevrations vector with dimensions (:math:`N_{obs}`).
-    cov_obs: npt.NDArray[np.float64]
-        Covariance matrix of observed data measurement errors with dimensions
-        (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
-    std_m_prior: npt.NDArray[np.float64]
-        Vector of a priori standard deviation :math:`sigma` of the estimated
-        parameter. The expected dimension is (:math:`N_{m}`).
-        It is the diagonal of :math:`C_{M}`.
-    d_obs_uc: npt.NDArray[np.float64]
-        Vectors of pertubed observations with dimension
-        (:math:`N_{e}`, :math:`N_{obs}`).
-    d_pred: npt.NDArray[np.float64]
-        Vectors of predicted values (one for each ensemble member)
-        with dimensions (:math:`N_{e}`, :math:`N_{obs}`).
-    d_history: List[npt.NDArray[np.float64]]
-        List of vectors of predicted values obtained at each assimilation step.
-    m_prior:
-        Vectors of parameter values (one vector for each ensemble member) used in the
-        last assimilation step. Dimensions are (:math:`N_{e}`, :math:`N_{m}`).
-    m_bounds : npt.NDArray[np.float64]
-        Lower and upper bounds for the :math:`N_{m}` parameter values.
-        Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
-        column and upper on the second one.
-    m_history: List[npt.NDArray[np.float64]]
-        List of successive `m_prior`.
-    cov_md: npt.NDArray[np.float64]
-        Cross-covariance matrix between the forecast state vector and predicted data.
-        Dimensions are (:math:`N_{m}, N_{obs}`).
-    cov_dd: npt.NDArray[np.float64]
-        Autocovariance matrix of predicted data.
-        Dimensions are (:math:`N_{obs}, N_{obs}`).
-    cov_mm: npt.NDArray[np.float64]
-        Autocovariance matrix of estimated parameters.
-        Dimensions are (:math:`N_{m}, N_{m}`).
-    forward_model: callable
-        Function calling the non-linear observation model (forward model)
-        for all ensemble members and returning the predicted data for
-        each ensemble member.
-    forward_model_args: Tuple[Any]
-        Additional args for the callable forward_model.
-    forward_model_kwargs: Dict[str, Any]
-        Additional kwargs for the callable forward_model.
-    n_assimilations : int
-        Number of data assimilations (:math:`N_{a}`) performed.
-        Automatically determined. Initially at 0.
-    cov_mm_initial_inflation_factor: float
-        List of factors used to inflate the adjusted parameters covariance among
-        iterations:
-        Each realization of the ensemble at the end of each update step i,
-        is linearly inflated around its mean.
-        See :cite:p:`andersonExploringNeedLocalization2007`.
-    dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
-        Correlation matrix based on spatial and temporal distances between
-        observations and observations :math:`\rho_{DD}`. It is used to localize the
-        autocovariance matrix of predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-    md_correlation_matrix : Optional[npt.NDArray[np.float64]]
-        Correlation matrix based on spatial and temporal distances between
-        parameters and observations :math:`\rho_{MD}`. It is used to localize the
-        cross-covariance matrix between the forecast state vector (parameters)
-        and predicted data by applying an elementwise
-        multiplication by this matrix.
-        Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
-    save_ensembles_history: bool
-        Whether to save the history predictions and parameters over the assimilations.
-    rng: np.random.Generator
-        The random number generator used in the predictions perturbation step.
-    is_forecast_for_last_assimilation: bool
-        Whether to compute the predictions for the ensemble obtained at the
-        last assimilation step.
     """
 
     # pylint: disable=R0902 # Too many instance attributes
@@ -118,14 +40,17 @@ class ESMDA_RS(ESMDABase):
         self,
         obs: npt.NDArray[np.float64],
         m_init: npt.NDArray[np.float64],
-        cov_obs: npt.NDArray[np.float64],
+        cov_obs: covmats.CovarianceMatrix,
         forward_model: Callable[..., npt.NDArray[np.float64]],
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         std_m_prior: Optional[npt.NDArray[np.float64]] = None,
+        inversion_type: Union[
+            ESMDAInversionType, str
+        ] = ESMDAInversionType.SUBSPACE_RESCALED,
         cov_mm_inflation_factor: float = 1.0,
-        dd_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
-        md_correlation_matrix: Optional[npt.NDArray[np.float64]] = None,
+        C_DD_localization: LocalizationStrategy = NoLocalization(),
+        C_MD_localization: LocalizationStrategy = NoLocalization(),
         m_bounds: Optional[npt.NDArray[np.float64]] = None,
         save_ensembles_history: bool = False,
         seed: Optional[int] = None,
@@ -135,6 +60,8 @@ class ESMDA_RS(ESMDABase):
         ] = 198873,
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
+        truncation: float = 0.99,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
         # pylint: disable=R0914 # Too many local variables
@@ -143,13 +70,14 @@ class ESMDA_RS(ESMDABase):
         Parameters
         ----------
         obs : npt.NDArray[np.float64]
-            Obsevrations vector with dimension :math:`N_{obs}`.
+            Obsevrations vector with dimension :math:`N_{\mathrm{obs}}`.
         m_init : npt.NDArray[np.float64]
             Initial ensemble of parameters vector with dimensions
-            (:math:`N_{e}`, :math:`N_{m}`).
-        cov_obs: npt.NDArray[np.float64]
+            (:math:`N_{m}`, :math:`N_{e}`).
+        cov_obs: covmats.CovarianceMatrix
             Covariance matrix of observed data measurement errors with dimensions
-            (:math:`N_{obs}`, :math:`N_{obs}`). Also denoted :math:`R`.
+            (:math:`N_{\mathrm{obs}}`,
+            :math:`N_{\mathrm{obs}}`). Also denoted :math:`R`.
         forward_model: callable
             Function calling the non-linear observation model (forward model)
             for all ensemble members and returning the predicted data for
@@ -158,6 +86,9 @@ class ESMDA_RS(ESMDABase):
             Additional args for the callable forward_model. The default is None.
         forward_model_kwargs: Optional[Dict[str, Any]]
             Additional kwargs for the callable forward_model. The default is None.
+        inversion_type: Union[ESMDAInversionType, str]
+            See :py:class:`ESMDAInversionType` for more details.
+            The default is :py:attr:`ESMDAInversionType.SUBSPACE_RESCALED`.
         std_m_prior: Optional[npt.NDArray[np.float64]]
             Vector of a priori standard deviation :math:`sigma` of the estimated
             parameter. The expected dimension is (:math:`N_{m}`).
@@ -168,21 +99,19 @@ class ESMDA_RS(ESMDABase):
             Factor used to inflate the initial ensemble variance around its mean.
             See :cite:p:`andersonExploringNeedLocalization2007`.
             The default is 1.0, which means no inflation.
-        dd_correlation_matrix : Optional[npt.NDArray[np.float64]]
-            Correlation matrix based on spatial and temporal distances between
-            observations and observations :math:`\rho_{DD}`. It is used to localize the
-            autocovariance matrix of predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{obs}`, :math:`N_{obs}`).
-            The default is None.
-        md_correlation_matrix : Optional[npt.NDArray[np.float64]]
-            Correlation matrix based on spatial and temporal distances between
-            parameters and observations :math:`\rho_{MD}`. It is used to localize the
-            cross-covariance matrix between the forecast state vector (parameters)
-            and predicted data by applying an elementwise
-            multiplication by this matrix.
-            Expected dimensions are (:math:`N_{m}`, :math:`N_{obs}`).
-            The default is None.
+        C_DD_localization: LocalizationStrategy
+            Localization operator :math:`\rho_{DD}` applied to the predictions
+            empirical auto-covariance matrices. Expected dimensions of the operator are
+            (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). It can be fixed
+            (defined correlation matrix used for all iterations) or adaptive and even
+            user defined. See implementations of :py:class:`LocalizationStrategy`.
+        C_MD_localization : Optional[csr_matrix]
+            Localization operator :math:`\rho_{DD}` applied to the
+            parameters-predictions empirical corss-covariance matrices.
+            Expected dimensions of the operator are
+            (:math:`N_{m}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined
+            correlation matrix used for all iterations) or adaptive and even user
+            defined. See implementations of :py:class:`LocalizationStrategy`.
         m_bounds : Optional[NDArrayFloat], optional
             Lower and upper bounds for the :math:`N_{m}` parameter values.
             Expected dimensions are (:math:`N_{m}`, 2) with lower bounds on the first
@@ -214,23 +143,30 @@ class ESMDA_RS(ESMDABase):
             Whether to use parallel computing for the analyse step if the number of
             batch is above one. It relies on `concurrent.futures` multiprocessing.
             The default is True.
+        truncation: float
+            A value in the range ]0, 1], used to determine the number of
+            significant singular values kept when using svd for the inversion
+            of $(C_{dd} + \alpha C_{d})$: Only the largest singular values are kept,
+            corresponding to this fraction of the sum of the nonzero singular values.
+            The goal of truncation is to deal with smaller matrices (dimensionality
+            reduction), easier to inverse. The default is 0.99.
+        logger: Optional[logging.Logger]
+            Optional :py:class:`logging.Logger` instance used for event logging.
+            The default is None.
 
         """
         super().__init__(
             obs=obs,
-            # only inflate the initial ensemble because we don't known
-            # the number of assimilations
-            m_init=inflate_ensemble_around_its_mean(
-                m_init, inflation_factor=cov_mm_inflation_factor
-            ),
+            m_init=m_init,
             cov_obs=cov_obs,
             forward_model=forward_model,
             forward_model_args=forward_model_args,
             forward_model_kwargs=forward_model_kwargs,
             n_assimilations=1,  # in esmda-rs this number is determined automatically
-            dd_correlation_matrix=dd_correlation_matrix,
-            md_correlation_matrix=md_correlation_matrix,
-            # cov_mm_inflation_factors=None, # [cov_mm_inflation_factor],
+            inversion_type=inversion_type,
+            cov_mm_inflation_factor=cov_mm_inflation_factor,
+            C_DD_localization=C_DD_localization,
+            C_MD_localization=C_MD_localization,
             m_bounds=m_bounds,
             save_ensembles_history=save_ensembles_history,
             seed=seed,
@@ -238,6 +174,8 @@ class ESMDA_RS(ESMDABase):
             random_state=random_state,
             batch_size=batch_size,
             is_parallel_analyse_step=is_parallel_analyse_step,
+            truncation=truncation,
+            logger=logger,
         )
 
         # Initialize an empty list
@@ -251,9 +189,7 @@ class ESMDA_RS(ESMDABase):
             self.std_m_prior: npt.NDArray[np.float64] = std_m_prior
         else:
             # otherwise, it is inffered from the inflated ensemble
-            self.std_m_prior: npt.NDArray[np.float64] = np.sqrt(
-                get_ensemble_variance(self.m_prior)
-            )
+            self.std_m_prior = np.std(self.m_prior, axis=1, ddof=1)
 
     @property
     def n_assimilations(self) -> int:
@@ -292,55 +228,37 @@ class ESMDA_RS(ESMDABase):
         m_pred = self.m_prior
         while not self._is_unity_reached(current_inflation_factor):
             self._assimilation_step += 1
-            print(f"Assimilation # {self._assimilation_step}")
+            self.loginfo(f"Assimilation # {self._assimilation_step}")
             self._forecast()
             # Divide per 2, because it is multiplied by 2 as the beginning
             # of the second while loop
-            current_inflation_factor: float = (
-                self._compute_initial_inflation_factor() / 2
-            )
+            current_inflation_factor = self._compute_initial_inflation_factor() / 2
             is_valid_parameter_change: bool = False
             while not is_valid_parameter_change:
                 current_inflation_factor *= 2  # double the inflation (dumping) factor
                 self._pertrub(current_inflation_factor)
 
                 if self.n_batches == 1:
-                    self._approximate_covariance_matrices()
                     m_pred = self._apply_bounds(self._analyse(current_inflation_factor))
                 else:
-                    # covariance approximation dd
-                    self.cov_dd = approximate_covariance_matrix_from_ensembles(
-                        self.d_pred, self.d_pred
-                    )
-                    # Spatial and temporal localization: obs - obs
-                    if self.dd_correlation_matrix is not None:
-                        self.cov_dd = self.dd_correlation_matrix.multiply(
-                            self.cov_dd
-                        ).toarray()
-
                     # Update the prior parameter for next iteration
                     m_pred = self._apply_bounds(
                         self._local_analyse(current_inflation_factor)
                     )
 
-                is_valid_parameter_change: bool = self._is_valid_parameter_change(
-                    m_pred
-                )
+                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
             # If the criteria is reached -> Get exactly one for the sum
             if self._is_unity_reached(current_inflation_factor):
                 current_inflation_factor = 1 / (
-                    1 - np.sum([1 / a for a in self.cov_obs_inflation_factors])
+                    1 - float(np.sum([1 / a for a in self.cov_obs_inflation_factors]))
                 )
                 self._pertrub(current_inflation_factor)
-                self._approximate_covariance_matrices()
                 m_pred = self._analyse(current_inflation_factor)
-                is_valid_parameter_change: bool = self._is_valid_parameter_change(
-                    m_pred
-                )
+                is_valid_parameter_change = self._is_valid_parameter_change(m_pred)
 
             self.cov_obs_inflation_factors.append(current_inflation_factor)
-            print(f"- Inflation factor = {current_inflation_factor:.3f}")
+            self.loginfo(f"- Inflation factor = {current_inflation_factor:.3f}")
 
             # Update the prior parameter for next iteration
             self.m_prior = m_pred
@@ -350,12 +268,15 @@ class ESMDA_RS(ESMDABase):
 
         # Last assimilation
         if self.is_forecast_for_last_assimilation:
+            self.loginfo("Forecast for the final ensemble")
             self._forecast()
 
     def _compute_initial_inflation_factor(self) -> float:
         r"""Compute the :math:`\alpha_{l}` inflation (dumping) factor."""
-        return 0.25 * compute_ensemble_average_normalized_objective_function(
-            self.d_pred, self.obs, self.cov_obs
+        return (
+            0.25
+            / self.obs.size
+            * float(np.mean(ls_cost_function(self.d_pred, self.obs, self.cov_obs)))
         )
 
     def _is_unity_reached(self, current_inflation_factor: float) -> bool:
@@ -370,27 +291,28 @@ class ESMDA_RS(ESMDABase):
             Multiplication factor used to inflate the covariance matrix of the
             measurement errors for the current (last) iteration.
         """
-        return (
+        return bool(
             np.sum([1 / a for a in self.cov_obs_inflation_factors])
             + 1 / current_inflation_factor
             >= 1
         )
 
     def _is_valid_parameter_change(self, m_pred: npt.NDArray[np.float64]) -> bool:
-        """Check if all change residuals are below 2 sigma.
+        r"""Check if all change residuals are below 2 sigma.
 
         Parameters
         ----------
         m_pred : npt.NDArray[np.float64]
-            _description_
+            Ensemble of predicted values with dimensions
+            (:math:`N_{s}`, :math:`N_{e}`).
 
         Returns
         -------
         bool
-            _description_
+            Whether the parameter change is valid.
         """
 
-        def is_lower(residuals) -> bool:
-            return np.all(residuals < 2 * self.std_m_prior)
+        def is_lower(residuals: NDArrayFloat) -> bool:
+            return bool(np.all(residuals < 2 * self.std_m_prior))
 
-        return np.all(list(map(is_lower, np.abs(m_pred - self.m_prior))))
+        return bool(np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T))))

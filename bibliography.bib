@@ -1,23 +1,20 @@
-
 @article{aanonsenEnsembleKalmanFilter2009,
   title = {The {{Ensemble Kalman Filter}} in {{Reservoir Engineering--a Review}}},
   author = {Aanonsen, Sigurd and N{\ae}vdal, Geir and Oliver, Dean and Reynolds, Albert and Vall{\`e}s, Brice},
-  year = {2009},
+  year = 2009,
   month = sep,
   journal = {SPE Journal - SPE J},
   volume = {14},
   pages = {393--412},
   doi = {10.2118/117274-PA},
   abstract = {There has been great progress in data assimilation within atmospheric and oceanographic sciences during the last couple of decades. In data assimilation, one aims at merging the information from observations into a numerical model, typically of a geophysical system. A typical example where data assimilation is needed is in weather forecasting. Here, the atmospheric models must take into account the most recent observations of variables such as temperature and atmospheric pressure for better forecasting of the weather in the next time period. A major challenge for these models is that they contain very large numbers of variables.The progress in data assimilation is because of both increased computational power and the introduction of techniques that are capable of handling large amounts of data and more severe nonlinearities. The aim of this paper is to focus on one of these techniques, the ensemble Kalman filter (EnKF). The EnKF has been introduced to petroleum science recently (Lorentzen et al. 2001a) and, in particular, has attracted attention as a promising method for solving the history matching problem. The literature available on the EnKF is now rather overwhelming. We hope that this review will help researchers (and students) working on adapting the EnKF to petroleum applications to find valuable references and ideas, although the number of papers discussing the EnKF is too large to give a complete review. For practitioners, we have cited critical EnKF papers from weather and oceanography. We have also tried to review most of the papers dealing with the EnKF and updating of reservoir models available to the authors by the beginning of 2008.The EnKF is based on the simpler Kalman filter (Kalman 1960). We will start by introducing the Kalman filter. The Kalman filter is an efficient recursive filter that estimates the state of a linear dynamical system from a series of noisy measurements. The Kalman filter is based on a model equation, where the current state of the system is associated with an uncertainty (expressed by a covariance matrix) and an observation equation that relates a linear combination of the states to measurements. The measurements are also associated with uncertainty. The model equations are used to compute a forward step (Eqs. 1 and 2) where the state variables are computed forward in time with the current estimate of the state as initial condition. The observation equations are used in the analysis step (Eqs. 3 through 5) where the estimated value of the state and its uncertainty are corrected to take into account the most recent measurements See, e.g., Cohn (1997), Maybeck (1979), or Stengel (1994) for an introduction to the Kalman filter.},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/JNISZ6SJ/Aanonsen et al. - 2009 - The Ensemble Kalman Filter in Reservoir Engineerin.pdf}
+  file = {/home/acollet/Documents/ZOTERO/storage/8AA88ENK/Aanonsen et al. - 2009 - The Ensemble Kalman Filter in Reservoir Engineerin.pdf}
 }
-% == BibTeX quality report for aanonsenEnsembleKalmanFilter2009:
-% ? Title looks like it was stored in title-case in Zotero
 
 @article{andersonExploringNeedLocalization2007,
   title = {Exploring the Need for Localization in Ensemble Data Assimilation Using a Hierarchical Ensemble Filter},
   author = {Anderson, Jeffrey L.},
-  year = {2007},
+  year = 2007,
   month = jun,
   journal = {Physica D: Nonlinear Phenomena},
   series = {Data {{Assimilation}}},
@@ -26,19 +23,63 @@
   pages = {99--111},
   issn = {0167-2789},
   doi = {10.1016/j.physd.2006.02.011},
+  urldate = {2022-07-25},
   abstract = {Good performance with small ensemble filters applied to models with many state variables may require `localizing' the impact of an observation to state variables that are `close' to the observation. As a step in developing nearly generic ensemble filter assimilation systems, a method to estimate `localization' functions is presented. Localization is viewed as a means to ameliorate sampling error when small ensembles are used to sample the statistical relation between an observation and a state variable. The impact of spurious sample correlations between an observation and model state variables is estimated using a `hierarchical ensemble filter', where an ensemble of ensemble filters is used to detect sampling error. Hierarchical filters can adapt to a wide array of ensemble sizes and observational error characteristics with only limited heuristic tuning. Hierarchical filters can allow observations to efficiently impact state variables, even when the notion of `distance' between the observation and the state variables cannot be easily defined. For instance, defining the distance between an observation of radar reflectivity from a particular radar and beam angle taken at 1133~GMT and a model temperature variable at 700~hPa 60~km north of the radar beam at 1200~GMT is challenging. The hierarchical filter estimates sampling error from a `group' of ensembles and computes a factor between 0 and 1 to minimize sampling error. An a priori notion of distance is not required. Results are shown in both a low-order model and a simple atmospheric GCM. For low-order models, the hierarchical filter produces `localization' functions that are very similar to those already described in the literature. When observations are more complex or taken at different times from the state specification (in ensemble smoothers for instance), the localization functions become increasingly distinct from those used previously. In the GCM, this complexity reaches a level that suggests that it would be difficult to define efficient localization functions a priori. There is a cost trade-off between running hierarchical filters or running a traditional filter with larger ensemble size. Hierarchical filters can be run for short training periods to develop localization statistics that can be used in a traditional ensemble filter to produce high quality assimilations at reasonable cost, even when the relation between observations and state variables is not well-known a priori. Additional research is needed to determine if it is ever cost-efficient to run hierarchical filters for large data assimilation problems instead of traditional filters with the corresponding total number of ensemble members.},
   langid = {english},
   keywords = {Data assimilation,Ensemble filters,Localization,Sampling error},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/39EI9S49/S0167278906002168.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/T7RDNA6D/Anderson - 2007 - Exploring the need for localization in ensemble da.pdf}
 }
-% == BibTeX quality report for andersonExploringNeedLocalization2007:
-% ? unused Library catalog ("ScienceDirect")
-% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0167278906002168")
+
+@article{bishopFlowadaptiveModerationSpurious2007,
+  title = {Flow-Adaptive Moderation of Spurious Ensemble Correlations and Its Use in Ensemble-Based Data Assimilation},
+  author = {Bishop, Craig H. and Hodyss, Daniel},
+  year = 2007,
+  journal = {Quarterly Journal of the Royal Meteorological Society},
+  volume = {133},
+  number = {629},
+  pages = {2029--2044},
+  issn = {1477-870X},
+  doi = {10.1002/qj.169},
+  urldate = {2024-01-14},
+  abstract = {Many ensemble Kalman filter (EnKF) data assimilation (DA) schemes reduce the effect of spurious ensemble correlations caused by small ensemble size by multiplying the correlations by moderation functions. Moderation functions envelop true error correlation functions. Ideal moderation functions would adapt to variations in the movement and width of true error correlation functions. Here, we describe a new method in which flow-dependent moderation functions are built from powers of smoothed ensemble correlations. The approach imparts to the moderation function movement and width information retained by the smoothed ensemble correlations. Spurious smoothed ensemble correlations are attenuated by raising them to a power. Simple systems were used to compare DA performance using such Smoothed ENsemble COrrelations Raised to a Power (SENCORP) moderation functions against DA performance using optimally tuned but non-adaptive moderation functions. The simple systems considered feature propagating error correlation functions and error correlation functions with variable width. It was found that when significant spatio-temporal variations in the true error correlation function are present, SENCORP moderation functions are superior to non-adaptive moderation functions. In the absence of spatio-temporal variations, the DA performance of SENCORP moderation functions was found to be statistically indistinguishable from the DA performance of non-adaptive moderation functions. An example using a primitive equation global model is given to illustrate how the method could be used to improve the performance of a local ensemble Kalman filter/smoother, particularly when larger observation volumes are used, to better account for error propagation and/or observations that represent vertically averaged variables. Published in 2007 by John Wiley \& Sons, Ltd.},
+  copyright = {This article is a US Government work and is in the public domain in the USA. Published in 2007 by John Wiley \& Sons, Ltd.},
+  langid = {english},
+  keywords = {covariance localization,local ensemble Kalman filter,smoother},
+  file = {/home/acollet/Documents/ZOTERO/storage/C7JAADRC/qj.html}
+}
+
+@inproceedings{bonet-cunhaHybridMarkovChain1996,
+  title = {A {{Hybrid Markov Chain Monte Carlo Method}} for {{Generating Permeability Fields Conditioned}} to {{Multiwell Pressure Data}} and {{Prior Information}}},
+  booktitle = {{{SPE Annual Technical Conference}} and {{Exhibition}}},
+  author = {{Bonet-Cunha}, L. and Oliver, D. S. and Redner, R. A. and Reynolds, A. C.},
+  year = 1996,
+  month = oct,
+  publisher = {OnePetro},
+  doi = {10.2118/36566-MS},
+  urldate = {2024-01-11},
+  abstract = {Abstract. In order to properly evaluate the uncertainty in reservoir performance predictions, it is necessary to construct and sample the a posteriori probability density functions for the rock property fields. In this work, the a posteriori probability density function is constructed based on prior means and variograms (covariance function) for log-permeability and multiwell pressure data. Within the context of sampling the probability density function, we argue that the notion of equally probable realizations is the wrong paradigm for reservoir characterization. If the simulation of Gaussian random fields with a known variogram is the objective, it is shown that the variogram should not be incorporated directly into the objective function if simulated annealing is applied either to sample the a posteriori probability density function or to estimate a global minimum of the associated objective function. It is shown that the hybrid Markov chain Monte Carlo method provides a way to explore more fully the set of plausible log-permeability fields and does not suffer from the high rejection rates of more standard Markov chain Monte Carlo methods.Introduction. To characterize the uncertainty in predicted reservoir performance, one wishes to simulate performance with a set of reservoir descriptions which honor all available data. Although simulated annealing represents a popular technique for generating reservoir descriptions which honor diverse data sets, our requirements are more strict. We do not simply wish to construct rock property fields which honor all data, we wish to generate a set of realizations of the rock property fields such that this set represents a correct sampling of the a posteriori probability density function for the rock property fields, i.e., we wish to derive the correct a posteriori probability density function conditioned to all data and then sample this probability distribution correctly. If one generates a set of N realizations which represent a proper sampling of the a posteriori probability density function, then one can characterize the uncertainty in performance predictions. To do this, we simply use each reservoir description (each realization) as input data for a reservoir simulation and generate the resulting reservoir performance. From these N flow simulations, one can compute the statistics (mean, median, variance, histogram) for each parameter or variable predicted by the flow simulations to provide a measure of the uncertainty or variability in predicted performance. Having characterized the uncertainty in predicted performance, one can make reservoir management decisions that account for our lack of complete knowledge of the true reservoir.For the problem considered here, the objective is to determine realizations of the log-permeability field defined on reservoir simulator gridblocks. These realizations are obtained by sampling the probability density function conditioned to prior means, variograms (covariance function) and multiwell pressure data. Unlike other work, we use the pressure data directly instead of using pressure data to estimate an},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/IWUR95YH/Bonet-Cunha et al. - 1996 - A Hybrid Markov Chain Monte Carlo Method for Gener.pdf}
+}
+
+@phdthesis{colletAssistedHistoryMatching2024,
+  type = {{{PhD}} Manuscript},
+  title = {Assisted History Matching in Reactive Transport : {{Application}} to Uranium in Situ Recovery},
+  shorttitle = {Assisted History Matching in Reactive Transport},
+  author = {Collet, Antoine},
+  year = 2024,
+  month = dec,
+  urldate = {2025-10-08},
+  abstract = {La production par r\'ecup\'eration in situ (ISR) est une technique mini\`ere alternative qui plut\^ot que de creuser de gigantesques trous ou bien une myriade de ga-Eries pour exploiter un gisement m\'etallique, proc\`ede par ce qui ressemble \`a de l'acupuncture : un r\'eseau de puits producteur et injecteur est for\'e jusqu'au gisement et des solutions sont inject\'ees et pomp\'ees continuellement pour dissoudre et r\'ecup\'erer le m\'etal d'int\'er\^et. L'absence d'acc\`es direct au gisement, m\^eme a posteriori, rend le mineur ``aveugle''. La mod\'elisation des \'ecoulements des fluides ainsi que des r\'eactions chimiques eau-roche est alors un outil de premier plan pour parer \`a ce probl\`eme et pr\'edire la performance d'un gisement, assurer son suivi environnemental. Il existe n\'eanmoins de forts \'ecarts entre mod\`ele et r\'ealit\'e \`a cause d'une mauvaise repr\'esentation 3D du sous-sol. Dans cette th\`ese, on d\'eveloppe donc des m\'ethodes efficaces de mise \`a jour de cette repr\'esentation \`a partir des donn\'ees de production pass\'ees.},
+  copyright = {Licence Etalab},
+  school = {Universit\'e Paris sciences et lettres},
+  keywords = {551,Adjoint state,Calage d'historique,ESMDA,Etat adjoint,History matching,HYTEC,In Situ Recovery,Inverse problem,Inversion (geophysique),L-BFGS-B,Optimisation,Optimization,PCGA,Probleme inverse,Reactive transport,Recuperation in situ,Traitement in situ (technique miniere),Transport reactif,Uranium}
+}
 
 @article{emerickEnsembleSmootherMultiple2013,
   title = {Ensemble Smoother with Multiple Data Assimilation},
   author = {Emerick, Alexandre A. and Reynolds, Albert C.},
-  year = {2013},
+  year = 2013,
   month = jun,
   journal = {Computers \& Geosciences},
   series = {Ensemble {{Kalman}} Filter for Data Assimilation},
@@ -46,124 +87,728 @@
   pages = {3--15},
   issn = {0098-3004},
   doi = {10.1016/j.cageo.2012.03.011},
+  urldate = {2021-08-19},
   abstract = {In the last decade, ensemble-based methods have been widely investigated and applied for data assimilation of flow problems associated with atmospheric physics and petroleum reservoir history matching. This paper focuses entirely on the reservoir history-matching problem. Among the ensemble-based methods, the ensemble Kalman filter (EnKF) is the most popular for history-matching applications. However, the recurrent simulation restarts required in the EnKF sequential data assimilation process may prevent the use of EnKF when the objective is to incorporate the history matching in an integrated geo-modeling workflow. In this situation, the ensemble smoother (ES) is a viable alternative. However, because ES computes a single global update, it may not result in acceptable data matches; therefore, the development of efficient iterative forms of ES is highly desirable. In this paper, we propose to assimilate the same data multiple times with an inflated measurement error covariance matrix in order to improve the results obtained by ES. This method is motivated by the equivalence between single and multiple data assimilation for the linear-Gaussian case. We test the proposed method for three synthetic reservoir history-matching problems. Our results show that the proposed method provides better data matches than those obtained with standard ES and EnKF, with a computational cost comparable with the computational cost of EnKF.},
   langid = {english},
   keywords = {Ensemble Kalman filter,Ensemble smoother,History matching,Multiple data assimilation},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/KLUCNM9T/Emerick and Reynolds - 2013 - Ensemble smoother with multiple data assimilation.pdf;/home/acollet/Documents/BIBLIOGRAPHY/storage/4LNFMI2H/S0098300412000994.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/AB32NMS6/Emerick and Reynolds - 2013 - Ensemble smoother with multiple data assimilation.pdf;/home/acollet/Documents/ZOTERO/storage/W9PHPUGD/S0098300412000994.html}
 }
-% == BibTeX quality report for emerickEnsembleSmootherMultiple2013:
-% ? unused Library catalog ("ScienceDirect")
-% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0098300412000994")
 
 @inproceedings{emerickHistoryMatchingProductionSeismic2013,
   title = {History-{{Matching Production}} and {{Seismic Data}} in a {{Real Field Case Using}} the {{Ensemble Smoother With Multiple Data Assimilation}}},
-  booktitle = {Society of {{Petroleum Engineers}} - {{SPE Reservoir Simulation Symposium}} 2013},
+  booktitle = {{{SPE Reservoir Simulation Symposium}}},
   author = {Emerick, Alexandre and Reynolds, Albert},
-  year = {2013},
+  year = 2013,
   month = feb,
   volume = {2},
+  address = {The Woodlands, Texas, USA},
   doi = {10.2118/163675-MS},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/I4DUT9GN/Emerick and Reynolds - 2013 - History-Matching Production and Seismic Data in a .pdf}
+  file = {/home/acollet/Documents/ZOTERO/storage/A5CQ894Z/Emerick and Reynolds - 2013 - History-Matching Production and Seismic Data in a .pdf}
 }
-% == BibTeX quality report for emerickHistoryMatchingProductionSeismic2013:
-% ? Unsure about the formatting of the booktitle
-% ? Title looks like it was stored in title-case in Zotero
+
+@article{emerickHistoryMatchingTimelapse2012,
+  title = {History Matching Time-Lapse Seismic Data Using the Ensemble {{Kalman}} Filter with Multiple Data Assimilations},
+  author = {Emerick, Alexandre A. and Reynolds, Albert C.},
+  year = 2012,
+  month = jun,
+  journal = {Computational Geosciences},
+  volume = {16},
+  number = {3},
+  pages = {639--659},
+  issn = {1573-1499},
+  doi = {10.1007/s10596-012-9275-5},
+  urldate = {2023-09-14},
+  abstract = {The ensemble Kalman filter (EnKF) has become a popular method for history matching production and seismic data in petroleum reservoir models. However, it is known that EnKF may fail to give acceptable data matches especially for highly nonlinear problems. In this paper, we introduce a procedure to improve EnKF data matches based on assimilating the same data multiple times with the covariance matrix of the measurement errors multiplied by the number of data assimilations. We prove the equivalence between single and multiple data assimilations for the linear-Gaussian case and present computational evidence that multiple data assimilations can improve EnKF estimates for the nonlinear case. The proposed procedure was tested by assimilating time-lapse seismic data in two synthetic reservoir problems, and the results show significant improvements compared to the standard EnKF. In addition, we review the inversion schemes used in the EnKF analysis and present a rescaling procedure to avoid loss of information during the truncation of small singular values.},
+  langid = {english},
+  keywords = {Ensemble Kalman filter,Multiple data assimilations,Time-lapse seismic},
+  file = {/home/acollet/Documents/ZOTERO/storage/5K8CJ4QP/Emerick and Reynolds - 2012 - History matching time-lapse seismic data using the.pdf}
+}
+
+@article{emerickInvestigationSamplingPerformance2013,
+  title = {Investigation of the Sampling Performance of Ensemble-Based Methods with a Simple Reservoir Model},
+  author = {Emerick, Alexandre A. and Reynolds, Albert C.},
+  year = 2013,
+  month = apr,
+  journal = {Computational Geosciences},
+  volume = {17},
+  number = {2},
+  pages = {325--350},
+  issn = {1573-1499},
+  doi = {10.1007/s10596-012-9333-z},
+  urldate = {2024-01-11},
+  abstract = {The application of the ensemble Kalman filter (EnKF) for history matching petroleum reservoir models has been the subject of intense investigation during the past 10~years. Unfortunately, EnKF often fails to provide reasonable data matches for highly nonlinear problems. This fact motivated the development of several iterative ensemble-based methods in the last few years. However, there exists no study comparing the performance of these methods in the literature, especially in terms of their ability to quantify uncertainty correctly. In this paper, we compare the performance of nine ensemble-based methods in terms of the quality of the data matches, quantification of uncertainty, and computational cost. For this purpose, we use a small but highly nonlinear reservoir model so that we can generate the reference posterior distribution of reservoir properties using a very long chain generated by a Markov chain Monte Carlo sampling algorithm. We also consider one adjoint-based implementation of the randomized maximum likelihood method in the comparisons.},
+  langid = {english},
+  keywords = {Ensemble Kalman filter,Ensemble smoother,History matching,Markov chain Monte Carlo,Randomized maximum likelihood,Uncertainty quantification},
+  file = {/home/acollet/Documents/ZOTERO/storage/74LP2QGM/Emerick and Reynolds - 2013 - Investigation of the sampling performance of ensem.pdf}
+}
+
+@misc{evensenCorrelationBasedLocalization2023,
+  title = {Correlation-{{Based Localization}}},
+  author = {Evensen, Geir},
+  year = 2023,
+  month = jan,
+  langid = {english},
+  annotation = {Presenters: \_:n16275},
+  file = {/home/acollet/Documents/ZOTERO/storage/DP9D9BK3/Evensen - Correlation-Based Localization.pdf}
+}
 
 @book{evensenDataAssimilationEnsemble2007,
   title = {Data {{Assimilation}} - {{The Ensemble Kalman Filter}}},
   author = {Evensen, Geir},
-  year = {2007},
-  publisher = {{Springer Berlin Heidelberg}},
+  year = 2007,
+  publisher = {Springer Berlin Heidelberg},
   doi = {10.1007/978-3-642-03711-5},
+  urldate = {2022-07-23},
   abstract = {Data Assimilation comprehensively covers data assimilation and inverse methods, including both traditional state estimation and parameter estimation. This text and reference focuses on various popular data assimilation methods, such as weak and strong constraint variational methods and ensemble filters and smoothers. It is demonstrated how the different methods can be derived from a common theoretical basis, as well as how they differ and/or are related to each other, and which properties characterize them, using several examples. It presents the mathematical framework and derivations in a way which is common for any discipline where dynamics is merged with measurements. The mathematics level is modest, although it requires knowledge of basic spatial statistics, Bayesian statistics, and calculus of variations. Readers will also appreciate the introduction to the mathematical methods used and detailed derivations, which should be easy to follow, are given throughout the book. The codes used in several of the data assimilation experiments are available on a web page. The focus on ensemble methods, such as the ensemble Kalman filter and smoother, also makes it a solid reference to the derivation, implementation and application of such techniques. Much new material, in particular related to the formulation and solution of combined parameter and state estimation problems and the general properties of the ensemble algorithms, is available here for the first time. The 2nd edition includes a partial rewrite of Chapters 13 an 14, and the Appendix. In addition, there is a completely new Chapter on "Spurious correlations, localization and inflation", and an updated and improved sampling discussion in Chap 11.},
   isbn = {978-3-642-03710-8},
   langid = {english},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/WD97BI9N/bwmeta1.element.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/FT5WI3H9/bwmeta1.element.html}
 }
-% == BibTeX quality report for evensenDataAssimilationEnsemble2007:
-% ? Title looks like it was stored in title-case in Zotero
-% ? unused Library catalog ("https://link.springer.comwww.infona.pl")
-% ? unused Url ("https://link.springer.com/book/10.1007/978-3-642-03711-5")
+
+@article{evensenEfficientImplementationIterative2019,
+  title = {Efficient {{Implementation}} of an {{Iterative Ensemble Smoother}} for {{Data Assimilation}} and {{Reservoir History Matching}}},
+  author = {Evensen, Geir and Raanes, Patrick and Stordal, Andreas and Hove, Joakim},
+  year = 2019,
+  month = oct,
+  journal = {Frontiers in Applied Mathematics and Statistics},
+  volume = {5},
+  pages = {47},
+  doi = {10.3389/fams.2019.00047},
+  abstract = {Raanes et al. [1] revised the iterative ensemble smoother of Chen and Oliver [2, 3], denoted Ensemble Randomized Maximum Likelihood (EnRML), using the property that the EnRML solution is contained in the ensemble subspace. They analyzed EnRML and demonstrated how to implement the method without the use of expensive pseudo inversions of the low-rank state covariance matrix or the ensemble-anomaly matrix. The new algorithm produces the same result, realization by realization, as the original EnRML method. However, the new formulation is simpler to implement, numerically stable, and computationally more efficient. The purpose of this document is to present a simple derivation of the new algorithm and demonstrate its practical implementation and use for reservoir history matching. An additional focus is to customize the algorithm to be suitable for big-data assimilation of measurements with correlated errors. The computational cost of the resulting ``ensemble sub-space'' algorithm is linear in both the dimension of the state space and the number of measurements, also when the measurements have correlated errors. The final algorithm is implemented in the Ensemble Reservoir Tool (ERT) for running and conditioning ensembles of reservoir models. Several verification experiments are presented.},
+  file = {/home/acollet/Documents/ZOTERO/storage/X5YZA579/Evensen et al. - 2019 - Efficient Implementation of an Iterative Ensemble .pdf}
+}
+
+@article{evensenEnsembleKalmanFilter2003,
+  title = {The {{Ensemble Kalman Filter}}: Theoretical Formulation and Practical Implementation},
+  shorttitle = {The {{Ensemble Kalman Filter}}},
+  author = {Evensen, Geir},
+  year = 2003,
+  month = nov,
+  journal = {Ocean Dynamics},
+  volume = {53},
+  number = {4},
+  pages = {343--367},
+  issn = {1616-7228},
+  doi = {10.1007/s10236-003-0036-9},
+  urldate = {2024-01-14},
+  abstract = {The purpose of this paper is to provide a comprehensive presentation and interpretation of the Ensemble Kalman Filter (EnKF) and its numerical implementation. The EnKF has a large user group, and numerous publications have discussed applications and theoretical aspects of it. This paper reviews the important results from these studies and also presents new ideas and alternative interpretations which further explain the success of the EnKF. In addition to providing the theoretical framework needed for using the EnKF, there is also a focus on the algorithmic formulation and optimal numerical implementation. A program listing is given for some of the key subroutines. The paper also touches upon specific issues such as the use of nonlinear measurements, in situ profiles of temperature and salinity, and data which are available with high frequency in time. An ensemble based optimal interpolation (EnOI) scheme is presented as a cost-effective approach which may serve as an alternative to the EnKF in some applications. A fairly extensive discussion is devoted to the use of time correlated model errors and the estimation of model bias.},
+  langid = {english},
+  keywords = {Data assimilation,Ensemble Kalman Filter}
+}
+
+@incollection{evensenLocalizationInflation2022,
+  title = {Localization and {{Inflation}}},
+  booktitle = {Data {{Assimilation Fundamentals}}: {{A Unified Formulation}} of the {{State}} and {{Parameter Estimation Problem}}},
+  author = {Evensen, Geir and Vossepoel, Femke C. and {van Leeuwen}, Peter Jan},
+  editor = {Evensen, Geir and Vossepoel, Femke C. and {van Leeuwen}, Peter Jan},
+  year = 2022,
+  series = {Springer {{Textbooks}} in {{Earth Sciences}}, {{Geography}} and {{Environment}}},
+  pages = {111--122},
+  publisher = {Springer International Publishing},
+  address = {Cham},
+  doi = {10.1007/978-3-030-96709-3_10},
+  urldate = {2023-09-24},
+  abstract = {Localization and inflation have become essential means of mitigating the effects of the low-rank approximation in ensemble methods. Localization increases the effective rank of the ensemble covariance matrix and allows it to fit a large number of independent observations. Thus, we use localization to reduce sampling errors, in combination with inflation, to reduce the underestimation of the ensemble variance caused by the low-rank approximation. These methods are essential for high-dimensional applications, and this chapter will give a general introduction to various formulations of localization and inflation methods.},
+  isbn = {978-3-030-96709-3},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/VI4T2HMY/Evensen et al. - 2022 - Localization and Inflation.pdf}
+}
+
+@article{evensenSamplingStrategiesSquare2004,
+  title = {Sampling Strategies and Square Root Analysis Schemes for the {{EnKF}}},
+  author = {Evensen, Geir},
+  year = 2004,
+  month = dec,
+  journal = {Ocean Dynamics},
+  volume = {54},
+  number = {6},
+  pages = {539--560},
+  issn = {1616-7228},
+  doi = {10.1007/s10236-004-0099-2},
+  urldate = {2023-09-25},
+  abstract = {The purpose of this paper is to examine how different sampling strategies and implementations of the analysis scheme influence the quality of the results in the EnKF. It is shown that by selecting the initial ensemble, the model noise and the measurement perturbations wisely, it is possible to achieve a significant improvement in the EnKF results, using the same number of members in the ensemble. The results are also compared with a square root implementation of the EnKF analysis scheme where the analyzed ensemble is computed without the perturbation of measurements. It is shown that the measurement perturbations introduce sampling errors which can be reduced using improved sampling schemes in the standard EnKF or fully eliminated when the square root analysis algorithm is used. Further, a new computationally efficient square root algorithm is proposed which allows for the use of a low-rank representation of the measurement error covariance matrix. It is shown that this algorithm in fact solves the full problem at a low cost without introducing any new approximations.},
+  langid = {english},
+  keywords = {Data assimilation,Ensemble Kalman Filter},
+  file = {/home/acollet/Documents/ZOTERO/storage/HP6VENRI/Evensen - 2004 - Sampling strategies and square root analysis schem.pdf}
+}
+
+@article{evensenSequentialDataAssimilation1994,
+  title = {Sequential Data Assimilation with a Nonlinear Quasi-Geostrophic Model Using {{Monte Carlo}} Methods to Forecast Error Statistics},
+  author = {Evensen, Geir},
+  year = 1994,
+  journal = {Journal of Geophysical Research: Oceans},
+  volume = {99},
+  number = {C5},
+  pages = {10143--10162},
+  issn = {2156-2202},
+  doi = {10.1029/94JC00572},
+  urldate = {2021-08-19},
+  abstract = {A new sequential data assimilation method is discussed. It is based on forecasting the error statistics using Monte Carlo methods, a better alternative than solving the traditional and computationally extremely demanding approximate error covariance equation used in the extended Kalman filter. The unbounded error growth found in the extended Kalman filter, which is caused by an overly simplified closure in the error covariance equation, is completely eliminated. Open boundaries can be handled as long as the ocean model is well posed. Well-known numerical instabilities associated with the error covariance equation are avoided because storage and evolution of the error covariance matrix itself are not needed. The results are also better than what is provided by the extended Kalman filter since there is no closure problem and the quality of the forecast error statistics therefore improves. The method should be feasible also for more sophisticated primitive equation models. The computational load for reasonable accuracy is only a fraction of what is required for the extended Kalman filter and is given by the storage of, say, 100 model states for an ensemble size of 100 and thus CPU requirements of the order of the cost of 100 model integrations. The proposed method can therefore be used with realistic nonlinear ocean models on large domains on existing computers, and it is also well suited for parallel computers and clusters of workstations where each processor integrates a few members of the ensemble.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/YQIUS4YF/Evensen - 1994 - Sequential data assimilation with a nonlinear quas.pdf;/home/acollet/Documents/ZOTERO/storage/K35K8SJX/94JC00572.html}
+}
+
+@incollection{evensenSpuriousCorrelationsLocalization2009,
+  title = {Spurious Correlations, Localization, and Inflation},
+  booktitle = {Data {{Assimilation}}: {{The Ensemble Kalman Filter}}},
+  author = {Evensen, Geir},
+  editor = {Evensen, Geir},
+  year = 2009,
+  pages = {237--253},
+  publisher = {Springer},
+  address = {Berlin, Heidelberg},
+  doi = {10.1007/978-3-642-03711-5_15},
+  urldate = {2024-01-14},
+  abstract = {The use of a finite ensemble size to approximate the error covariance matrix introduces sampling errors that are seen as spurious correlations over long spatial distances or between variables known to be uncorrelated. The spurios correlations imply that variables that are supposed to be uncorrelated with an observation, experience a small unphysical update. Over time and with many data, the spurious updates may cancel out and the drift in the mean may be negligible. However, with each spurious update there is an associated reduction of ensemble variance and over time the ensemble variance may significantly underestimate the true variance. This problem is present in all EnKF applications and can lead to filter divergence. On the other hand, the consistency of the updated variance improves when a larger ensemble is used.},
+  isbn = {978-3-642-03711-5},
+  langid = {english},
+  keywords = {Adaptive Localization,Ensemble Size,Error Covariance Matrix,Spurious Correlation,Variance Reduction}
+}
+
+@article{fertigAssimilatingNonlocalObservations2007,
+  title = {Assimilating Non-Local Observations with a Local Ensemble {{Kalman}} Filter},
+  author = {Fertig, Elana J. and Hunt, Brian R. and Ott, Edward and Szunyogh, Istvan},
+  year = 2007,
+  month = jan,
+  journal = {Tellus},
+  volume = {59},
+  number = {5},
+  pages = {719--730},
+  publisher = {Stockholm University Press},
+  issn = {1600-0870},
+  doi = {10.1111/j.1600-0870.2007.00260.x},
+  urldate = {2024-01-14},
+  abstract = {Many ensemble data assimilation schemes utilize spatial localization so that a small ensemble can capture the unstable degrees of freedom in the model state. These local ensemble-based schemes typically allow the analysis at a given location to depend only on observations near that location. Meanwhile, the location of satellite observations cannot be pinpointed in the same manner as conventional observations. We propose a technique to update the state at a given location by assimilating satellite radiance observations that are strongly correlated to the model state there. For satellite retrievals, we propose incorporating the observation error covariance matrix and selecting the retrievals that have errors correlated to observations near the location to be updated. Our selection techniques improve the analysis obtained when assimilating simulated satellite observations with a seven-layer primitive equation model, the SPEEDY model.},
+  langid = {american},
+  file = {/home/acollet/Documents/ZOTERO/storage/22C8BXPG/Fertig et al. - 2007 - Assimilating non-local observations with a local e.pdf}
+}
+
+@article{gaoImprovedImplementationLBFGS2006,
+  title = {An {{Improved Implementation}} of the {{LBFGS Algorithm}} for {{Automatic History Matching}}},
+  author = {Gao, Guohua and Reynolds, Albert C.},
+  year = 2006,
+  month = mar,
+  journal = {SPE Journal},
+  volume = {11},
+  number = {01},
+  pages = {5--17},
+  issn = {1086-055X},
+  doi = {10.2118/90058-PA},
+  urldate = {2024-01-10},
+  abstract = {For large scale history matching problems, where it is not feasible to compute individual sensitivity coefficients, the limited memory Broyden-Fletcher-Goldfarb-Shanno (LBFGS)is an efficient optimization algorithm, (Zhang and Reynolds, 2002; Zhang, 2002). However, computational experiments reveal that application of the original implementation of LBFGS may encounter the following problems: (i) converge to a model which gives an unacceptable match of production data; (ii) generate a bad search direction that either leads to false convergence or a restart with the steepest descent direction which radically reduces the convergence rate; (iii) exhibit overshooting and undershooting, i.e., converge to a vector of model parameters which contains some abnormally high or low values of model parameters which are physically unreasonable. Overshooting and undershooting can occur even though all history matching problems are formulated in a Bayesian framework with a prior model providing regularization.We show that the rate of convergence and the robustness of the algorithm can be significantly improved by: (1) a more robust line search algorithm motivated by the theoretical result that the Wolfe conditions should be satisfied; (2) an application of a data damping procedure at early iterations or (3) enforcing constraints on the model parameters. Computational experiments also indicate that (4) a simple rescaling of model parameters prior to application of the optimization algorithm can improve the convergence properties of the algorithm although the scaling procedure used can not be theoretically validated.},
+  file = {/home/acollet/Documents/ZOTERO/storage/VNCREJDM/Gao and Reynolds - 2006 - An Improved Implementation of the LBFGS Algorithm .pdf;/home/acollet/Documents/ZOTERO/storage/T8BAB5GK/An-Improved-Implementation-of-the-LBFGS-Algorithm.html}
+}
 
 @article{gaspariConstructionCorrelationFunctions1999,
   title = {Construction of Correlation Functions in Two and Three Dimensions},
   author = {Gaspari, Gregory and Cohn, Stephen E.},
-  year = {1999},
+  year = 1999,
   journal = {Quarterly Journal of the Royal Meteorological Society},
   volume = {125},
   number = {554},
   pages = {723--757},
   issn = {1477-870X},
   doi = {10.1002/qj.49712555417},
-  abstract = {This article focuses on the construction, directly in physical space, of simply parametrized covariance functions for data-assimilation applications. A self-contained, rigorous mathematical summary of relevant topics from correlation theory is provided as a foundation for this construction. Covariance and correlation functions are defined, and common notions of homogeneity and isotropy are clarified. Classical results are stated, and proven where instructive. Included are smoothness properties relevant to multivariate statistical-analysis algorithms where wind/wind and wind/mass correlation models are obtained by differentiating the correlation model of a mass variable. the Convolution Theorem is introduced as the primary tool used to construct classes of covariance and cross-covariance functions on three-dimensional Euclidean space R3. Among these are classes of compactly supported functions that restrict to covariance and cross-covariance functions on the unit sphere S2, and that vanish identically on subsets of positive measure on S2. It is shown that these covariance and cross-covariance functions on S2, referred to as being space-limited, cannot be obtained using truncated spectral expansions. Compactly supported and space-limited covariance functions determine sparse covariance matrices when evaluated on a grid, thereby easing computational burdens in atmospheric data-analysis algorithms. Convolution integrals leading to practical examples of compactly supported covariance and cross-covariance functions on R3 are reduced and evaluated. More specifically, suppose that gi and gj are radially symmetric functions defined on R3 such that gi(x) = 0 for |x| {$>$} di and gj(x) = 0 for |xv {$>$} dj, O {$<$} di,dj {$\leqq$}, where |. | denotes Euclidean distance in R3. the parameters di and dj are `cut-off' distances. Closed-form expressions are determined for classes of convolution cross-covariance functions Cij(x,y) := (gi * gj)(x-y), i {$\neq$} j, and convolution covariance functions Cii(x,y) := (gi * gi)(x-y), vanishing for |x - y| {$>$} di + dj and |x - y| {$>$} 2di, respectively, Additional covariance functions on R3 are constructed using convolutions over the real numbers R, rather than R3. Families of compactly supported approximants to standard second- and third-order autoregressive functions are constructed as illustrative examples. Compactly supported covariance functions of the form C(x,y) := Co(|x - y|), x,y {$\in$} R3, where the functions Co(r) for r {$\in$} R are 5th-order piecewise rational functions, are also constructed. These functions are used to develop space-limited product covariance functions B(x, y) C(x, y), x, y {$\in$} S2, approximating given covariance functions B(x, y) supported on all of S2 \texttimes{} S2.},
-  copyright = {Copyright \textcopyright{} 1999 Royal Meteorological Society},
+  urldate = {2023-08-01},
+  abstract = {This article focuses on the construction, directly in physical space, of simply parametrized covariance functions for data-assimilation applications. A self-contained, rigorous mathematical summary of relevant topics from correlation theory is provided as a foundation for this construction. Covariance and correlation functions are defined, and common notions of homogeneity and isotropy are clarified. Classical results are stated, and proven where instructive. Included are smoothness properties relevant to multivariate statistical-analysis algorithms where wind/wind and wind/mass correlation models are obtained by differentiating the correlation model of a mass variable. the Convolution Theorem is introduced as the primary tool used to construct classes of covariance and cross-covariance functions on three-dimensional Euclidean space R3. Among these are classes of compactly supported functions that restrict to covariance and cross-covariance functions on the unit sphere S2, and that vanish identically on subsets of positive measure on S2. It is shown that these covariance and cross-covariance functions on S2, referred to as being space-limited, cannot be obtained using truncated spectral expansions. Compactly supported and space-limited covariance functions determine sparse covariance matrices when evaluated on a grid, thereby easing computational burdens in atmospheric data-analysis algorithms. Convolution integrals leading to practical examples of compactly supported covariance and cross-covariance functions on R3 are reduced and evaluated. More specifically, suppose that gi and gj are radially symmetric functions defined on R3 such that gi(x) = 0 for \textbar x\textbar{} {$>$} di and gj(x) = 0 for \textbar xv {$>$} dj, O {$<$} di,dj {$\leqq$}, where \textbar. \textbar{} denotes Euclidean distance in R3. the parameters di and dj are `cut-off' distances. Closed-form expressions are determined for classes of convolution cross-covariance functions Cij(x,y) := (gi * gj)(x-y), i {$\neq$} j, and convolution covariance functions Cii(x,y) := (gi * gi)(x-y), vanishing for \textbar x - y\textbar{} {$>$} di + dj and \textbar x - y\textbar{} {$>$} 2di, respectively, Additional covariance functions on R3 are constructed using convolutions over the real numbers R, rather than R3. Families of compactly supported approximants to standard second- and third-order autoregressive functions are constructed as illustrative examples. Compactly supported covariance functions of the form C(x,y) := Co(\textbar x - y\textbar ), x,y {$\in$} R3, where the functions Co(r) for r {$\in$} R are 5th-order piecewise rational functions, are also constructed. These functions are used to develop space-limited product covariance functions B(x, y) C(x, y), x, y {$\in$} S2, approximating given covariance functions B(x, y) supported on all of S2 \texttimes{} S2.},
+  copyright = {Copyright \copyright{} 1999 Royal Meteorological Society},
   langid = {english},
   keywords = {Compactly supported,Convolution,Correlation functions,Data assimilation,Space-limited},
-  annotation = {\_eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1002/qj.49712555417},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/TK8QSPHX/Gaspari and Cohn - 1999 - Construction of correlation functions in two and t.pdf;/home/acollet/Documents/BIBLIOGRAPHY/storage/54NZAHII/qj.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/IAQPCV6K/Gaspari and Cohn - 1999 - Construction of correlation functions in two and t.pdf;/home/acollet/Documents/ZOTERO/storage/LHRLT7MJ/qj.html}
 }
-% == BibTeX quality report for gaspariConstructionCorrelationFunctions1999:
-% ? unused Library catalog ("Wiley Online Library")
-% ? unused Url ("https://onlinelibrary.wiley.com/doi/abs/10.1002/qj.49712555417")
+
+@book{golubMatrixComputations1996,
+  title = {Matrix Computations},
+  author = {Golub, Gene H. and Van Loan, Charles F.},
+  year = 1996,
+  series = {Johns {{Hopkins}} Studies in the Mathematical Sciences},
+  edition = {3rd ed},
+  publisher = {Johns Hopkins University Press},
+  address = {Baltimore},
+  isbn = {978-0-8018-5413-2 978-0-8018-5414-9},
+  lccn = {QA188 .G65 1996},
+  keywords = {Data processing,Matrices},
+  file = {/home/acollet/Documents/ZOTERO/storage/2I2TCKYP/Golub_VanLoan.Matr_comp_3ed.pdf}
+}
+
+@article{houtekamerSequentialEnsembleKalman2001,
+  title = {A {{Sequential Ensemble Kalman Filter}} for {{Atmospheric Data Assimilation}}},
+  author = {Houtekamer, P. L. and Mitchell, Herschel L.},
+  year = 2001,
+  month = jan,
+  journal = {Monthly Weather Review},
+  volume = {129},
+  number = {1},
+  pages = {123--137},
+  publisher = {American Meteorological Society},
+  issn = {1520-0493, 0027-0644},
+  doi = {10.1175/1520-0493(2001)129<0123:ASEKFF>2.0.CO;2},
+  urldate = {2024-01-14},
+  abstract = {Abstract An ensemble Kalman filter may be considered for the 4D assimilation of atmospheric data. In this paper, an efficient implementation of the analysis step of the filter is proposed. It employs a Schur (elementwise) product of the covariances of the background error calculated from the ensemble and a correlation function having local support to filter the small (and noisy) background-error covariances associated with remote observations. To solve the Kalman filter equations, the observations are organized into batches that are assimilated sequentially. For each batch, a Cholesky decomposition method is used to solve the system of linear equations. The ensemble of background fields is updated at each step of the sequential algorithm and, as more and more batches of observations are assimilated, evolves to eventually become the ensemble of analysis fields. A prototype sequential filter has been developed. Experiments are performed with a simulated observational network consisting of 542 radiosonde and 615 satellite-thickness profiles. Experimental results indicate that the quality of the analysis is almost independent of the number of batches (except when the ensemble is very small). This supports the use of a sequential algorithm. A parallel version of the algorithm is described and used to assimilate over 100\,000 observations into a pair of 50-member ensembles. Its operation count is proportional to the number of observations, the number of analysis grid points, and the number of ensemble members. In view of the flexibility of the sequential filter and its encouraging performance on a NEC SX-4 computer, an application with a primitive equations model can now be envisioned.},
+  chapter = {Monthly Weather Review},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/NUWEFRK5/Houtekamer and Mitchell - 2001 - A Sequential Ensemble Kalman Filter for Atmospheri.pdf}
+}
+
+@article{iglesiasAdaptiveRegularisationEnsemble2021,
+  title = {Adaptive Regularisation for Ensemble {{Kalman}} Inversion},
+  author = {Iglesias, Marco and Yang, Yuchen},
+  year = 2021,
+  month = jan,
+  journal = {Inverse Problems},
+  volume = {37},
+  number = {2},
+  pages = {025008},
+  publisher = {IOP Publishing},
+  issn = {0266-5611},
+  doi = {10.1088/1361-6420/abd29b},
+  urldate = {2024-01-17},
+  abstract = {We propose a new regularisation strategy for the classical ensemble Kalman inversion (EKI) framework. The strategy consists of: (i) an adaptive choice for the regularisation parameter in the update formula in EKI, and (ii) criteria for the early stopping of the scheme. In contrast to existing approaches, our parameter choice does not rely on additional tuning parameters which often have severe effects on the efficiency of EKI. We motivate our approach using the interpretation of EKI as a Gaussian approximation in the Bayesian tempering setting for inverse problems. We show that our parameter choice controls the symmetrised Kullback--Leibler divergence between consecutive tempering measures. We further motivate our choice using a heuristic statistical discrepancy principle. We test our framework using electrical impedance tomography with the complete electrode model. Parameterisations of the unknown conductivity are employed which enable us to characterise both smooth or a discontinuous (piecewise-constant) fields. We show numerically that the proposed regularisation of EKI can produce efficient, robust and accurate estimates, even for the discontinuous case which tends to require larger ensembles and more iterations to converge. We compare the proposed technique with a standard method of choice and demonstrate that the proposed method is a viable choice to address computational efficiency of EKI in practical/operational settings.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/MGIGKCNR/Iglesias and Yang - 2021 - Adaptive regularisation for ensemble Kalman invers.pdf}
+}
+
+@article{kalmanNewApproachLinear1960,
+  title = {A {{New Approach}} to {{Linear Filtering}} and {{Prediction Problems}}},
+  author = {Kalman, R. E.},
+  year = 1960,
+  month = mar,
+  journal = {Journal of Basic Engineering},
+  volume = {82},
+  number = {1},
+  pages = {35--45},
+  issn = {0021-9223},
+  doi = {10.1115/1.3662552},
+  urldate = {2020-07-20},
+  abstract = {The classical filtering and prediction problem is re-examined using the Bode-Shannon representation of random processes and the ``state-transition'' method of analysis of dynamic systems. New results are: (1) The formulation and methods of solution of the problem apply without modification to stationary and nonstationary statistics and to growing-memory and infinite-memory filters. (2) A nonlinear difference (or differential) equation is derived for the covariance matrix of the optimal estimation error. From the solution of this equation the co-efficients of the difference (or differential) equation of the optimal linear filter are obtained without further calculations. (3) The filtering problem is shown to be the dual of the noise-free regulator problem. The new method developed here is applied to two well-known problems, confirming and extending earlier results. The discussion is largely self-contained and proceeds from first principles; basic concepts of the theory of random processes are reviewed in the Appendix.}
+}
+
+@article{kitanidisQuasiLinearGeostatisticalTheory1995,
+  title = {Quasi-{{Linear Geostatistical Theory}} for {{Inversing}}},
+  author = {Kitanidis, Peter K.},
+  year = 1995,
+  journal = {Water Resources Research},
+  volume = {31},
+  number = {10},
+  pages = {2411--2419},
+  issn = {1944-7973},
+  doi = {10.1029/95WR01945},
+  urldate = {2022-05-07},
+  abstract = {A quasi-linear theory is presented for the geostatistical solution to the inverse problem. The archetypal problem is to estimate the log transmissivity function from observations of head and log transmissivity at selected locations. The unknown is parameterized as a realization of a random field, and the estimation problem is solved in two phases: structural analysis, where the random field is characterized, followed by estimation of the log transmissivity conditional on all observations. The proposed method generalizes the linear approach of Kitanidis and Vomvoris (1983). The generalized method is superior to the linear method in cases of large contrast in formation properties but informative measurements, i.e., there are enough observations that the variance of estimation error of the log transmissivity is small. The methodology deals rigorously with unknown drift coefficients and yields estimates of covariance parameters that are unbiased and grid independent. The applicability of the methodology is demonstrated through an example that includes structural analysis, determination of best estimates, and conditional simulations.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/K8PDYA2S/Kitanidis - 1995 - Quasi-Linear Geostatistical Theory for Inversing.pdf}
+}
 
 @article{leAdaptiveEnsembleSmoother2016,
   title = {An {{Adaptive Ensemble Smoother With Multiple Data Assimilation}} for {{Assisted History Matching}}},
   author = {Le, Duc and Emerick, Alexandre and Reynolds, Albert},
-  year = {2016},
+  year = 2016,
   month = jun,
   journal = {SPE Journal},
   volume = {21},
   doi = {10.2118/173214-PA},
-  abstract = {Recently, Emerick and Reynolds (2012) introduced the ensemble smoother with multiple data assimilations (ES-MDA) for assisted history matching. With computational examples, they demonstrated that ES-MDA provides both a better data match and a better quantification of uncertainty than is obtained with the ensemble Kalman filter (EnKF). However, similar to EnKF, ESMDA can experience near ensemble collapse and results in too many extreme values of rock-property fields for complex problems. These negative effects can be avoided by a judicious choice of the ES-MDA inflation factors, but, before this work, the optimal inflation factors could only be determined by trial and error. Here, we provide two automatic procedures for choosing the inflation factor for the next data-assimilation step adaptively as the history match proceeds. Both methods are motivated by knowledge of regularization procedures\textemdash the first is intuitive and heuristical; the second is motivated by existing theory on the regularization of least-squares inverse problems. We illustrate that the adaptive ES-MDA algorithms are superior to the original ES-MDA algorithm by history matching three-phase-flow production data for a complicated synthetic problem in which the reservoir-model parameters include the porosity, horizontal and vertical permeability fields, depths of the initial fluid contacts, and the parameters of power-law permeability curves.},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/QH2FA688/Le et al. - 2016 - An Adaptive Ensemble Smoother With Multiple Data A.pdf}
+  abstract = {Recently, Emerick and Reynolds (2012) introduced the ensemble smoother with multiple data assimilations (ES-MDA) for assisted history matching. With computational examples, they demonstrated that ES-MDA provides both a better data match and a better quantification of uncertainty than is obtained with the ensemble Kalman filter (EnKF). However, similar to EnKF, ESMDA can experience near ensemble collapse and results in too many extreme values of rock-property fields for complex problems. These negative effects can be avoided by a judicious choice of the ES-MDA inflation factors, but, before this work, the optimal inflation factors could only be determined by trial and error. Here, we provide two automatic procedures for choosing the inflation factor for the next data-assimilation step adaptively as the history match proceeds. Both methods are motivated by knowledge of regularization procedures---the first is intuitive and heuristical; the second is motivated by existing theory on the regularization of least-squares inverse problems. We illustrate that the adaptive ES-MDA algorithms are superior to the original ES-MDA algorithm by history matching three-phase-flow production data for a complicated synthetic problem in which the reservoir-model parameters include the porosity, horizontal and vertical permeability fields, depths of the initial fluid contacts, and the parameters of power-law permeability curves.},
+  file = {/home/acollet/Documents/ZOTERO/storage/2778TCMK/Le et al. - 2016 - An Adaptive Ensemble Smoother With Multiple Data A.pdf}
 }
-% == BibTeX quality report for leAdaptiveEnsembleSmoother2016:
-% ? Title looks like it was stored in title-case in Zotero
-% ? unused Library catalog ("ResearchGate")
+
+@article{leeuwenDataAssimilationInverse1996,
+  title = {Data {{Assimilation}} and {{Inverse Methods}} in {{Terms}} of a {{Probabilistic Formulation}}},
+  author = {van Leeuwen, Peter Jan and Evensen, Geir},
+  year = 1996,
+  month = dec,
+  journal = {Monthly Weather Review},
+  volume = {124},
+  number = {12},
+  pages = {2898--2913},
+  publisher = {American Meteorological Society},
+  issn = {1520-0493, 0027-0644},
+  doi = {10.1175/1520-0493(1996)124<2898:DAAIMI>2.0.CO;2},
+  urldate = {2021-08-19},
+  abstract = {{$<$}section class="abstract"{$><$}h2 class="abstractTitle text-title my-1" id="d28553381e55"{$>$}Abstract{$<$}/h2{$><$}p{$>$}The weak constraint inverse for nonlinear dynamical models is discussed and derived in term of a probabilistic formulation. The well-known result that for Gaussian error statistics the minimum of the weak constraint inverse is equal to the maximum-likelihood estimate is rederived. Then several methods based on ensemble statistics that can be used to find the smoother (as opposed to the filter) solution are introduced and compared to traditional methods. A strong point of the new methods is that they avoid the integration of adjoint equations, which is a complex task for real oceanographic or atmospheric applications. They also avoid iterative searches in a Hilbert space, and error estimates can be obtained without much additional computational effort. The feasibility of the new methods is illustrated in a two-layer quasigeostrophic ocean model.{$<$}/p{$><$}/section{$>$}},
+  chapter = {Monthly Weather Review},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/WU24TKCK/Leeuwen and Evensen - 1996 - Data Assimilation and Inverse Methods in Terms of .pdf;/home/acollet/Documents/ZOTERO/storage/JXTVSCXR/1520-0493_1996_124_2898_daaimi_2_0_co_2.html}
+}
+
+@article{lepineUncertaintyAnalysisPredictive1999,
+  title = {Uncertainty {{Analysis}} in {{Predictive Reservoir Simulation Using Gradient Information}}},
+  author = {Lepine, O.J. and Bissell, R.C. and Aanonsen, S.I. and Pallister, I.C. and Barker, J.W.},
+  year = 1999,
+  month = sep,
+  journal = {SPE Journal},
+  volume = {4},
+  number = {03},
+  pages = {251--259},
+  issn = {1086-055X},
+  doi = {10.2118/57594-PA},
+  urldate = {2021-08-20},
+  abstract = {We demonstrate how gradient-based techniques can be used to estimate uncertainty in predictive reservoir simulations made following history matching. We discuss how the gradient calculations can help in finding the parameters that make the largest contributions to the uncertainty, estimating the uncertainty on these parameters, and estimating the uncertainty in predicted quantities by use of a linear analysis. The methodology is illustrated on two field examples, and compared with other methods of uncertainty quantification.Reservoir simulation is used to forecast oil and gas production profiles under selected development scenarios. Almost all the data used in reservoir simulation are subject to uncertainty. This uncertainty may be quite large, as is usually the case for the distribution of rock properties (porosity and permeability) away from the wells. Consequently, the production profile associated with any development scheme cannot be predicted exactly; the best that can be done is to calculate a range of possible profiles.Of course, this is well recognized within the industry.1 When new field developments are being considered, it is standard practice to consider a range of possible reservoir models and to run reservoir simulations for each one to produce a range of production profiles. Each of these models would respect the data available for the reservoir under consideration, which would generally include seismic data, log, core and well-test data from exploration and appraisal wells, and geological knowledge of the region or from analog reservoirs. The number of such models varies from case to case, but sufficient computing power is generally available that it is perfectly feasible to construct several different models and to run the corresponding reservoir simulations within a reasonable time frame.When it comes to assessing incremental developments of fields already in production, however, the situation is more complicated. In addition to the sources of data mentioned above, there will be "historical" production data available, i.e., measurements of pressure and of oil, gas and water rates throughout the time that the reservoir has been in production. To forecast future production profiles in such cases, the standard procedure consists of three steps:construct an initial reservoir model;adjust this model until the simulated production data matches the historical production data;use this adjusted model to simulate the future production.Step 2 is known as history matching and is often a very time-consuming procedure that may require up to several months of work by the reservoir engineer (even longer for large fields with a long production history).2This standard procedure leads only to a single production forecast for each development scenario. It does not permit any assessment of uncertainty. Although the historical production data should contain information on the reservoir that will reduce the uncertainty in future performance,3,4 substantial uncertainty usually remains even after long periods of production.An obvious method of estimating the uncertainty would be to generate multiple initial reservoir models, history match each one of them and simulate future production on all of them.5--7 A refinement of this approach has been presented by Oliver et al.8 who estimate the probability density of the parameters by using a combination of stochastic reservoir realizations and automatic history matching with uncertainty on the data. However, we are not aware of any company that has adopted an approach of this type. The reason it has not caught on is undoubtedly that it is so expensive. In the near future, we may expect that it will be possible to consider a small number of different models built in this way. But even this requires a decision to use additional resources to match multiple models rather than to fine-tune the match of a single model (or simply to use more grid blocks in the model).In this paper, we consider an alternative way of estimating uncertainty in the future performance of reservoirs already in production.9 It is based on the recognition that, once the values of the parameters of the reservoir model have been adjusted to obtain an acceptable history match, it will probably be possible to perturb these values slightly and still have a match that would be considered acceptable. If the same perturbations are applied during the predictive simulations, a range of possible future production profiles will be obtained. Further, provided that the perturbations are sufficiently small, a linear perturbation analysis can be used to derive confidence intervals for the future production performance. All that is required to do this is a single reservoir simulation of the historical and predictive periods, provided that the derivatives (gradients) of the production variables with respect to the parameter values are known. If the calculation of these gradients has been coded in the simulation model, they may also be obtained from the same simulation run at the cost of a relatively small increase in computing time.10It should be noted that none of the ideas behind this approach are new. The theoretical basis is described in standard textbooks;11,12 its application in the context of reservoir simulation has been described by Dogru et al.13 for single phase flow and by Kalogerakis9 for multiphase flow, although he applied it only to a simple single-well coning problem. The gradient calculation was first published in the SPE literature over a decade ago.10 However, it is only recently that software tools have become available that enable this approach to be used in practice.},
+  file = {/home/acollet/Documents/ZOTERO/storage/9QGZHCGC/Lepine et al. - 1999 - Uncertainty Analysis in Predictive Reservoir Simul.pdf;/home/acollet/Documents/ZOTERO/storage/U7RB3IL3/Uncertainty-Analysis-in-Predictive-Reservoir.html}
+}
+
+@article{leutbecherEnsembleSizeHow2019,
+  title = {Ensemble Size: {{How}} Suboptimal Is Less than Infinity?},
+  shorttitle = {Ensemble Size},
+  author = {Leutbecher, Martin},
+  year = 2019,
+  journal = {Quarterly Journal of the Royal Meteorological Society},
+  volume = {145},
+  number = {S1},
+  pages = {107--128},
+  issn = {1477-870X},
+  doi = {10.1002/qj.3387},
+  urldate = {2023-08-10},
+  abstract = {Ensemble forecasts are the method of choice in numerical weather prediction (NWP) to generate probabilistic forecasts. The number of members in an ensemble is an important factor in determining how well a probability distribution of a weather-related variable can be estimated. Having only a finite number of members reduces the average skill such a probabilistic forecast can have. Increasing ensemble size is therefore desirable; however, ensemble size is also proportional to the computational cost. Having a small ensemble size limits the cost and makes other improvements, such as increases in spatial resolution, feasible. This article examines how average skill measures with metrics such as the continuous ranked probability score, the quantile score, and the Dawid--Sebastiani score converge with ensemble size. A numerical experiment with a 200 member ensemble using the European Centre for Medium-Range Weather Forecasts (ECMWF) Integrated Forecasting System (IFS) model at a resolution of 29 km and a forecast range of 15 days provides data to compare the convergence of probabilistic skill in a current NWP system with theoretical expectations derived for perfectly reliable ensembles with exchangeable members. Results in the first part of the article can help users of operational NWP ensemble forecasts formulate their minimum requirement in terms of ensemble size. In the second part, requirements for scientists who test changes to NWP systems are examined. Using proper scores and fair scores, it is explored whether testing changes in the ensemble forecasts can be meaningful with fewer members than in the operational configuration. Results are based on medium-range numerical experiments with 50 members. Two experiments test the activation of a representation of model uncertainty and three other experiments test changes in horizontal resolution from 29 to 18 km and from 29 to 45 km.},
+  copyright = {\copyright{} 2018 Royal Meteorological Society},
+  langid = {english},
+  keywords = {ensemble size,ensembles,fair score,forecast verification,forecasting,numerical weather prediction,proper scoring rule},
+  file = {/home/acollet/Documents/ZOTERO/storage/Y85KZYU5/Leutbecher - 2019 - Ensemble size How suboptimal is less than infinit.pdf;/home/acollet/Documents/ZOTERO/storage/2ETXVZH6/qj.html}
+}
+
+@article{liHistoryMatchingThreePhase2003,
+  title = {History {{Matching}} of {{Three-Phase Flow Production Data}}},
+  author = {Li, Ruijian and Reynolds, A. C. and Oliver, D. S.},
+  year = 2003,
+  month = dec,
+  journal = {SPE Journal},
+  volume = {8},
+  number = {04},
+  pages = {328--340},
+  issn = {1086-055X},
+  doi = {10.2118/87336-PA},
+  urldate = {2024-01-10},
+  abstract = {Adjoint equations for 3D, three-phase flow problems are developed and implemented to calculate the sensitivity of production data to permeability fields and well skin factors. Typically, the development of adjoint equations is rather tedious, but the formulation given here makes the development and numerical solution of adjoint equations straightforward. The procedure for calculating sensitivity coefficients is coupled with a fully implicit finite-difference simulator to develop an automatic history-matching procedure. Even if one does not wish to fully automate history matching, sensitivity coefficients are useful for understanding the physics that control 3D multiphase flow and the influence of local reservoir properties on production data. Procedures to estimate the value of particular types of data [pressure, producing gas/oil ratio (GOR), and water/oil ratio (WOR)] for reducing the uncertainty in estimates of reservoir properties are applied and discussed.},
+  file = {/home/acollet/Documents/ZOTERO/storage/PV3AGSVE/History-Matching-of-Three-Phase-Flow-Production.html}
+}
+
+@article{luoAutomaticAdaptiveLocalization2020,
+  title = {Automatic and Adaptive Localization for Ensemble-Based History Matching},
+  author = {Luo, Xiaodong and Bhakta, Tuhin},
+  year = 2020,
+  month = jan,
+  journal = {Journal of Petroleum Science and Engineering},
+  volume = {184},
+  pages = {106559},
+  issn = {0920-4105},
+  doi = {10.1016/j.petrol.2019.106559},
+  urldate = {2023-06-22},
+  abstract = {Ensemble-based history matching methods are among the state-of-the-art approaches to reservoir characterization. In practice, however, they often suffer from ensemble collapse, a phenomenon that deteriorates history matching performance. To prevent ensemble collapse, it is customary to equip an ensemble history matching algorithm with a certain localization scheme. In a previous study, the authors propose an adaptive localization scheme that exploits the correlations between model variables and simulated observations. Correlation-based adaptive localization not only overcomes some longstanding issues (e.g., the challenges in handling non-local or time-lapse observations) arising in the conventional distance-based localization, but also is more convenient and flexible to use in real field case studies. In applications, however, correlation-based localization is also found to be subject to two problems. One is that, it requires to run a relatively large ensemble in order to achieve decent performance in an automatic manner, which becomes computationally expensive in large-scale problems. As a result, certain empirical tuning factors are introduced to reduce the computational costs. The other problem is that, the way used to compute the tapering coefficients in the previous study may induce discontinuities, and neglect the information of certain still-influential observations for model updates. The main objective of this work is to improve the efficiency and accuracy of correlation-based adaptive localization, making it run in an automatic manner but without incurring substantial extra computational costs. To this end, we introduce two enhancements that aim to avoid the aforementioned two problems, namely, empirical tuning and discontinuities. We apply the resulting automatic and adaptive correlation-based localization with these two enhancements to a 2D and a 3D cases investigated in the previous study, and show that it leads to better history matching performance (in terms of efficiency and/or estimation accuracy) than that is achieved in the previous work.},
+  langid = {english},
+  keywords = {Big data assimilation,Correlation-based adaptive localization,Ensemble data assimilation,Iterative ensemble smoother,Seismic history matching},
+  file = {/home/acollet/Documents/ZOTERO/storage/3CJ7ANLB/Luo and Bhakta - 2020 - Automatic and adaptive localization for ensemble-b.pdf;/home/acollet/Documents/ZOTERO/storage/RMDBD62Y/S0920410519309805.html}
+}
+
+@article{luoContinuousHyperparameterOPtimization2022,
+  title = {Continuous {{Hyper-parameter OPtimization}} ({{CHOP}}) in an Ensemble {{Kalman}} Filter},
+  author = {Luo, Xiaodong and Xia, Chuan-An},
+  year = 2022,
+  journal = {Frontiers in Applied Mathematics and Statistics},
+  volume = {8},
+  issn = {2297-4687},
+  urldate = {2024-01-14},
+  abstract = {Practical data assimilation algorithms often contain hyper-parameters, which may arise due to, for instance, the use of certain auxiliary techniques like covariance inflation and localization in an ensemble Kalman filter, the re-parameterization of certain quantities such as model and/or observation error covariance matrices, and so on. Given the richness of the established assimilation algorithms, and the abundance of the approaches through which hyper-parameters are introduced to the assimilation algorithms, one may ask whether it is possible to develop a sound and generic method to efficiently choose various types of (sometimes high-dimensional) hyper-parameters. This work aims to explore a feasible, although likely partial, answer to this question. Our main idea is built upon the notion that a data assimilation algorithm with hyper-parameters can be considered as a parametric mapping that links a set of quantities of interest (e.g., model state variables and/or parameters) to a corresponding set of predicted observations in the observation space. As such, the choice of hyper-parameters can be recast as a parameter estimation problem, in which our objective is to tune the hyper-parameters in such a way that the resulted predicted observations can match the real observations to a good extent. From this perspective, we propose a hyper-parameter estimation workflow and investigate the performance of this workflow in an ensemble Kalman filter. In a series of experiments, we observe that the proposed workflow works efficiently even in the presence of a relatively large amount (up to 103) of hyper-parameters, and exhibits reasonably good and consistent performance under various conditions.},
+  file = {/home/acollet/Documents/ZOTERO/storage/HIQ5PZ84/Luo and Xia - 2022 - Continuous Hyper-parameter OPtimization (CHOP) in .pdf}
+}
+
+@article{luoCorrelationBasedAdaptiveLocalization2018,
+  title = {Correlation-{{Based Adaptive Localization}} for {{Ensemble-Based History Matching}}: {{Applied To}} the {{Norne Field Case Study}}},
+  shorttitle = {Correlation-{{Based Adaptive Localization}} for {{Ensemble-Based History Matching}}},
+  author = {Luo, Xiaodong and Lorentzen, Rolf J. and Valestrand, Randi and Evensen, Geir},
+  year = 2018,
+  month = oct,
+  journal = {SPE Reservoir Evaluation \& Engineering},
+  volume = {22},
+  number = {03},
+  pages = {1084--1109},
+  issn = {1094-6470},
+  doi = {10.2118/191305-PA},
+  urldate = {2024-01-14},
+  abstract = {Ensemble-based methods are among the state-of-the-art history-matching algorithms. However, in practice, they often suffer from ensemble collapse, a phenomenon that deteriorates history-matching performance. It is customary to equip an ensemble history-matching algorithm with a localization scheme to prevent ensemble collapse. Conventional localization methods use distances between the physical locations of model variables and observations to modify the degree of the observations' influence on model updates. Distance-based localization methods work well in many problems, but they also suffer from dependence on the physical locations of both model variables and observations, the challenges in dealing with nonlocal and time-lapse measurements, and the nonadaptivity to handling different types of model variables.To enhance the applicability of localization to various history-matching problems, we adopt an adaptive localization scheme that exploits the correlations between model variables and simulated observations. We elaborate how correlation-based adaptive localization can overcome or mitigate issues arising in conventional distance-based localization.To demonstrate the efficacy of correlation-based adaptive localization, we adopt an iterative ensemble smoother (iES) with the proposed localization scheme to history match the real production data of the Norne Field model, and we compare the history-matching results with those obtained by using the iES with distance-based localization. Our study indicates that when compared with distance-based localization, correlation-based localization not only achieves close or better performance in terms of data mismatch, but also is more convenient to use in practical history-matching problems. As a result, the proposed correlation-based localization scheme might serve as a viable alternative to conventional distance-based localization.},
+  file = {/home/acollet/Documents/ZOTERO/storage/J44X4533/Luo et al. - 2018 - Correlation-Based Adaptive Localization for Ensemb.pdf;/home/acollet/Documents/ZOTERO/storage/EV4422JB/Correlation-Based-Adaptive-Localization-for.html}
+}
+
+@article{milinskiHowLargeDoes2020,
+  title = {How Large Does a Large Ensemble Need to Be?},
+  author = {Milinski, Sebastian and Maher, Nicola and Olonscheck, Dirk},
+  year = 2020,
+  month = oct,
+  journal = {Earth System Dynamics},
+  volume = {11},
+  number = {4},
+  pages = {885--901},
+  publisher = {Copernicus GmbH},
+  issn = {2190-4979},
+  doi = {10.5194/esd-11-885-2020},
+  urldate = {2024-01-14},
+  abstract = {Initial-condition large ensembles with ensemble sizes ranging from 30 to 100 members have become a commonly used tool for quantifying the forced response and internal variability in various components of the climate system. However, there is no consensus on the ideal or even sufficient ensemble size for a large ensemble. Here, we introduce an objective method to estimate the required ensemble size that can be applied to any given application and demonstrate its use on the examples of global mean near-surface air temperature, local temperature and precipitation, and variability in the El Ni\~no--Southern Oscillation (ENSO) region and central United States for the Max Planck Institute Grand Ensemble (MPI-GE). Estimating the required ensemble size is relevant not only for designing or choosing a large ensemble but also for designing targeted sensitivity experiments with a model. Where possible, we base our estimate of the required ensemble size on the pre-industrial control simulation, which is available for every model. We show that more ensemble members are needed to quantify variability than the forced response, with the largest ensemble sizes needed to detect changes in internal variability itself. Finally, we highlight that the required ensemble size depends on both the acceptable error to the user and the studied quantity.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/92TJLAGS/Milinski et al. - 2020 - How large does a large ensemble need to be.pdf}
+}
+
+@inproceedings{oliverConditioningPermeabilityFields1996,
+  title = {Conditioning {{Permeability Fields}} to {{Pressure Data}}},
+  booktitle = {{{ECMOR V}} - 5th {{European Conference}} on the {{Mathematics}} of {{Oil Recovery}}},
+  author = {Oliver, D. S. and He, N. and Reynolds, A. C.},
+  year = 1996,
+  month = sep,
+  pages = {cp},
+  publisher = {European Association of Geoscientists \& Engineers},
+  issn = {2214-4609},
+  doi = {10.3997/2214-4609.201406884},
+  urldate = {2024-01-11},
+  abstract = {Generating realizations of the permeability field drawn from a probability density function conditioned on inaccurate pressure or saturation data is difficult, even if the unconditional realizations are Gaussian random fields, because the problem is highly nonlinear. Inefficient methods that generate large numbers of rejected images, such as simulated annealing, must be ruled out as impractical because of the repeated need for reservoir flow simulation.},
+  isbn = {978-3-9500542-0-0},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/6TYWLPVB/Oliver et al. - 1996 - Conditioning Permeability Fields to Pressure Data.pdf;/home/acollet/Documents/ZOTERO/storage/4FZ7JFXR/2214-4609.html}
+}
+
+@article{oliverMarkovChainMonte1997,
+  title = {Markov Chain {{Monte Carlo}} Methods for Conditioning a Permeability Field to Pressure Data},
+  author = {Oliver, Dean S. and Cunha, Luciane B. and Reynolds, Albert C.},
+  year = 1997,
+  month = mar,
+  journal = {Mathematical Geology},
+  volume = {29},
+  number = {1},
+  pages = {61--91},
+  issn = {1573-8868},
+  doi = {10.1007/BF02769620},
+  urldate = {2024-01-11},
+  abstract = {Generating one realization of a random permeability field that is consistent with observed pressure data and a known variogram model is not a difficult problem. If, however, one wants to investigate the uncertainty of reservior behavior, one must generate a large number of realizations and ensure that the distribution of realizations properly reflects the uncertainty in reservoir properties. The most widely used method for conditioning permeability fields to production data has been the method of simulated annealing, in which practitioners attempt to minimize the difference between the ' 'true and simulated production data, and ``true'' and simulated variograms. Unfortunately, the meaning of the resulting realization is not clear and the method can be extremely slow. In this paper, we present an alternative approach to generating realizations that are conditional to pressure data, focusing on the distribution of realizations and on the efficiency of the method. Under certain conditions that can be verified easily, the Markov chain Monte Carlo method is known to produce states whose frequencies of appearance correspond to a given probability distribution, so we use this method to generate the realizations. To make the method more efficient, we perturb the states in such a way that the variogram is satisfied automatically and the pressure data are approximately matched at every step. These perturbations make use of sensitivity coefficients calculated from the reservoir simulator.},
+  langid = {english},
+  keywords = {conditional simulation,Markov chain,Monte Carlo,pressure data,sampling,sensitivity,well test},
+  file = {/home/acollet/Documents/ZOTERO/storage/6HNGAAMG/Oliver et al. - 1997 - Markov chain Monte Carlo methods for conditioning .pdf}
+}
+
+@article{oliverRecentProgressReservoir2011,
+  title = {Recent Progress on Reservoir History Matching: A Review},
+  author = {Oliver, Dean S. and Chen, Yan},
+  year = 2011,
+  month = jan,
+  journal = {Computational Geosciences},
+  volume = {15},
+  number = {1},
+  pages = {185--221},
+  issn = {1573-1499},
+  doi = {10.1007/s10596-010-9194-2},
+  abstract = {History matching is a type of inverse problem in which observed reservoir behavior is used to estimate reservoir model variables that caused the behavior. Obtaining even a single history-matched reservoir model requires a substantial amount of effort, but the past decade has seen remarkable progress in the ability to generate reservoir simulation models that match large amounts of production data. Progress can be partially attributed to an increase in computational power, but the widespread adoption of geostatistics and Monte Carlo methods has also contributed indirectly. In this review paper, we will summarize key developments in history matching and then review many of the accomplishments of the past decade, including developments in reparameterization of the model variables, methods for computation of the sensitivity coefficients, and methods for quantifying uncertainty. An attempt has been made to compare representative procedures and to identify possible limitations of each.},
+  file = {/home/acollet/Documents/ZOTERO/storage/79C48LJY/Oliver and Chen - 2011 - Recent progress on reservoir history matching a r.pdf}
+}
+
+@misc{petersenMatrixCookbook2008,
+  title = {The {{Matrix Cookbook}}},
+  author = {Petersen, Kaare Brandt and Pedersen, Michael Syskind},
+  year = 2008,
+  month = nov,
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/85LY7J7I/Petersen and Pedersen - [ httpmatrixcookbook.com ].pdf}
+}
+
+@article{rafieeTheoreticalEfficientPractical2017,
+  title = {Theoretical and Efficient Practical Procedures for the Generation of Inflation Factors for {{ES-MDA}}},
+  author = {Rafiee, Javad and Reynolds, Albert C.},
+  year = 2017,
+  month = oct,
+  journal = {Inverse Problems},
+  volume = {33},
+  number = {11},
+  pages = {115003},
+  publisher = {IOP Publishing},
+  issn = {0266-5611},
+  doi = {10.1088/1361-6420/aa8cb2},
+  urldate = {2024-10-24},
+  abstract = {The ensemble smoother with multiple data assimilation (ES-MDA) has proved to be a powerful assisted history-matching method. The main drawback of ES-MDA is that the inflation factors for damping the changes in model parameters have to be determined before starting the history-match. Although various authors have provided suggestions for determining the inflation factors adaptively as the history-match proceeds, these methods often result in a large number of data assimilation steps which can make ES-MDA too computationally inefficient for practical application to large-scale field problems. Here, we provide a theoretical procedure to determine exactly the minimum inflation factor at each data assimilation step that ensures the discrepancy principle is satisfied. Like previous adaptive ES-MDA methods, this method does not allow one to specify a priori the number of data assimilation steps to be done. Thus, using the exact theoretical procedure as a guide, we provide a practical efficient method for determining the inflation factors which allows one to specify a priori the number of data assimilation steps to be done with ES-MDA which still ensures that the initial inflation factor is chosen so that the discrepancy principle is approximately satisfied.},
+  langid = {english}
+}
+
+@article{ranazziEnsembleSizeInvestigation2019,
+  title = {Ensemble Size Investigation in Adaptive {{ES-MDA}} Reservoir History Matching},
+  author = {Ranazzi, Paulo Henrique and Sampaio, Marcio Augusto},
+  year = 2019,
+  month = sep,
+  journal = {Journal of the Brazilian Society of Mechanical Sciences and Engineering},
+  volume = {41},
+  number = {10},
+  pages = {413},
+  issn = {1806-3691},
+  doi = {10.1007/s40430-019-1935-0},
+  urldate = {2024-01-17},
+  abstract = {In this work, we study the ensemble size influence on an adaptive ensemble-based methodology for history matching of petroleum reservoirs. The assimilation scheme used is an adaptive ensemble smoother with multiple data assimilation (ES-MDA) in which both the total number of assimilations and the inflation factor of each iteration are defined automatically by the algorithm. This fact leads to the assumption that the predefined algorithm parameters may have influence in the total number of assimilations and the inflation factors. One main parameter that can be investigated is the number of ensemble members used in the assimilation, also called ensemble size. The ensemble size influence was analyzed by applying the adaptive ES-MDA in a synthetic large-scale reservoir model. As a result of the investigation, the ensemble size showed influence on the reduction in the uncertainty of the posterior models, but it did not show any influence on the total number of assimilations and on the inflation factor selection.},
+  langid = {english},
+  keywords = {Data assimilation,Ensemble smoother,History matching,Reservoir simulation},
+  file = {/home/acollet/Documents/ZOTERO/storage/IARIDE6E/Ranazzi and Sampaio - 2019 - Ensemble size investigation in adaptive ES-MDA res.pdf}
+}
+
+@article{ren-puConvergenceVariableMetric1983,
+  title = {The Convergence of Variable Metric Matrices in Unconstrained Optimization},
+  author = {{Ren-pu}, Ge and Powell, M. J. D.},
+  year = 1983,
+  month = oct,
+  journal = {Mathematical Programming},
+  volume = {27},
+  number = {2},
+  pages = {123--143},
+  issn = {1436-4646},
+  doi = {10.1007/BF02591941},
+  urldate = {2024-01-12},
+  abstract = {It is proved that, if the DFP or BFGS algorithm with step-lengths of one is applied to a functionF(x) that has a Lipschitz continuous second derivative, and if the calculated vectors of variables converge to a point at which ∇F is zero and ∇2F is positive definite, then the sequence of variable metric matrices also converges. The limit of this sequence is identified in the case whenF(x) is a strictly convex quadratic function.},
+  langid = {english},
+  keywords = {Convergence,Quasi-Newton Methods,Unconstrained Optimization,Variable Metric Methods},
+  file = {/home/acollet/Documents/ZOTERO/storage/IQ4XXZXH/Ren-pu and Powell - 1983 - The convergence of variable metric matrices in unc.pdf}
+}
+
+@misc{reynoldsAssistedHistoryMatching2017,
+  title = {Assisted {{History Matching}}},
+  author = {Reynolds, Albert},
+  year = 2017,
+  month = mar,
+  abstract = {Tutorial Lecture on Assisted History Matching IPAM Workship III, Data Assimilation, Uncertainty Quantification and Optimization for Subsurface Flow},
+  langid = {english},
+  annotation = {Presenters: \_:n11658},
+  file = {/home/acollet/Documents/ZOTERO/storage/M8SIPL3L/Reynolds - 2017 - Assisted History Matching.pdf}
+}
+
+@inproceedings{reynoldsIterativeFormsEnsemble2006,
+  title = {Iterative {{Forms}} of the {{Ensemble Kalman Filter}}},
+  booktitle = {{{ECMOR X}} - 10th {{European Conference}} on the {{Mathematics}} of {{Oil Recovery}}},
+  author = {Reynolds, A. C. and Zafari, M. and Li, G.},
+  year = 2006,
+  month = sep,
+  pages = {cp},
+  publisher = {European Association of Geoscientists \& Engineers},
+  issn = {2214-4609},
+  doi = {10.3997/2214-4609.201402496},
+  urldate = {2024-01-09},
+  abstract = {Recently, the Ensemble Kalman filter (EnKF) has been proposed as an alternative to traditional history matching. Because of its computational efficiency, ease of implementation into a reservoir simulator and ability to provide an evaluation of uncertainty in the reservoir model and in production forecasts, EnKF appears to be a more attractive method for integrating essentially continuous streams of dynamic data to update reservoir models and characterize uncertainty than automatic history matching based on methods such as randomized maximum likelihood using the adjoint/LBFGS approach for optimization.\&lt;br\&gt;\&lt;br\&gt;Although the standard theoretical underpinnings of EnKF rest on Bayesian updating with Gaussian priors, we show that the EnKF update equations can also be derived as an approximation to the Gauss-Newton method, which uses an ``average\&apos;\&apos; sensitivity matrix.\&lt;br\&gt;This suggests that for highly nonlinear, non-Gaussian problems, EnKF may not provide an appropriate characterization of uncertainty and that some form of iteration is required. By viewing EnKF through the lens of optimization, instead of Monte Carlo sampling, we derive an iterative EnKF procedure for nonlinear problems. Although the iterative scheme incorporates some of the main features of EnKF, the computational efficiency of the basic EnKF method is not preserved.\&lt;br\&gt;We show, however, that for some problems, iteration can provide an improved characterization of uncertainty.},
+  isbn = {978-90-73781-47-4},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/BJXSPVQX/2214-4609.html}
+}
+
+@article{saibabaFastComputationUncertainty2015,
+  title = {Fast Computation of Uncertainty Quantification Measures in the Geostatistical Approach to Solve Inverse Problems},
+  author = {Saibaba, Arvind K. and Kitanidis, Peter K.},
+  year = 2015,
+  month = aug,
+  journal = {Advances in Water Resources},
+  volume = {82},
+  pages = {124--138},
+  issn = {0309-1708},
+  doi = {10.1016/j.advwatres.2015.04.012},
+  urldate = {2021-08-26},
+  abstract = {We consider the computational challenges associated with uncertainty quantification involved in parameter estimation such as seismic slowness and hydraulic transmissivity fields. The reconstruction of these parameters can be mathematically described as inverse problems which we tackle using the geostatistical approach. The quantification of uncertainty in the geostatistical approach involves computing the posterior covariance matrix which is prohibitively expensive to fully compute and store. We consider an efficient representation of the posterior covariance matrix at the maximum a posteriori (MAP) point as the sum of the prior covariance matrix and a low-rank update that contains information from the dominant generalized eigenmodes of the data misfit part of the Hessian and the inverse covariance matrix. The rank of the low-rank update is typically independent of the dimension of the unknown parameter. The cost of our method scales as O(mlogm) where m dimension of unknown parameter vector space. Furthermore, we show how to efficiently compute measures of uncertainty that are based on scalar functions of the posterior covariance matrix. The performance of our algorithms is demonstrated by application to model problems in synthetic travel-time tomography and steady-state hydraulic tomography. We explore the accuracy of the posterior covariance on different experimental parameters and show that the cost of approximating the posterior covariance matrix depends on the problem size and is not sensitive to other experimental parameters.},
+  langid = {english},
+  keywords = {Geostatistical approach,Hydraulic tomography,Inverse problems,Seismic tomography,Uncertainty quantification},
+  file = {/home/acollet/Documents/ZOTERO/storage/FXQF8ZCM/Saibaba and Kitanidis - 2015 - Fast computation of uncertainty quantification mea.pdf;/home/acollet/Documents/ZOTERO/storage/ZRYXNBZL/S030917081500086X.html}
+}
+
+@incollection{schmidtApplicationStateSpaceMethods1966,
+  title = {Application of {{State-Space Methods}} to {{Navigation Problems}}},
+  booktitle = {Advances in {{Control Systems}}},
+  author = {Schmidt, STANLEY F.},
+  editor = {Leondes, C. T.},
+  year = 1966,
+  month = jan,
+  volume = {3},
+  pages = {293--340},
+  publisher = {Elsevier},
+  doi = {10.1016/B978-1-4831-6716-9.50011-4},
+  urldate = {2022-08-30},
+  abstract = {This chapter presents mathematical examples and concepts that have proved extremely useful in resolving problems associated with navigation systems. The main part of the document assumes knowledge of linear differential equations and their solutions using state-space methods. The chapter presents examples of nominal trajectories and equations of motion and notation. It describes the principles involved in using the sensitivity coefficients to derive guidance laws. The success of most missions rests on whether the components and the manner in which they are used in the system can be chosen in such a way that the expected deviation from the desired objective at the end of the mission is within allowable bounds. On a space mission, the accuracy of the launch-vehicle guidance system contributes to the fuel requirements for a midcourse maneuver. The lower the accuracy of the guidance system, the larger the midcourse maneuver is likely to be. By appropriate usage of the sensitivity coefficients, one can relate each error source to some objective such as midcourse maneuver or miss at the target. In this manner, the tradeoffs between improvements in system design and objectives of the mission can be determined.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/RRJ92NQN/B9781483167169500114.html}
+}
+
+@inproceedings{skjervheimEnsembleSmootherAssisted2011,
+  title = {An {{Ensemble Smoother}} for Assisted {{History Matching}}},
+  booktitle = {{{SPE Reservoir Simulation Symposium}}},
+  author = {Skjervheim, J.-a.-A. and Evensen, G. and Hove, J. and Vab{\o}, J. G.},
+  year = 2011,
+  month = feb,
+  publisher = {OnePetro},
+  doi = {10.2118/141929-MS},
+  urldate = {2024-01-10},
+  abstract = {Abstract. This paper compares two ensemble-based data-assimilation methods when solving the history-matching problem in reservoir-simulation models. The methods are the Ensemble Kalman Filter (EnKF) and the Ensemble Smoother (ES). Several publications have discussed the use of EnKF in petroleum applications while ES is now used for the first time for history matching. ES differs from EnKF by computing a global update in the space-time domain, rather than using recursive updates in time as in EnKF. Thus, the sequential updating of the realizations with associated restarts is avoided.EnKF and ES provide identical solutions for state estimation with linear dynamical models. However, for nonlinear dynamical models, and in particular models with chaotic dynamics, EnKF is superior to ES, due to the fact that the recursive updates keep the model on track and close to the true solution. Thus, ES is not much used and EnKF has been the method of choice in most data assimilation studies where ensemble methods are used.On the other hand, reservoir simulation models are rather diffusive systems when compared to the chaotic dynamical models that were previously used to test ES. If we can assume that the model solution is stable with respect to small perturbations in the initial conditions and the history-matching parameters, then ES should give similar results to EnKF, and ES will be a more efficient and much simpler method to implement and apply.The technical advantages of using ES compared to EnKF are severe, especially when the methods are applied with complex real reservoir models. ES provides a significant reduction in simulation time. Furthermore, a more flexible parameterization is possible, which makes it easier to handle structural and geological model parameters in the history-matching process.In this paper we compare EnKF and ES and show that ES indeed provide for an efficient ensemble-based method for history matching.},
+  langid = {english},
+  file = {/home/acollet/Documents/ZOTERO/storage/98G7J6CW/Skjervheim et al. - 2011 - An Ensemble Smoother for assisted History Matching.pdf}
+}
+
+@book{tarantolaInverseProblemTheory2005,
+  title = {Inverse {{Problem Theory}} and {{Methods}} for {{Model Parameter Estimation}}},
+  author = {Tarantola, Albert},
+  year = 2005,
+  month = jan,
+  series = {Other {{Titles}} in {{Applied Mathematics}}},
+  publisher = {{Society for Industrial and Applied Mathematics}},
+  doi = {10.1137/1.9780898717921},
+  urldate = {2021-07-28},
+  abstract = {Physical theories allow us to make predictions: given a complete description of a physical system, we can predict the outcome of some measurements. This problem of predicting the result of measurements is called the modelization problem, the simulation problem, or the forward problem. The inverse problem consists of using the actual result of some measurements to infer the values of the parameters that characterize the system. While the forward problem has (in deterministic physics) a unique solution, the inverse problem does not. As an example, consider measurements of the gravity field around a planet: given the distribution of mass inside the planet, we can uniquely predict the values of the gravity field around the planet (forward problem), but there are different distributions of mass that give exactly the same gravity field in the space outside the planet. Therefore, the inverse problem --- of inferring the mass distribution from observations of the gravity field --- has multiple solutions (in fact, an infinite number). Because of this, in the inverse problem, one needs tomake explicit any available a priori information on the model parameters. One also needs to be careful in the representation of the data uncertainties. The most general (and simple) theory is obtained when using a probabilistic point of view, where the a priori information on the model parameters is represented by a probability distribution over the `model space.' The theory developed here explains how this a priori probability distribution is transformed into the a posteriori probability distribution, by incorporating a physical theory (relating the model parameters to some observable parameters) and the actual result of the observations (with their uncertainties). To develop the theory, we shall need to examine the different types of parameters that appear in physics and to be able to understand what a total absence of a priori information on a given parameter may mean. Although the notion of the inverse problem could be based on conditional probabilities and Bayes's theorem, I choose to introduce a more general notion, that of the `combination of states of information,' that is, in principle, free from the special difficulties appearing in the use of conditional probability densities (like the well-known Borel paradox).},
+  isbn = {978-0-89871-572-9},
+  keywords = {inverse methods,Inverse problems,least-squares,probability,uncertainties},
+  file = {/home/acollet/Documents/ZOTERO/storage/VTH536DT/Tarantola - 2005 - Inverse Problem Theory and Methods for Model Param.pdf}
+}
 
 @phdthesis{todaroAdvancedTechniquesSolving2021,
   type = {{Tesis doctoral}},
   title = {{Advanced techniques for solving groundwater and surface water problems in the context of inverse methods and climate change.}},
   author = {Todaro, Valeria},
-  year = {2021},
+  year = 2021,
   month = may,
   doi = {10.4995/Thesis/10251/166439},
-  abstract = {[ES] El tema de la investigaci\'on se centra en t\'ecnicas avanzadas para manejar problemas de aguas subterr\'aneas y superficiales relacionados con m\'etodos inversos y cambio clim\'atico. Los filtros de Kalman, con especial atenci\'on en Ensemble Smoother with Multiple Data Assimilation (ES-MDA), se analizan y mejoran para la soluci\'on de diferentes tipos de problemas inversos. En particular, la principal novedad es la aplicaci\'on de estos m\'etodos para la identificaci\'on de series temporales.
- La primera parte de la tesis, luego de la descripci\'on del m\'etodo, presenta el desarrollo de un software escrito en Python para la aplicaci\'on de la metodolog\'ia propuesta. El software cuenta con un flujo de trabajo flexible que puede adaptarse f\'acilmente para implementar diferentes variantes del filtro de Kalman y ser aplicado para la soluci\'on de varios tipos de problemas. Un paquete de herramientas proporciona varias funcionalidades que permiten de configurar el algoritmo de acuerdo con el problema espec\'ifico analizado.
- La primera aplicaci\'on se refiere a la soluci\'on del problema inverso de flujo en r\'ios. Este es un procedimiento inverso destinado a estimar el flujo de entrada a un sistema hidr\'aulico en funci\'on de informaci\'on recopilada abajo. El procedimiento se prueba mediante dos ejemplos sint\'eticos y un estudio de caso real; se investiga el impacto de los tama\~nos de los conjuntos y la aplicaci\'on de t\'ecnicas de localizaci\'on e inflaci\'on de covarianzas. Los resultados muestran la capacidad del m\'etodo propuesto de resolver este tipo de problemas; el rendimiento de ES-MDA mejora, especialmente para tama\~nos de conjuntos peque\~nos, cuando se aplican t\'ecnicas de inflaci\'on y localizaci\'on de covarianza.
- La segunda aplicaci\'on en el campo de las aguas superficiales se refiere a la calibraci\'on de un modelo hidrol\'ogico-hidr\'aulico que simula los mecanismos de formaci\'on de eventos de inundaci\'on. ES-MDA se acopla al modelo num\'erico de forma paralela para la estimaci\'on de los coeficientes de rugosidad e infiltraci\'on en base al conocimiento de un hidrograma de flujo en una secci\'on del dominio. Los resultados de dos casos sint\'eticos y un estudio de caso real demuestran la capacidad del m\'etodo propuesto para calibrar el modelo hidrol\'ogico-hidr\'aulico con un tiempo computacional razonable.
- En el campo de aguas subterr\'aneas, ES-MDA se aplica por primera vez para identificar simult\'aneamente la ubicaci\'on de la fuente y el historial de liberaci\'on de un contaminante en un acu\'ifero a partir de datos de concentraci\'on detectados en diferentes puntos del dominio. Se realizaron numerosas pruebas para evaluar la influencia de la distribuci\'on espacial y temporal de los datos de concentraci\'on, el n\'umero del conjunto y el uso de t\'ecnicas de localizaci\'on e inflaci\'on; adem\'as, se presenta un nuevo procedimiento para realizar una localizaci\'on iterativa espacio-temporal. La metodolog\'ia se valida mediante un ejemplo anal\'itico y un estudio de caso que utiliza datos obtenidos en el laboratorio mediante una caja de arena. ES-MDA conduce a una buena estimaci\'on de los par\'ametros investigados; una red de monitoreo bien dise\~nada y la aplicaci\'on de correcciones de covarianza mejoran el rendimiento del m\'etodo y ayudan a mitigar el posible problema de no unicidad de la soluci\'on.
- Otro prop\'osito de la tesis es investigar el efecto del cambio clim\'atico en las aguas subterr\'aneas. Se presenta un modelo simplificado que describe la respuesta de los niveles de agua subterr\'anea a las variables meteorol\'ogicas hasta 2100. Es un enfoque estad\'istico sencillo basado en las correlaciones entre los niveles de agua subterr\'anea y dos \'indices de sequ\'ia que dependen de los datos de precipitaci\'on y temperatura. El m\'etodo se utiliza para evaluar el impacto del cambio clim\'atico en los recursos de agua subterr\'anea en un \'area de estudio ubicada en el norte de Italia utilizando datos hist\'oricos y de modelos clim\'aticos regionales. Los resultados m},
+  urldate = {2022-01-03},
+  abstract = {[ES] El tema de la investigaci\'on se centra en t\'ecnicas avanzadas para manejar problemas de aguas subterr\'aneas y superficiales relacionados con m\'etodos inversos y cambio clim\'atico. Los filtros de Kalman, con especial atenci\'on en Ensemble Smoother with Multiple Data Assimilation (ES-MDA), se analizan y mejoran para la soluci\'on de diferentes tipos de problemas inversos. En particular, la principal novedad es la aplicaci\'on de estos m\'etodos para la identificaci\'on de series temporales. La primera parte de la tesis, luego de la descripci\'on del m\'etodo, presenta el desarrollo de un software escrito en Python para la aplicaci\'on de la metodolog\'ia propuesta. El software cuenta con un flujo de trabajo flexible que puede adaptarse f\'acilmente para implementar diferentes variantes del filtro de Kalman y ser aplicado para la soluci\'on de varios tipos de problemas. Un paquete de herramientas proporciona varias funcionalidades que permiten de configurar el algoritmo de acuerdo con el problema espec\'ifico analizado. La primera aplicaci\'on se refiere a la soluci\'on del problema inverso de flujo en r\'ios. Este es un procedimiento inverso destinado a estimar el flujo de entrada a un sistema hidr\'aulico en funci\'on de informaci\'on recopilada abajo. El procedimiento se prueba mediante dos ejemplos sint\'eticos y un estudio de caso real; se investiga el impacto de los tama\~nos de los conjuntos y la aplicaci\'on de t\'ecnicas de localizaci\'on e inflaci\'on de covarianzas. Los resultados muestran la capacidad del m\'etodo propuesto de resolver este tipo de problemas; el rendimiento de ES-MDA mejora, especialmente para tama\~nos de conjuntos peque\~nos, cuando se aplican t\'ecnicas de inflaci\'on y localizaci\'on de covarianza. La segunda aplicaci\'on en el campo de las aguas superficiales se refiere a la calibraci\'on de un modelo hidrol\'ogico-hidr\'aulico que simula los mecanismos de formaci\'on de eventos de inundaci\'on. ES-MDA se acopla al modelo num\'erico de forma paralela para la estimaci\'on de los coeficientes de rugosidad e infiltraci\'on en base al conocimiento de un hidrograma de flujo en una secci\'on del dominio. Los resultados de dos casos sint\'eticos y un estudio de caso real demuestran la capacidad del m\'etodo propuesto para calibrar el modelo hidrol\'ogico-hidr\'aulico con un tiempo computacional razonable. En el campo de aguas subterr\'aneas, ES-MDA se aplica por primera vez para identificar simult\'aneamente la ubicaci\'on de la fuente y el historial de liberaci\'on de un contaminante en un acu\'ifero a partir de datos de concentraci\'on detectados en diferentes puntos del dominio. Se realizaron numerosas pruebas para evaluar la influencia de la distribuci\'on espacial y temporal de los datos de concentraci\'on, el n\'umero del conjunto y el uso de t\'ecnicas de localizaci\'on e inflaci\'on; adem\'as, se presenta un nuevo procedimiento para realizar una localizaci\'on iterativa espacio-temporal. La metodolog\'ia se valida mediante un ejemplo anal\'itico y un estudio de caso que utiliza datos obtenidos en el laboratorio mediante una caja de arena. ES-MDA conduce a una buena estimaci\'on de los par\'ametros investigados; una red de monitoreo bien dise\~nada y la aplicaci\'on de correcciones de covarianza mejoran el rendimiento del m\'etodo y ayudan a mitigar el posible problema de no unicidad de la soluci\'on. Otro prop\'osito de la tesis es investigar el efecto del cambio clim\'atico en las aguas subterr\'aneas. Se presenta un modelo simplificado que describe la respuesta de los niveles de agua subterr\'anea a las variables meteorol\'ogicas hasta 2100. Es un enfoque estad\'istico sencillo basado en las correlaciones entre los niveles de agua subterr\'anea y dos \'indices de sequ\'ia que dependen de los datos de precipitaci\'on y temperatura. El m\'etodo se utiliza para evaluar el impacto del cambio clim\'atico en los recursos de agua subterr\'anea en un \'area de estudio ubicada en el norte de Italia utilizando datos hist\'oricos y de modelos clim\'aticos regionales. Los resultados m},
   copyright = {Reserva de todos los derechos},
   langid = {Ingl\'es},
   school = {Universitat Polit\`ecnica de Val\`encia},
   annotation = {Accepted: 2021-05-17T12:35:44Z},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/SAZ8FUA6/Todaro - 2021 - Advanced techniques for solving groundwater and su.pdf;/home/acollet/Documents/BIBLIOGRAPHY/storage/6QDVQIYE/166439.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/BAV6KV7I/Todaro - 2021 - Advanced techniques for solving groundwater and su.pdf;/home/acollet/Documents/ZOTERO/storage/5S9F8YZK/166439.html}
 }
-% == BibTeX quality report for todaroAdvancedTechniquesSolving2021:
-% ? unused Library catalog ("riunet.upv.es")
-% ? unused Url ("https://riunet.upv.es/handle/10251/166439")
 
 @article{todaroGenESMDAGenericOpensource2022,
   title = {{{genES-MDA}}: {{A}} Generic Open-Source Software Package to Solve Inverse Problems via the {{Ensemble Smoother}} with {{Multiple Data Assimilation}}},
   shorttitle = {{{genES-MDA}}},
   author = {Todaro, Valeria and D'Oria, Marco and Tanda, Maria Giovanna and {G{\'o}mez-Hern{\'a}ndez}, J. Jaime},
-  year = {2022},
+  year = 2022,
   month = oct,
   journal = {Computers \& Geosciences},
   volume = {167},
   pages = {105210},
   issn = {0098-3004},
   doi = {10.1016/j.cageo.2022.105210},
+  urldate = {2022-08-30},
   abstract = {Ensemble Kalman filter methods have been successfully applied for data assimilation and parameter estimation through inverse modeling in various scientific fields. We have developed a new generic software package for the solution of inverse problems implementing the Ensemble Smoother with Multiple Data Assimilation (genES-MDA). It is an open-source, platform-independent Python-based program. Its aim is to facilitate the management and configuration of the ES-MDA through several programming tools that help in the preparation of the different steps of ES-MDA. genES-MDA has a flexible workflow that can be easily adapted for the implementation of different variants of the ensemble Kalman filter and for the solution of generic inverse problems. This paper presents a description of the package and some application examples. genES-MDA has been tested in three synthetic case studies: the solution of the reverse flow routing for the estimation of the inflow hydrograph to a river reach using observed water levels and a calibrated forward model of the river system, the identification of a hydraulic conductivity field using piezometric observations and a known forward flow model, and the estimation of the release history of a contaminant spill in an aquifer from measured concentration data and a known flow and transport model. The results of all these tests have demonstrated the flexibility of genES-MDA and its capabilities to efficiently solve different types of inverse problems.},
   langid = {english},
   keywords = {Covariance localization and inflation,Python,Stochastic inverse modeling,Uncertainty characterization},
-  file = {/home/acollet/Documents/BIBLIOGRAPHY/storage/756ICPMB/S0098300422001601.html}
+  file = {/home/acollet/Documents/ZOTERO/storage/2FA9IZVK/Todaro et al. - 2022 - genES-MDA A generic open-source software package .pdf;/home/acollet/Documents/ZOTERO/storage/J3LQIIXC/S0098300422001601.html}
 }
-% == BibTeX quality report for todaroGenESMDAGenericOpensource2022:
-% ? unused Library catalog ("ScienceDirect")
-% ? unused Url ("https://www.sciencedirect.com/science/article/pii/S0098300422001601")
 
+@article{wangWhichFilterData2023,
+  title = {Which Filter for Data Assimilation in Water Quality Models? {{Focus}} on Oxygen Reaeration and Heterotrophic Bacteria Activity},
+  shorttitle = {Which Filter for Data Assimilation in Water Quality Models?},
+  author = {Wang, Shuaitao and Flipo, Nicolas and Romary, Thomas},
+  year = 2023,
+  month = mar,
+  journal = {Journal of Hydrology},
+  volume = {620},
+  pages = {129423},
+  doi = {10.1016/j.jhydrol.2023.129423},
+  file = {/home/acollet/Documents/ZOTERO/storage/YHTRBTF5/Wang et al. - 2023 - Which filter for data assimilation in water qualit.pdf}
+}
 
-% Required packages:
-% * textcomp
+@article{yinOptimalEnsembleSize2015,
+  title = {Optimal Ensemble Size of Ensemble {{Kalman}} Filter in Sequential Soil Moisture Data Assimilation},
+  author = {Yin, Jifu and Zhan, Xiwu and Zheng, Youfei and Hain, Christopher R. and Liu, Jicheng and Fang, Li},
+  year = 2015,
+  journal = {Geophysical Research Letters},
+  volume = {42},
+  number = {16},
+  pages = {6710--6715},
+  issn = {1944-8007},
+  doi = {10.1002/2015GL063366},
+  urldate = {2024-01-14},
+  abstract = {The ensemble Kalman filter (EnKF) has been extensively applied in sequential soil moisture data assimilation to improve the land surface model performance and in turn weather forecast capability. Usually, the ensemble size of EnKF is determined with limited sensitivity experiments. Thus, the optimal ensemble size may have never been reached. In this work, based on a series of mathematical derivations, we demonstrate that the maximum efficiency of the EnKF for assimilating observations into the models could be reached when the ensemble size is set to 12. Simulation experiments are designed in this study under ensemble size cases 2, 5, 12, 30, 50, 100, and 300 to support the mathematical derivations. All the simulations are conducted from 1 June to 30 September 2012 over southeast USA (from -90{$^\circ$}W, 30{$^\circ$}N to -80{$^\circ$}W, 40{$^\circ$}N) at 25 km resolution. We found that the simulations are perfectly consistent with the mathematical derivation. This optical ensemble size may have theoretical implications on the implementation of EnKF in other sequential data assimilation problems.},
+  copyright = {\copyright 2015. The Authors.},
+  langid = {english},
+  keywords = {data assimilation,ensemble Kalman filter,ensemble size},
+  file = {/home/acollet/Documents/ZOTERO/storage/2M4KE4KI/Yin et al. - 2015 - Optimal ensemble size of ensemble Kalman filter in.pdf;/home/acollet/Documents/ZOTERO/storage/U8RMKPCX/2015GL063366.html}
+}

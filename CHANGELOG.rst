@@ -2,6 +2,17 @@
 Changelog
 ==============
 
+1.0.0 (TODO)
+------------------
+
+TODO.
+* Inversion algorithm
+* Use of logging
+* Improved example
+* Support for localization
+* Use of covmats lib
+* Improved documentation
+
 0.4.3 (2023-08-03)
 ------------------
 
