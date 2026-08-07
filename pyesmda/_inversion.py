@@ -28,7 +28,6 @@ The methods can be classified as
 # inversion_<exact/approximate>_<name>
 from __future__ import annotations
 
-import functools
 from enum import Enum
 from typing import List, Optional
 
@@ -45,7 +44,6 @@ from pyesmda._utils import (
 )
 
 
-@functools.cache
 def get_cholesky(cov: covmats.CovarianceMatrix) -> NDArrayFloat:
     """Get the inversed matrix."""
     return sp.linalg.cholesky(cov.todense(), lower=False)
@@ -364,19 +362,21 @@ def inversion_exact_woodbury(
     # TODO: If regularization -> we can try to apply the localization
     # and then to use cholesky afterwards ?
     Y_shift = get_anomaly_matrix(Y)
+    rhs = D - Y
 
-    # Compute the center part of the rhs in woodburry
-    center = Y_shift.T @ C_D.solve(Y_shift / inflation_factor)
+    # Symmetric term of the rhs in woodbury.
+    term = C_D.solve(Y_shift / inflation_factor)
+
+    # Center part of the rhs in woodbury
+    center = Y_shift.T @ term
     center.flat[:: center.shape[0] + 1] += 1.0  # Add to diagonal
 
-    # Compute the symmetric term of the rhs in woodbury
-    term = C_D.solve(Y_shift / inflation_factor)
+    correction = np.linalg.multi_dot([term, sp.linalg.inv(center), term.T, rhs])
 
     return C_MD_localization.localize_multi_dot(
         X,
         Y,
-        C_D.solve((D - Y) / inflation_factor)
-        - np.linalg.multi_dot([term, sp.linalg.inv(center), term.T]) @ (D - Y),
+        C_D.solve(rhs / inflation_factor) - correction,
         batch_slice=batch_slice,
     )
 
@@ -448,24 +448,22 @@ def inversion_rescaled(
 
     if not isinstance(C_D, covmats.CovViaDiagonal):
         # TODO change that
-        C_D_L = get_cholesky(C_D)
+        C_D_U = get_cholesky(C_D)
 
-        C_D_L_inv, _ = sp.linalg.lapack.dtrtri(
-            C_D_L, lower=0, overwrite_c=0
+        C_D_U_inv, _ = sp.linalg.lapack.dtrtri(
+            C_D_U, lower=0, overwrite_c=0
         )  # Invert lower triangular using BLAS routine
-        C_D_L_inv /= np.sqrt(inflation_factor)
+        C_D_U_inv /= np.sqrt(inflation_factor)
 
         # Eqn (59). Form C_tilde
-        # TODO: Use BLAS routine for triangular times dense matrix
-        C_tilde = sp.linalg.blas.strmm(alpha=1, a=C_D_L_inv, b=C_DD, lower=0)
-        C_tilde = C_D_L_inv @ C_DD @ C_D_L_inv.T
+        C_tilde = C_D_U_inv @ C_DD @ C_D_U_inv.T
         C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
 
     # When C_D is a diagonal covariance matrix, there is no need to perform
     # the cholesky factorization
     else:
-        C_D_L_inv = 1.0 / np.sqrt(C_D.get_diagonal() * inflation_factor)
-        C_tilde = (C_D_L_inv * (C_DD * C_D_L_inv).T).T
+        C_D_U_inv = 1.0 / np.sqrt(C_D.get_diagonal() * inflation_factor)
+        C_tilde = (C_D_U_inv * (C_DD * C_D_U_inv).T).T
         C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
 
     # Eqn (60). Compute SVD, which is equivalent to taking eigendecomposition
@@ -487,9 +485,9 @@ def inversion_rescaled(
     # Eqn (61). Compute symmetric term once first, then multiply together and
     # finally multiply with (D - Y)
     term = (
-        C_D_L_inv.T @ U_r
+        C_D_U_inv.T @ U_r
         if not isinstance(C_D, covmats.CovViaDiagonal)
-        else (C_D_L_inv * U_r.T).T
+        else (C_D_U_inv * U_r.T).T
     )
     # term = C_D.whiten(U_r)
 
@@ -610,41 +608,34 @@ def inversion_rescaled_subspace(
     N_n, N_e = Y.shape
     Y_shift = Y - np.mean(Y, axis=1, keepdims=True)  # Subtract average
     if not isinstance(C_D, covmats.CovViaDiagonal):
-        # TODO: change that
-        C_D_L = get_cholesky(C_D)
-        # Here C_D_L is C^{1/2} in equation (57)
-        # assert np.allclose(C_D_L @ C_D_L.T, C_D * alpha)
-        C_D_L_inv, _ = sp.linalg.lapack.dtrtri(
-            C_D_L * np.sqrt(inflation_factor), lower=0, overwrite_c=0
+        C_D_U = get_cholesky(C_D)
+        # Here C_D_U is C^{1/2} in equation (57)
+        # assert np.allclose(C_D_U @ C_D_U.T, C_D * alpha)
+        C_D_U_inv, _ = sp.linalg.lapack.dtrtri(
+            C_D_U * np.sqrt(inflation_factor), lower=0, overwrite_c=0
         )  # Invert upper triangular
 
-        # Use BLAS to compute product of upper triangular matrix C_D_L_inv and Y_shift
-        # This line is equal to C_D_L_inv @ Y_shift
-        C_D_L_times_Y_shift = sp.linalg.blas.dtrmm(
-            alpha=1.0, a=C_D_L_inv, b=Y_shift, lower=0
-        )
-
-        C_D_L_times_Y_shift = C_D_L_inv @ Y_shift
+        C_D_U_times_Y_shift = C_D_U_inv @ Y_shift
 
     else:
         # Same as above, but C_D is a vector
-        C_D_L_inv = 1 / np.sqrt(
+        C_D_U_inv = 1 / np.sqrt(
             inflation_factor * C_D.get_diagonal()
         )  # Invert the Cholesky factor a diagonal
-        C_D_L_times_Y_shift = (Y_shift.T * C_D_L_inv).T
+        C_D_U_times_Y_shift = (Y_shift.T * C_D_U_inv).T
 
-    U, w, _ = sp.linalg.svd(C_D_L_times_Y_shift, overwrite_a=True, full_matrices=False)
+    U, w, _ = sp.linalg.svd(C_D_U_times_Y_shift, overwrite_a=True, full_matrices=False)
     idx = singular_values_to_keep(w, truncation=truncation)
 
     # assert np.allclose(VT @ VT.T, np.eye(VT.shape[0]))
     N_r = min(N_n, N_e - 1, idx)  # Number of values in SVD to keep
     U_r, w_r = U[:, :N_r], w[:N_r]
 
-    # Eqn (78) - taking into account that C_D_L_inv could be an array
+    # Eqn (78) - taking into account that C_D_U_inv could be an array
     term = (
-        C_D_L_inv.T @ (U_r / w_r)
+        C_D_U_inv.T @ (U_r / w_r)
         if not isinstance(C_D, covmats.CovViaDiagonal)
-        else ((U_r / w_r).T * C_D_L_inv).T
+        else ((U_r / w_r).T * C_D_U_inv).T
     )
     T_r = (N_e - 1) / w_r**2  # Equation (79)
     diag = 1 / (1 + T_r)
