@@ -18,8 +18,10 @@ from pyesmda._inversion import ESMDAInversionType, inversion
 from pyesmda._localization import LocalizationStrategy, NoLocalization
 from pyesmda._utils import (
     NDArrayFloat,
+    NDArrayInt,
     check_nans_in_predictions,
     get_anomaly_matrix,
+    get_failed_members_indices,
     inflate_ensemble_around_its_mean,
 )
 
@@ -62,6 +64,10 @@ class ESMDABase(ABC):
         "is_parallel_analyse_step",
         "_truncation",
         "logger",
+        "_max_failure_fraction",
+        "_initial_n_ensemble",
+        "_active_member_indices",
+        "_excluded_member_indices",
     ]
 
     def __init__(
@@ -89,6 +95,7 @@ class ESMDABase(ABC):
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
         truncation: float = 0.99,
+        max_failure_fraction: float = 0.0,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
@@ -102,6 +109,24 @@ class ESMDABase(ABC):
         Vectors of parameter values (one vector for each ensemble member) used in the
         last assimilation step; Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
         """
+
+        self._initial_n_ensemble: int = self.n_ensemble
+        """Number of ensemble members at initialization, before any exclusion."""
+
+        self._active_member_indices: NDArrayInt = np.arange(self._initial_n_ensemble)
+        """
+        Indices, in the original (initial) ensemble, of the members that are
+        still active, i.e., that have not been excluded because of a forward
+        model failure.
+        """
+
+        self._excluded_member_indices: List[int] = []
+        """
+        Indices, in the original (initial) ensemble, of the members that have
+        been excluded so far because of a forward model failure.
+        """
+
+        self.max_failure_fraction = max_failure_fraction
 
         self.save_ensembles_history: bool = save_ensembles_history
         """
@@ -379,6 +404,59 @@ class ESMDABase(ABC):
             raise ValueError("The truncation number should be in ]0, 1]!")
         self._truncation = float(truncation)
 
+    @property
+    def max_failure_fraction(self) -> float:
+        """
+        Get the maximum fraction of the initial ensemble allowed to fail.
+
+        A "failed" member is one for which the forward model returned at least
+        one NaN value (typically because of a non-convergence). Failed members
+        are excluded from the ensemble. If the cumulative fraction of failed
+        members exceeds this threshold, an exception is raised. A value of 0.0
+        means that no failure at all is tolerated.
+        """
+        return self._max_failure_fraction
+
+    @max_failure_fraction.setter
+    def max_failure_fraction(self, max_failure_fraction: float) -> None:
+        """Set the maximum fraction of the initial ensemble allowed to fail."""
+        if not 0.0 <= max_failure_fraction < 1.0:
+            raise ValueError(
+                f"max_failure_fraction should be in [0, 1[! Got {max_failure_fraction}."
+            )
+        self._max_failure_fraction = float(max_failure_fraction)
+
+    @property
+    def active_member_indices(self) -> NDArrayFloat:
+        """
+        Get the indices, in the original (initial) ensemble, of the currently
+        active members, i.e., the members that have not been excluded because
+        of a forward model failure. Read-only.
+        """
+        return self._active_member_indices
+
+    @property
+    def excluded_member_indices(self) -> List[int]:
+        """
+        Get the indices, in the original (initial) ensemble, of the members
+        that have been excluded so far because of a forward model failure.
+        Read-only.
+        """
+        return list(self._excluded_member_indices)
+
+    @property
+    def n_excluded_members(self) -> int:
+        """Get the number of ensemble members excluded so far. Read-only."""
+        return len(self._excluded_member_indices)
+
+    @property
+    def failure_fraction(self) -> float:
+        """
+        Get the cumulative fraction of the initial ensemble that has failed
+        so far. Read-only.
+        """
+        return self.n_excluded_members / self._initial_n_ensemble
+
     def loginfo(self, msg: str) -> None:
         """Log the message."""
         if self.logger is not None:
@@ -411,12 +489,79 @@ class ESMDABase(ABC):
         self.d_pred = self.forward_model(
             self.m_prior, *self.forward_model_args, **self.forward_model_kwargs
         )
+
+        # Handle members for which the forward model failed (NaN predictions):
+        # either exclude them (within the allowed failure fraction) or raise.
+        self._handle_failed_members()
+
         if self.save_ensembles_history:
             self.d_history.append(self.d_pred)
 
-        # Check if no nan values are found in the predictions.
-        # If so, stop the assimilation
-        check_nans_in_predictions(self.d_pred, self._assimilation_step)
+    def _handle_failed_members(self) -> None:
+        """
+        Detect ensemble members for which the forward model failed and exclude them.
+
+        A member is considered failed if its prediction vector contains at least
+        one NaN value (typically because the forward/reservoir simulation did not
+        converge). If ``max_failure_fraction`` is 0.0 (the default), any failure
+        immediately raises an exception (the historical, strict behavior). Otherwise,
+        failed members are dropped from :py:attr:`m_prior` and :py:attr:`d_pred` (and
+        thus excluded from the analysis/inversion step and from subsequent
+        assimilations), as long as the cumulative fraction of failed members
+        (relative to the initial ensemble size) does not exceed
+        ``max_failure_fraction``. If it does, an exception is raised.
+        """
+        local_failed_indices = get_failed_members_indices(self.d_pred)
+        if local_failed_indices.size == 0:
+            return
+
+        if self.max_failure_fraction == 0.0:
+            # Historical strict behavior: no failure tolerated at all.
+            check_nans_in_predictions(self.d_pred, self._assimilation_step)
+
+        # Map the (local) failed column indices back to indices in the
+        # original, initial ensemble.
+        new_failed_original_indices = self._active_member_indices[local_failed_indices]
+
+        total_n_failed = self.n_excluded_members + local_failed_indices.size
+        new_failure_fraction = total_n_failed / self._initial_n_ensemble
+
+        if new_failure_fraction > self.max_failure_fraction:
+            raise Exception(
+                f"Something went wrong after assimilation step "
+                f"{self._assimilation_step} -> NaN values are found in "
+                "predictions for members "
+                f"{[int(i) for i in new_failed_original_indices]} ! "
+                f"This brings the cumulative failure fraction to "
+                f"{new_failure_fraction:.2%}, which exceeds the allowed "
+                f"max_failure_fraction of {self.max_failure_fraction:.2%}."
+            )
+
+        # Exclude the failed members: keep only the active (non-failed) columns.
+        active_mask = np.ones(self.n_ensemble, dtype=bool)
+        active_mask[local_failed_indices] = False
+
+        self.loginfo(
+            f"Excluding {local_failed_indices.size} failed ensemble member(s) "
+            f"(original indices {[int(i) for i in new_failed_original_indices]}) "
+            f"at assimilation step {self._assimilation_step}. Cumulative failure "
+            f"fraction: {new_failure_fraction:.2%} "
+            f"(max allowed: {self.max_failure_fraction:.2%})."
+        )
+
+        self._excluded_member_indices.extend(
+            int(i) for i in new_failed_original_indices
+        )
+        self._active_member_indices = self._active_member_indices[active_mask]
+        self.m_prior = self.m_prior[:, active_mask]
+        self.d_pred = self.d_pred[:, active_mask]
+
+        if self.n_ensemble < 2:
+            raise Exception(
+                "Too many ensemble members have failed: fewer than 2 members "
+                "remain, which is not enough to estimate covariances and "
+                "continue the assimilation."
+            )
 
     def _pertrub(self, inflation_factor: float) -> None:
         r"""
@@ -514,14 +659,14 @@ class ESMDABase(ABC):
                 for index, res in enumerate(results):
                     _slice = slice(
                         index * self.batch_size,
-                        max([(index + 1) * self.batch_size, self.m_dim]),
+                        min((index + 1) * self.batch_size, self.m_dim),
                     )
                     m_pred[_slice, :] = res
         else:
             for index in range(self.n_batches):
                 _slice = slice(
                     index * self.batch_size,
-                    max([(index + 1) * self.batch_size, self.m_dim]),
+                    min((index + 1) * self.batch_size, self.m_dim),
                 )
                 m_pred[_slice, :] = self._get_batch_m_update(index, inflation_factor)
 
@@ -529,7 +674,7 @@ class ESMDABase(ABC):
 
     def _get_batch_m_update(self, index: int, inflation_factor: float) -> NDArrayFloat:
         _slice = slice(
-            index * self.batch_size, max([(index + 1) * self.batch_size, self.m_dim])
+            index * self.batch_size, min((index + 1) * self.batch_size, self.m_dim)
         )
 
         return self.m_prior[_slice, :] + (

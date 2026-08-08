@@ -98,6 +98,7 @@ from ._utils import (
     empirical_covariance_upper,
     get_anomaly_matrix,
     get_ensemble_variance,
+    get_failed_members_indices,
     inflate_ensemble_around_its_mean,
     ls_cost_function,
 )
@@ -116,6 +117,7 @@ __all__ = [
     "ls_cost_function",
     "inflate_ensemble_around_its_mean",
     "check_nans_in_predictions",
+    "get_failed_members_indices",
     "distances_to_weights_beta_cumulative",
     "distances_to_weights_fifth_order",
     "FixedLocalization",

@@ -11,7 +11,7 @@ import covmats
 import numpy as np
 import numpy.typing as npt
 
-from pyesmda._esmda import ESMDABase
+from pyesmda._base import ESMDABase
 from pyesmda._inversion import ESMDAInversionType
 from pyesmda._localization import LocalizationStrategy, NoLocalization
 from pyesmda._utils import NDArrayFloat, ls_cost_function
@@ -61,6 +61,7 @@ class ESMDA_RS(ESMDABase):
         batch_size: int = 5000,
         is_parallel_analyse_step: bool = True,
         truncation: float = 0.99,
+        max_failure_fraction: float = 0.0,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         # pylint: disable=R0913 # Too many arguments
@@ -150,6 +151,15 @@ class ESMDA_RS(ESMDABase):
             corresponding to this fraction of the sum of the nonzero singular values.
             The goal of truncation is to deal with smaller matrices (dimensionality
             reduction), easier to inverse. The default is 0.99.
+        max_failure_fraction: float
+            Maximum fraction (in [0, 1[) of the initial ensemble members that are
+            allowed to fail (i.e., for which the forward model returns NaN values,
+            typically because of a non-convergence) over the whole optimization.
+            Failed members are excluded from the ensemble (from the analysis step
+            and from subsequent assimilations). If the cumulative fraction of
+            failed members exceeds this threshold, an exception is raised. The
+            default is 0.0, meaning no failure is tolerated (any NaN immediately
+            raises an exception).
         logger: Optional[logging.Logger]
             Optional :py:class:`logging.Logger` instance used for event logging.
             The default is None.
@@ -175,6 +185,7 @@ class ESMDA_RS(ESMDABase):
             batch_size=batch_size,
             is_parallel_analyse_step=is_parallel_analyse_step,
             truncation=truncation,
+            max_failure_fraction=max_failure_fraction,
             logger=logger,
         )
 
