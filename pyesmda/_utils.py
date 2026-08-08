@@ -11,7 +11,8 @@ import numpy as np
 import numpy.typing as npt
 import scipy as sp
 
-NDArrayFloat = npt.NDArray[np.float64]
+NDArrayFloat = npt.NDArray[np.floating]
+NDArrayInt = npt.NDArray[np.integer]
 
 
 def get_ensemble_variance(
@@ -260,6 +261,36 @@ def inflate_ensemble_around_its_mean(
     return ensemble
 
 
+def get_failed_members_indices(d_pred: NDArrayFloat) -> npt.NDArray[np.int_]:
+    """
+    Get the indices of ensemble members (columns) with NaN values in their prediction.
+
+    A member is considered "failed" as soon as at least one of its predicted
+    values is NaN (e.g., because the forward/reservoir simulation did not
+    converge for that member).
+
+    Parameters
+    ----------
+    d_pred : NDArrayFloat
+        Ensemble of predicted values with dimensions
+        (:math:`N_{\\mathrm{obs}}`, :math:`N_{e}`).
+
+    Returns
+    -------
+    npt.NDArray[np.int_]
+        Sorted array of unique column indices containing at least one NaN.
+
+    Examples
+    --------
+    >>> d_pred = np.array([[1.0, np.nan, 3.0], [4.0, 5.0, np.nan]])
+    >>> get_failed_members_indices(d_pred)
+    array([1, 2])
+    """
+    if not np.isnan(d_pred).any():
+        return np.array([], dtype=int)
+    return np.array(sorted(set(np.where(np.isnan(d_pred))[1])), dtype=int)
+
+
 def check_nans_in_predictions(d_pred: NDArrayFloat, assimilation_step: int) -> None:
     """
     Check and raise an exception if there is any NaNs in the input predictions array.
@@ -277,11 +308,10 @@ def check_nans_in_predictions(d_pred: NDArrayFloat, assimilation_step: int) -> N
         Raised if NaNs are found. It indicates which ensemble members have incorrect
         predictions, and at which assimilaiton step.
     """
-    if not np.isnan(d_pred).any():
+    error_indices: List[int] = list(get_failed_members_indices(d_pred))
+    if not error_indices:
         return
 
-    # indices of members for which nan have been found
-    error_indices: List[int] = sorted(set(np.where(np.isnan(d_pred))[1]))
     if assimilation_step == 0:
         msg: str = "with the initial ensemble predictions "
     else:
