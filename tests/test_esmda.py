@@ -328,8 +328,8 @@ def empty_forward_model(*args, **kwargs) -> None:
                 ValueError,
                 match=(
                     r"smth_not_valid is not a supported inversion type! "
-                    r"Choose among \['naive', 'exact_cholesky', 'exact_lstq', "
-                    r"'exact_woodbury', 'rescaled', 'subspace', "
+                    r"Choose among \['naive', 'cholesky', 'lstsq', "
+                    r"'woodbury', 'rescaled', 'subspace', "
                     r"'subspace_rescaled'\]"
                 ),
             ),
@@ -413,9 +413,9 @@ def forward_model(m_ensemble, x):
 
 expected_std = {
     ESMDAInversionType.NAIVE: [1.05e-1, 6.31e-5],
-    ESMDAInversionType.EXACT_CHOLESKY: [1.05e-1, 6.31e-5],
-    ESMDAInversionType.EXACT_LSTSQ: [1.055e-1, 6.31e-5],
-    ESMDAInversionType.EXACT_WOODBURY: [1.055e-1, 6.31e-5],
+    ESMDAInversionType.CHOLESKY: [1.05e-1, 6.31e-5],
+    ESMDAInversionType.LSTSQ: [1.055e-1, 6.31e-5],
+    ESMDAInversionType.WOODBURY: [1.055e-1, 6.31e-5],
     ESMDAInversionType.RESCALED: [1.05e-1, 6.64e-5],
     ESMDAInversionType.SUBSPACE: [1.05e-01, 6.31e-05],
     ESMDAInversionType.SUBSPACE_RESCALED: [0.105, 6.30e-05],
@@ -427,9 +427,9 @@ expected_std = {
     "inversion_type",
     [
         ESMDAInversionType.NAIVE,
-        ESMDAInversionType.EXACT_CHOLESKY,
-        ESMDAInversionType.EXACT_LSTSQ,
-        ESMDAInversionType.EXACT_WOODBURY,
+        ESMDAInversionType.CHOLESKY,
+        ESMDAInversionType.LSTSQ,
+        ESMDAInversionType.WOODBURY,
         ESMDAInversionType.RESCALED,
         ESMDAInversionType.SUBSPACE,
         ESMDAInversionType.SUBSPACE_RESCALED,
@@ -591,7 +591,7 @@ def test_esmda_exponential_case_batch(
         forward_model_args=(x,),
         forward_model_kwargs={},
         n_assimilations=n_assimilations,
-        inversion_type="exact_woodbury",
+        inversion_type="woodbury",
         cov_obs_inflation_factors=cov_obs_inflation_factors,
         cov_mm_inflation_factor=1.2,
         C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),

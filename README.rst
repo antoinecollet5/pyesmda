@@ -169,7 +169,7 @@ The optimal solution (a, b) can be found following:
         cov_mm_inflation_factor=cov_mm_inflation_factor,
         m_bounds=m_bounds,
         save_ensembles_history=True,
-        inversion_type=ESMDAInversionType.EXACT_CHOLESKY,
+        inversion_type=ESMDAInversionType.CHOLESKY,
         seed=seed,
         truncation=0.99,
         logger=logging.getLogger("ESMDA"),

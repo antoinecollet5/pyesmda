@@ -59,10 +59,10 @@ class ESMDAInversionType(str, Enum):
 
     Available inversion types are:
         - **naive**: direct inversion of C_DD + alpha * C_D
-        - **exact_cholesky**: perform the cholesky factorization of C_DD + alpha * C_D
-        - **exact_lstq**: Computes inversion using least squares. While this method can
+        - **cholesky**: perform the cholesky factorization of C_DD + alpha * C_D
+        - **lstsq**: Computes inversion using least squares. While this method can
           deal with rank-deficient C_D, it should not be used since it's very slow
-        - **exact_woodbury**: Rely on woodbury lemma to reformulate the problem
+        - **woodbury**: Rely on woodbury lemma to reformulate the problem
         - **rescaled**: rely on truncated singular value decomposition TSVD of C_DD
         - **subspace**: rely on TSVD of U with C_DD = UU^{T}
         - **subspace_rescaled**: Same as subspace but with a rescaling procedure to
@@ -71,9 +71,9 @@ class ESMDAInversionType(str, Enum):
     """
 
     NAIVE = "naive"
-    EXACT_CHOLESKY = "exact_cholesky"
-    EXACT_LSTSQ = "exact_lstq"
-    EXACT_WOODBURY = "exact_woodbury"
+    CHOLESKY = "cholesky"
+    LSTSQ = "lstsq"
+    WOODBURY = "woodbury"
     RESCALED = "rescaled"
     SUBSPACE = "subspace"
     SUBSPACE_RESCALED = "subspace_rescaled"
@@ -214,9 +214,9 @@ def inversion(
     """
     return {
         ESMDAInversionType.NAIVE: inversion_exact_naive,
-        ESMDAInversionType.EXACT_CHOLESKY: inversion_exact_cholesky,
-        ESMDAInversionType.EXACT_LSTSQ: inversion_exact_lstsq,
-        ESMDAInversionType.EXACT_WOODBURY: inversion_exact_woodbury,
+        ESMDAInversionType.CHOLESKY: inversion_exact_cholesky,
+        ESMDAInversionType.LSTSQ: inversion_exact_lstsq,
+        ESMDAInversionType.WOODBURY: inversion_exact_woodbury,
         ESMDAInversionType.RESCALED: inversion_rescaled,
         ESMDAInversionType.SUBSPACE: inversion_subspace,
         ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
