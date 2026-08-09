@@ -8,13 +8,14 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import covmats
 import numpy as np
 from scipy._lib._util import check_random_state
 
-from pyesmda._inversion import ESMDAInversionType, inversion
+from pyesmda._inversion import ESMDAInversionType, _run_batch_update, inversion
 from pyesmda._localization import LocalizationStrategy, NoLocalization
 from pyesmda._utils import (
     NDArrayFloat,
@@ -24,8 +25,6 @@ from pyesmda._utils import (
     get_failed_members_indices,
     inflate_ensemble_around_its_mean,
 )
-
-# pylint: disable=C0103 # Does not conform to snake_case naming style
 
 
 class ESMDABase(ABC):
@@ -648,14 +647,22 @@ class ESMDABase(ABC):
 
         """
         m_pred: NDArrayFloat = np.zeros(self.m_prior.shape)
-
+        worker = partial(
+            _run_batch_update,
+            inflation_factor=inflation_factor,
+            batch_size=self.batch_size,
+            m_dim=self.m_dim,
+            m_prior=self.m_prior,
+            inversion_type=self.inversion_type,
+            cov_obs=self.cov_obs,
+            d_obs_uc=self.d_obs_uc,
+            d_pred=self.d_pred,
+            C_DD_localization=self.C_DD_localization,
+            C_MD_localization=self.C_MD_localization,
+        )
         if self.is_parallel_analyse_step:
             with ProcessPoolExecutor() as executor:
-                results: Iterator[NDArrayFloat] = executor.map(
-                    self._get_batch_m_update,
-                    range(self.n_batches),
-                    [inflation_factor] * self.n_batches,
-                )
+                results = executor.map(worker, range(self.n_batches))
                 for index, res in enumerate(results):
                     _slice = slice(
                         index * self.batch_size,
@@ -668,31 +675,8 @@ class ESMDABase(ABC):
                     index * self.batch_size,
                     min((index + 1) * self.batch_size, self.m_dim),
                 )
-                m_pred[_slice, :] = self._get_batch_m_update(index, inflation_factor)
-
+                m_pred[_slice, :] = worker(index)
         return m_pred
-
-    def _get_batch_m_update(self, index: int, inflation_factor: float) -> NDArrayFloat:
-        _slice = slice(
-            index * self.batch_size, min((index + 1) * self.batch_size, self.m_dim)
-        )
-
-        return self.m_prior[_slice, :] + (
-            inversion(
-                self.inversion_type,
-                inflation_factor,
-                self.cov_obs,
-                self.d_obs_uc,
-                self.d_pred,
-                self.m_prior[_slice, :].reshape(
-                    -1, self.m_prior.shape[-1]
-                ),  # ensure 2d array
-                C_DD_localization=self.C_DD_localization,
-                C_MD_localization=self.C_MD_localization,
-                truncation=1.0,
-                batch_slice=_slice,
-            )
-        )
 
     def _apply_bounds(self, m_pred: NDArrayFloat) -> NDArrayFloat:
         """Apply bounds constraints to the adjusted parameters."""

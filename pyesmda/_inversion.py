@@ -233,6 +233,36 @@ def inversion(
     )
 
 
+def _run_batch_update(
+    index: int,
+    inflation_factor: float,
+    batch_size: int,
+    m_dim: int,
+    m_prior: NDArrayFloat,
+    inversion_type: ESMDAInversionType,
+    cov_obs: covmats.CovarianceMatrix,
+    d_obs_uc: NDArrayFloat,
+    d_pred: NDArrayFloat,
+    C_DD_localization: LocalizationStrategy,
+    C_MD_localization: LocalizationStrategy,
+) -> NDArrayFloat:
+    _slice = slice(index * batch_size, min((index + 1) * batch_size, m_dim))
+    return m_prior[_slice, :] + (
+        inversion(
+            inversion_type,
+            inflation_factor,
+            cov_obs,
+            d_obs_uc,
+            d_pred,
+            m_prior[_slice, :].reshape(-1, m_prior.shape[-1]),
+            C_DD_localization=C_DD_localization,
+            C_MD_localization=C_MD_localization,
+            truncation=1.0,
+            batch_slice=_slice,
+        )
+    )
+
+
 def inversion_exact_naive(
     *,
     inflation_factor: float,
