@@ -460,16 +460,23 @@ def test_esmda_exponential_case(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = covmats.CovViaDiagonal(
-        np.ones(
-            obs.size,
-        )
-    )
     if is_cov_obs_2D:
         cov_obs = covmats.CovViaCholesky(
-            sp.linalg.cholesky(np.diag(cov_obs.get_diagonal()), lower=True)
+            sp.linalg.cholesky(
+                np.diag(
+                    np.ones(
+                        obs.size,
+                    )
+                ),
+                lower=True,
+            )
         )
-
+    else:
+        cov_obs = covmats.CovViaDiagonal(
+            np.ones(
+                obs.size,
+            )
+        )
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
 
@@ -559,9 +566,25 @@ def test_esmda_exponential_case_batch(
     m_ensemble = np.stack((ma, mb), axis=0)
 
     # Observation error covariance matrix
-    cov_obs = covmats.CovViaCholesky(
-        sp.linalg.cholesky(np.diag(np.ones((obs.size,))), lower=True)
-    )
+    # Observation error covariance matrix
+    if cov_obs_dim == 2:
+        cov_obs = covmats.CovViaCholesky(
+            sp.linalg.cholesky(
+                np.diag(
+                    np.ones(
+                        obs.size,
+                    )
+                ),
+                lower=True,
+            )
+        )
+    else:
+        cov_obs = covmats.CovViaDiagonal(
+            np.ones(
+                obs.size,
+            )
+        )
+
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
 

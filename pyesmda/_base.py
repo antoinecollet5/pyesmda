@@ -10,12 +10,12 @@ Implement a base class for the ES-MDA algorithms and variants.
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import covmats
 import numpy as np
+from joblib import Parallel, delayed
 from scipy._lib._util import check_random_state
 
 from pyesmda._inversion import ESMDAInversionType, _run_batch_update, inversion
@@ -664,21 +664,18 @@ class ESMDABase(ABC):
             C_MD_localization=self.C_MD_localization,
         )
         if self.is_parallel_analyse_step:
-            with ProcessPoolExecutor() as executor:
-                results = executor.map(worker, range(self.n_batches))
-                for index, res in enumerate(results):
-                    _slice = slice(
-                        index * self.batch_size,
-                        min((index + 1) * self.batch_size, self.m_dim),
-                    )
-                    m_pred[_slice, :] = res
+            results = Parallel(n_jobs=-1)(
+                delayed(worker)(index) for index in range(self.n_batches)
+            )
         else:
-            for index in range(self.n_batches):
-                _slice = slice(
-                    index * self.batch_size,
-                    min((index + 1) * self.batch_size, self.m_dim),
-                )
-                m_pred[_slice, :] = worker(index)
+            results = [worker(index) for index in range(self.n_batches)]
+
+        for index, res in enumerate(results):
+            _slice = slice(
+                index * self.batch_size,
+                min((index + 1) * self.batch_size, self.m_dim),
+            )
+            m_pred[_slice, :] = res
         return m_pred
 
     def _apply_bounds(self, m_pred: NDArrayFloat) -> NDArrayFloat:
