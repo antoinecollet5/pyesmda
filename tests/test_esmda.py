@@ -562,7 +562,6 @@ def test_esmda_exponential_case_batch(
         )
     else:
         cov_obs = covmats.CovViaDiagonal(np.ones((obs.size,)))
-        cov_obs._invD
 
     # Bounds on parameters (size m * 2)
     m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
