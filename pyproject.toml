@@ -22,7 +22,7 @@ license = { file = "LICENSE" }
 dependencies = [
     "numpy>=1.2",
     "scipy>=1.6.2",
-    "covmats>=0.3.0"
+    "covmats>=0.3.1"
 ]
 requires-python = ">=3.9"
 classifiers = [
