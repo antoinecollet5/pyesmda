@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2026 Antoine COLLET
+
 import numpy as np
 import scipy as sp
 from pyesmda._inversion import ESMDAInversionType, get_localized_cmd_multi_dot

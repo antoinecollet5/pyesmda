@@ -108,7 +108,7 @@ jobs:
         run: pip install coverage
 
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           path: coverage-data
 

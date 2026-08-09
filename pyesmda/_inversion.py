@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2026 Antoine COLLET
+
 """
 ESMDA inversion functions.
 
@@ -213,10 +216,10 @@ def inversion(
         The update :math:`\delta X`.
     """
     return {
-        ESMDAInversionType.NAIVE: inversion_exact_naive,
-        ESMDAInversionType.CHOLESKY: inversion_exact_cholesky,
-        ESMDAInversionType.LSTSQ: inversion_exact_lstsq,
-        ESMDAInversionType.WOODBURY: inversion_exact_woodbury,
+        ESMDAInversionType.NAIVE: inversion_naive,
+        ESMDAInversionType.CHOLESKY: inversion_cholesky,
+        ESMDAInversionType.LSTSQ: inversion_lstsq,
+        ESMDAInversionType.WOODBURY: inversion_woodbury,
         ESMDAInversionType.RESCALED: inversion_rescaled,
         ESMDAInversionType.SUBSPACE: inversion_subspace,
         ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
@@ -263,7 +266,7 @@ def _run_batch_update(
     )
 
 
-def inversion_exact_naive(
+def inversion_naive(
     *,
     inflation_factor: float,
     C_D: covmats.CovarianceMatrix,
@@ -285,7 +288,7 @@ def inversion_exact_naive(
     return C_MD @ sp.linalg.inv(C_DD + inflation_factor * C_D.todense()) @ (D - Y)
 
 
-def inversion_exact_cholesky(
+def inversion_cholesky(
     *,
     inflation_factor: float,
     C_D: covmats.CovarianceMatrix,
@@ -331,7 +334,7 @@ def inversion_exact_cholesky(
     return C_MD_localization.localize_multi_dot(X, Y, K, batch_slice=batch_slice)
 
 
-def inversion_exact_lstsq(
+def inversion_lstsq(
     *,
     inflation_factor: float,
     C_D: covmats.CovarianceMatrix,
@@ -364,7 +367,7 @@ def inversion_exact_lstsq(
     return C_MD_localization.localize_multi_dot(X, Y, K, batch_slice=batch_slice)
 
 
-def inversion_exact_woodbury(
+def inversion_woodbury(
     *,
     inflation_factor: float,
     C_D: covmats.CovarianceMatrix,
