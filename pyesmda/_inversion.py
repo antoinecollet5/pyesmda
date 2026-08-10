@@ -27,28 +27,32 @@ The methods can be classified as
 
 """
 
-# Every inversion function has the form
-# inversion_<exact/approximate>_<name>
 from __future__ import annotations
 
+import functools
+import warnings
 from enum import Enum
-from typing import List, Optional
+from typing import Callable, Dict, List
 
 import covmats
 import numpy as np
 import scipy as sp
-from scipy.sparse import spmatrix
 
 from pyesmda._localization import LocalizationStrategy, NoLocalization
 from pyesmda._utils import (
     NDArrayFloat,
-    empirical_cross_covariance,
     get_anomaly_matrix,
 )
 
 
-def get_cholesky(cov: covmats.CovarianceMatrix) -> NDArrayFloat:
-    """Get the inversed matrix."""
+@functools.cache
+def cholesky_upper(cov: covmats.CovarianceMatrix) -> NDArrayFloat:
+    """
+    Return the upper Cholesky factor ``U`` of the dense covariance matrix.
+
+    ``U`` is upper-triangular and satisfies ``U.T @ U == cov.todense()``.
+
+    """
     return sp.linalg.cholesky(cov.todense(), lower=False)
 
 
@@ -101,62 +105,22 @@ class ESMDAInversionType(str, Enum):
         return list(cls)
 
 
-def get_localized_cdd(Y: NDArrayFloat, dd_corr_mat: Optional[spmatrix]) -> NDArrayFloat:
-    r"""
-    Get the empirical auto-correlation matrix $C_{dd}$.
-
-    If provided, the matrix is masked with the provided localization matrix.
-
-    Parameters
-    ----------
-    m_pred : npt.NDArray[np.float64]
-        Ensemble of predicted values with dimensions
-        (:math:`N_{\mathrm{obs}}`, :math:`N_{e}`).
-
-    """
-    C_DD = empirical_cross_covariance(Y, Y)
-    if dd_corr_mat is not None:
-        return dd_corr_mat.multiply(C_DD)  # ty:ignore[unresolved-attribute]
-    return C_DD
-
-
-def get_localized_cmd_multi_dot(
-    X: NDArrayFloat,
-    Y: NDArrayFloat,
-    *args: NDArrayFloat,
-    md_corr_mat: Optional[spmatrix] = None,
-) -> NDArrayFloat:
-    """_summary_
-
-    Parameters
-    ----------
-    X : NDArrayFloat
-        _description_
-    Y : NDArrayFloat
-        _description_
-    md_corr_mat : Optional[spmatrix], optional
-        _description_, by default None
-
-    Returns
-    -------
-    NDArrayFloat
-        _description_
-    """
-    X_shift = get_anomaly_matrix(X)
-    Y_shift = get_anomaly_matrix(Y)
-
-    if md_corr_mat is not None:
-        return np.linalg.multi_dot(
-            [
-                md_corr_mat.multiply(X_shift.dot(Y_shift.T)).toarray(),  # ty:ignore[unresolved-attribute]
-                *args,
-            ]
-        )
-    return np.linalg.multi_dot([X_shift, Y_shift.T, *args])
+# Inversion types for which C_DD_localization is accepted but not currently
+# applied. See the warning raised for these in `inversion()` below, and the
+# per-function docstrings for why (in short: the Woodbury and subspace
+# formulations never materialize the dense C_DD matrix that a
+# LocalizationStrategy.localize() call would need to mask).
+_INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION = frozenset(
+    {
+        ESMDAInversionType.WOODBURY,
+        ESMDAInversionType.SUBSPACE,
+        ESMDAInversionType.SUBSPACE_RESCALED,
+    }
+)
 
 
 def inversion(
-    invertion_type: ESMDAInversionType,
+    inversion_type: ESMDAInversionType,
     inflation_factor: float,
     cov_obs: covmats.CovarianceMatrix,
     obs_uc: NDArrayFloat,
@@ -172,7 +136,7 @@ def inversion(
 
     Parameters
     ----------
-    invertion_type : ESMDAInversionType
+    inversion_type : ESMDAInversionType
         Type of inversion. See :py:class:`ESMDAInversionType` for available methods.
     inflation_factor : float
         Inflation factor :math:`\alpha` for `cov_obs`, the covariance matrix of
@@ -186,7 +150,7 @@ def inversion(
     d_pred : NDArrayFloat
         Ensemble of predicted values with shape (:math:`N_{\mathrm{obs}}`,
         :math:`N_{e}`).
-    m_pred : npt.NDArray[np.float64]
+    s_ens : NDArrayFloat
         Ensemble of adjusted parameters with dimensions
         (:math:`N_{m}`, :math:`N_{e}`).
     C_DD_localization: LocalizationStrategy
@@ -195,12 +159,20 @@ def inversion(
         (:math:`N_{\mathrm{obs}}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined
         correlation matrix used for all iterations) or adaptive and even user defined.
         See implementations of :py:class:`LocalizationStrategy`.
-    C_MD_localization : Optional[csr_matrix]
-        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
-        empirical corss-covariance matrices. Expected dimensions of the operator are
+
+        Note
+        ----
+        Not every `inversion_type` currently applies this. See
+        :py:data:`_INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION`; a
+        :py:class:`UserWarning` is raised when a non-default localization is
+        passed for one of those types, since it is silently ignored.
+    C_MD_localization : LocalizationStrategy
+        Localization operator :math:`\rho_{MD}` applied to the parameters-predictions
+        empirical cross-covariance matrices. Expected dimensions of the operator are
         (:math:`N_{m}`, :math:`N_{\mathrm{obs}}`). It can be fixed (defined correlation
         matrix used for all iterations) or adaptive and even user defined.
-        See implementations of :py:class:`LocalizationStrategy`.
+        See implementations of :py:class:`LocalizationStrategy`. Applied by every
+        `inversion_type`.
     truncation : float, optional
         truncation: float
         A value in the range ]0, 1], used to determine the number of
@@ -214,16 +186,26 @@ def inversion(
     -------
     NDArrayFloat
         The update :math:`\delta X`.
+
+    Raises
+    ------
+    KeyError
+        If `inversion_type` is not one of the values in
+        :py:class:`ESMDAInversionType`.
     """
-    return {
-        ESMDAInversionType.NAIVE: inversion_naive,
-        ESMDAInversionType.CHOLESKY: inversion_cholesky,
-        ESMDAInversionType.LSTSQ: inversion_lstsq,
-        ESMDAInversionType.WOODBURY: inversion_woodbury,
-        ESMDAInversionType.RESCALED: inversion_rescaled,
-        ESMDAInversionType.SUBSPACE: inversion_subspace,
-        ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
-    }[invertion_type](
+    if inversion_type in _INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION and not isinstance(
+        C_DD_localization, NoLocalization
+    ):
+        warnings.warn(
+            f"C_DD_localization is not supported by inversion_type="
+            f"'{inversion_type}' and will be silently ignored. Use "
+            f"inversion_type='naive', 'cholesky', 'lstsq', or 'rescaled' if "
+            f"C_DD localization is required.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    return _INVERSION_DISPATCH[inversion_type](
         inflation_factor=inflation_factor,
         C_D=cov_obs,
         D=obs_uc,
@@ -249,6 +231,53 @@ def _run_batch_update(
     C_DD_localization: LocalizationStrategy,
     C_MD_localization: LocalizationStrategy,
 ) -> NDArrayFloat:
+    """
+    Compute the updated parameters for a single batch of rows of `m_prior`.
+
+    This is the function dispatched to worker processes (via
+    ``functools.partial``) by ``ESMDABase._local_analyse`` when
+    ``is_parallel_analyse_step`` is True. It is also called directly,
+    sequentially, when running without parallelism. See
+    :py:meth:`pyesmda._base.ESMDABase._local_analyse`.
+
+    Parameters
+    ----------
+    index : int
+        Index of the batch to process, in ``range(n_batches)``.
+    inflation_factor : float
+        Inflation factor :math:`\\alpha` for `cov_obs` at the current
+        assimilation step.
+    batch_size : int
+        Number of parameters (rows of `m_prior`) processed per batch.
+    m_dim : int
+        Total number of parameters (rows of `m_prior`), used to clip the
+        last batch to the correct size.
+    m_prior : NDArrayFloat
+        Full, unsliced ensemble of prior parameters, with dimensions
+        (:math:`N_{m}`, :math:`N_{e}`). Only the rows selected by this
+        batch's slice are updated and returned.
+    inversion_type : ESMDAInversionType
+        Type of inversion. See :py:class:`ESMDAInversionType`.
+    cov_obs : covmats.CovarianceMatrix
+        Full, unsliced covariance matrix of observation errors -- identical
+        across every batch of a given assimilation step.
+    d_obs_uc : NDArrayFloat
+        Matrix of perturbed observations, with dimensions
+        (:math:`N_{\\mathrm{obs}}`, :math:`N_{e}`).
+    d_pred : NDArrayFloat
+        Ensemble of predicted values, with dimensions
+        (:math:`N_{\\mathrm{obs}}`, :math:`N_{e}`).
+    C_DD_localization : LocalizationStrategy
+        Localization strategy for the predictions auto-covariance.
+    C_MD_localization : LocalizationStrategy
+        Localization strategy for the parameters-predictions cross-covariance.
+
+    Returns
+    -------
+    NDArrayFloat
+        Updated parameters for this batch's rows only, with dimensions
+        (batch rows, :math:`N_{e}`).
+    """
     _slice = slice(index * batch_size, min((index + 1) * batch_size, m_dim))
     return m_prior[_slice, :] + (
         inversion(
@@ -300,7 +329,7 @@ def inversion_cholesky(
     batch_slice: slice = slice(None),
     **kwargs,
 ) -> NDArrayFloat:
-    """Computes an exact inversion using `sp.linalg.solve`, which uses a
+    r"""Computes an exact inversion using `sp.linalg.solve`, which uses a
     Cholesky factorization in the case of symmetric, positive definite matrices.
 
     The goal is to compute: C_MD @ inv(C_DD + \alpha * C_D) @ (D - Y)
@@ -352,7 +381,6 @@ def inversion_lstsq(
     C_DD = C_DD_localization.localize(Y, Y)
 
     # A covariance matrix was given
-    # TODO: add method inflated.
     if not isinstance(C_D, covmats.CovViaDiagonal):
         C_DD += inflation_factor * C_D.todense()  # Save memory by mutating
     # A diagonal covariance matrix was given as a vector
@@ -391,8 +419,16 @@ def inversion_woodbury(
     (V + U @ U.T)^-1 = V^-1 - V^-1 @ U @ (1 + U.T @ V^-1 @ U )^-1 @ U.T @ V^-1
 
     to compute inv(C_DD + inflation_factor * C_D).
+
+    Note
+    ----
+    `C_DD_localization` is NOT applied here: C_DD is never materialized as a
+    dense matrix (it stays implicit via the low-rank U @ U.T factors used
+    above), so there is no dense matrix for
+    `LocalizationStrategy.localize()` to mask elementwise. Only
+    `C_MD_localization` is applied. See
+    :py:data:`_INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION`.
     """
-    # TODO: If regularization -> we can try to apply the localization
     # and then to use cholesky afterwards ?
     Y_shift = get_anomaly_matrix(Y)
     rhs = D - Y
@@ -470,26 +506,22 @@ def inversion_rescaled(
     See Appendix A.1 in :cite:t:`emerickHistoryMatchingTimelapse2012`
     for details regarding this approach.
     """
-    C_DD = C_DD_localization.localize_multi_dot(Y, Y)
-
-    # TODO: see if we can get the same with covmats ?
-    # TODO: add an inflate
+    C_DD = C_DD_localization.localize(Y, Y)
 
     # Eqn (59). Form C_tilde
     # C_tilde = C_D.whiten(C_D.whiten(C_DD / inflation_factor))
     # C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
 
     if not isinstance(C_D, covmats.CovViaDiagonal):
-        # TODO change that
-        C_D_U = get_cholesky(C_D)
+        C_D_U = cholesky_upper(C_D)
 
         C_D_U_inv, _ = sp.linalg.lapack.dtrtri(
             C_D_U, lower=0, overwrite_c=0
-        )  # Invert lower triangular using BLAS routine
+        )  # Invert upper triangular using BLAS routine
         C_D_U_inv /= np.sqrt(inflation_factor)
 
         # Eqn (59). Form C_tilde
-        C_tilde = C_D_U_inv @ C_DD @ C_D_U_inv.T
+        C_tilde = C_D_U_inv.T @ C_DD @ C_D_U_inv
         C_tilde.flat[:: C_tilde.shape[0] + 1] += 1.0  # Add to diagonal
 
     # When C_D is a diagonal covariance matrix, there is no need to perform
@@ -517,8 +549,10 @@ def inversion_rescaled(
 
     # Eqn (61). Compute symmetric term once first, then multiply together and
     # finally multiply with (D - Y)
+    # term == L^-T @ U_r == (U.T)^-T @ U_r == C_D_U_inv @ U_r (no transpose
+    # here -- see the comment above on the C_tilde line for the convention).
     term = (
-        C_D_U_inv.T @ U_r
+        C_D_U_inv @ U_r
         if not isinstance(C_D, covmats.CovViaDiagonal)
         else (C_D_U_inv * U_r.T).T
     )
@@ -573,9 +607,12 @@ def inversion_subspace(
            [0., 0., 0.],
            [0., 0., 0.]])
 
+    Note
+    ----
+    `C_DD_localization` is NOT currently applied by this function -- see
+    :py:data:`_INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION`. Only
+    `C_MD_localization` is applied.
     """
-    # TODO: localization
-
     # N_n is the number of observations
     # N_e is the number of members in the ensemble
     N_n, N_e = Y.shape
@@ -637,18 +674,35 @@ def inversion_rescaled_subspace(
     See Appendix A.2 in :cite:t:`emerickHistoryMatchingTimelapse2012`.
 
     Subspace inversion with rescaling.
+
+    Note
+    ----
+    `C_DD_localization` cannot be applied directly by this function -- see
+    :py:data:`_INVERSION_TYPE_FALLBACK_FOR_C_DD_LOCALIZATION`. `C_MD_localization`
+    is always applied directly. If this function is reached via
+    :func:`inversion` with a non-default `C_DD_localization`, that call
+    transparently falls back to `inversion_rescaled` instead. Calling
+    `inversion_rescaled_subspace` directly (bypassing `inversion()`) does
+    not get this fallback and will simply ignore `C_DD_localization`.
     """
     N_n, N_e = Y.shape
     Y_shift = Y - np.mean(Y, axis=1, keepdims=True)  # Subtract average
     if not isinstance(C_D, covmats.CovViaDiagonal):
-        C_D_U = get_cholesky(C_D)
-        # Here C_D_U is C^{1/2} in equation (57)
-        # assert np.allclose(C_D_U @ C_D_U.T, C_D * alpha)
+        C_D_U = cholesky_upper(C_D)
+        # get_cholesky() returns the UPPER factor U from
+        # scipy.linalg.cholesky(A, lower=False), satisfying U.T @ U == C_D
+        # (NOT U @ U.T == C_D). Writing L := U.T gives the usual "lower
+        # Cholesky" whitening factor, L @ L.T == C_D * alpha here (alpha
+        # folded in via the sqrt(inflation_factor) scaling below), so
+        # whitening Y_shift by C_D is L^-1 @ Y_shift
+        #   = (U.T)^-1 @ Y_shift == C_D_U_inv.T @ Y_shift
+        # (since C_D_U_inv := U^-1, so (U.T)^-1 == C_D_U_inv.T). Verified to
+        # machine precision against inversion_naive for non-diagonal C_D.
         C_D_U_inv, _ = sp.linalg.lapack.dtrtri(
             C_D_U * np.sqrt(inflation_factor), lower=0, overwrite_c=0
         )  # Invert upper triangular
 
-        C_D_U_times_Y_shift = C_D_U_inv @ Y_shift
+        C_D_U_times_Y_shift = C_D_U_inv.T @ Y_shift
 
     else:
         # Same as above, but C_D is a vector
@@ -666,7 +720,7 @@ def inversion_rescaled_subspace(
 
     # Eqn (78) - taking into account that C_D_U_inv could be an array
     term = (
-        C_D_U_inv.T @ (U_r / w_r)
+        C_D_U_inv @ (U_r / w_r)
         if not isinstance(C_D, covmats.CovViaDiagonal)
         else ((U_r / w_r).T * C_D_U_inv).T
     )
@@ -678,3 +732,20 @@ def inversion_rescaled_subspace(
     return C_MD_localization.localize_multi_dot(
         X * (N_e - 1), Y, (term * diag), term.T, (D - Y), batch_slice=batch_slice
     )
+
+
+# Dispatch table used by `inversion()`. Defined at the end of the module,
+# after every inversion_* function, purely for readability (so each
+# function can be read top-to-bottom without forward references); this is
+# safe because `inversion()` only looks this name up at call time, once the
+# whole module has already finished loading, regardless of where in the
+# module it's defined.
+_INVERSION_DISPATCH: Dict[ESMDAInversionType, Callable[..., NDArrayFloat]] = {
+    ESMDAInversionType.NAIVE: inversion_naive,
+    ESMDAInversionType.CHOLESKY: inversion_cholesky,
+    ESMDAInversionType.LSTSQ: inversion_lstsq,
+    ESMDAInversionType.WOODBURY: inversion_woodbury,
+    ESMDAInversionType.RESCALED: inversion_rescaled,
+    ESMDAInversionType.SUBSPACE: inversion_subspace,
+    ESMDAInversionType.SUBSPACE_RESCALED: inversion_rescaled_subspace,
+}
