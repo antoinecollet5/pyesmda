@@ -393,13 +393,9 @@ def cov_to_corr(
     """
     if not inplace:
         cov_XY = cov_XY.copy()
-    # Divide each element of cov_XY by the corresponding standard deviations
-
-    cov_XY /= stds_X[:, np.newaxis]
-    cov_XY /= stds_Y[np.newaxis, :]
-
-    # divide by zeros,
-    # TODO: should not append normally -> stds is not supposed to be null
+    with np.errstate(divide="ignore", invalid="ignore"):
+        cov_XY /= stds_X[:, np.newaxis]
+        cov_XY /= stds_Y[np.newaxis, :]
     cov_XY = np.nan_to_num(cov_XY, nan=0.0)
 
     # Perform checks and clip values to [-1, 1]
@@ -673,46 +669,46 @@ class CorrelationBasedLocalization(LocalizationStrategy):
             ),
         )
 
+    def localize_multi_dot(
+        self,
+        X: NDArrayFloat,
+        Y: NDArrayFloat,
+        *args: NDArrayFloat,
+        batch_slice: slice = slice(None),
+    ) -> NDArrayFloat:
+        """
+        Compute the localized matrix and optionally multiply it with additional
+        matrices.
 
-def localize_multi_dot(
-    self,
-    X: NDArrayFloat,
-    Y: NDArrayFloat,
-    *args: NDArrayFloat,
-    batch_slice: slice = slice(None),
-) -> NDArrayFloat:
-    """
-    Compute the localized matrix and optionally multiply it with additional matrices.
+        Generic implementation of :meth:`LocalizationStrategy.localize_multi_dot`,
+        expressed in terms of :meth:`LocalizationStrategy.localize`, suitable
+        for mixing into a :class:`LocalizationStrategy` subclass that does not
+        provide a more efficient, fused implementation (unlike
+        :meth:`FixedLocalization.localize_multi_dot`).
 
-    Generic implementation of :meth:`LocalizationStrategy.localize_multi_dot`,
-    expressed in terms of :meth:`LocalizationStrategy.localize`, suitable
-    for mixing into a :class:`LocalizationStrategy` subclass that does not
-    provide a more efficient, fused implementation (unlike
-    :meth:`FixedLocalization.localize_multi_dot`).
+        Parameters
+        ----------
+        self : LocalizationStrategy
+            The localization strategy instance providing a :meth:`localize` method.
+        X : NDArrayFloat
+            First input array passed to :meth:`~LocalizationStrategy.localize`.
+        Y : NDArrayFloat
+            Second input array passed to :meth:`~LocalizationStrategy.localize`.
+        *args : NDArrayFloat
+            Additional matrices to multiply with the localized matrix. Each array
+            must have compatible dimensions for matrix multiplication.
+        batch_slice : slice, optional
+            Slice selecting the batch to process. Currently unused.
 
-    Parameters
-    ----------
-    self : LocalizationStrategy
-        The localization strategy instance providing a :meth:`localize` method.
-    X : NDArrayFloat
-        First input array passed to :meth:`~LocalizationStrategy.localize`.
-    Y : NDArrayFloat
-        Second input array passed to :meth:`~LocalizationStrategy.localize`.
-    *args : NDArrayFloat
-        Additional matrices to multiply with the localized matrix. Each array
-        must have compatible dimensions for matrix multiplication.
-    batch_slice : slice, optional
-        Slice selecting the batch to process. Currently unused.
-
-    Returns
-    -------
-    NDArrayFloat
-        The localized matrix if no additional matrices are provided.
-        Otherwise, the result of the chained matrix multiplication
-        ``localized @ args[0] @ args[1] @ ...``.
-    """
-    localized = self.localize(X, Y)
-    return np.linalg.multi_dot([localized, *args]) if args else localized
+        Returns
+        -------
+        NDArrayFloat
+            The localized matrix if no additional matrices are provided.
+            Otherwise, the result of the chained matrix multiplication
+            ``localized @ args[0] @ args[1] @ ...``.
+        """
+        localized = self.localize(X, Y, batch_slice=batch_slice)
+        return np.linalg.multi_dot([localized, *args]) if args else localized
 
 
 def _reversed_beta_cumulative(distances: NDArrayFloat, beta: float = 3) -> NDArrayFloat:

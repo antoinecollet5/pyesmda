@@ -205,6 +205,7 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
+                "inversion_type": "rescaled",
                 "C_DD_localization": FixedLocalization(np.zeros((20, 20))),
             },
             does_not_raise(),
@@ -229,9 +230,31 @@ def empty_forward_model(*args, **kwargs) -> None:
                 empty_forward_model,
             ),
             {
+                "inversion_type": "rescaled",
                 "C_DD_localization": FixedLocalization(np.zeros((20, 20))),
             },
             does_not_raise(),
+        ),
+        (
+            (
+                np.zeros(20),
+                np.zeros((10, 8)),
+                covmats.CovViaDiagonal(np.ones(20)),
+                empty_forward_model,
+            ),
+            {
+                "inversion_type": "woodbury",
+                "C_DD_localization": FixedLocalization(np.zeros((20, 20))),
+            },
+            pytest.warns(
+                UserWarning,
+                match=(
+                    r"C_DD_localization is not supported by inversion_type='woodbury' "
+                    "and will be silently ignored. Use inversion_type='naive', "
+                    "'cholesky', 'lstsq', or 'rescaled' if C_DD localization is "
+                    "required."
+                ),
+            ),
         ),
         (
             (
@@ -535,7 +558,7 @@ def test_esmda_exponential_case(
 
 
 @pytest.mark.parametrize(
-    "batch_size, cov_obs_dim, is_parallel_analyse_step, expected_n_batches",
+    "batch_size, cov_obs_dim, is_parallel_analyse_step, expected_n_batches,",
     [
         (1, 1, False, 2),
         (2, 2, False, 1),
@@ -544,7 +567,10 @@ def test_esmda_exponential_case(
     ],
 )
 def test_esmda_exponential_case_batch(
-    batch_size, cov_obs_dim, is_parallel_analyse_step, expected_n_batches
+    batch_size,
+    cov_obs_dim,
+    is_parallel_analyse_step,
+    expected_n_batches,
 ) -> None:
     """Test the ES-MDA on a simple synthetic case with two parameters."""
     seed = 2387
@@ -606,29 +632,40 @@ def test_esmda_exponential_case_batch(
 
     np.testing.assert_almost_equal(sum(1.0 / np.array(cov_obs_inflation_factors)), 1.0)
 
-    solver = ESMDA(
-        obs,
-        m_ensemble,
-        cov_obs,
-        forward_model,
-        forward_model_args=(x,),
-        forward_model_kwargs={},
-        n_assimilations=n_assimilations,
-        inversion_type="woodbury",
-        cov_obs_inflation_factors=cov_obs_inflation_factors,
-        cov_mm_inflation_factor=1.2,
-        C_MD_localization=FixedLocalization(np.ones((m_ensemble.shape[0], obs.size))),
-        C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
-        m_bounds=m_bounds,
-        save_ensembles_history=True,
-        random_state=seed,
-        batch_size=batch_size,
-        is_parallel_analyse_step=is_parallel_analyse_step,
-    )
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"C_DD_localization is not supported by inversion_type='woodbury' and "
+            "will be silently ignored. Use inversion_type='naive', 'cholesky', "
+            "'lstsq', or 'rescaled' if C_DD localization is required."
+        ),
+    ):
+        solver = ESMDA(
+            obs,
+            m_ensemble,
+            cov_obs,
+            forward_model,
+            forward_model_args=(x,),
+            forward_model_kwargs={},
+            n_assimilations=n_assimilations,
+            inversion_type="woodbury",
+            cov_obs_inflation_factors=cov_obs_inflation_factors,
+            cov_mm_inflation_factor=1.2,
+            C_MD_localization=FixedLocalization(
+                np.ones((m_ensemble.shape[0], obs.size))
+            ),
+            C_DD_localization=FixedLocalization(np.ones((obs.size, obs.size))),
+            m_bounds=m_bounds,
+            save_ensembles_history=True,
+            random_state=seed,
+            batch_size=batch_size,
+            is_parallel_analyse_step=is_parallel_analyse_step,
+        )
 
     assert solver.n_batches == expected_n_batches
 
     # Call the ES-MDA solver
+    # with pytest.warns(UserWarning):
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.

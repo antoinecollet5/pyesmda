@@ -18,7 +18,12 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy._lib._util import check_random_state
 
-from pyesmda._inversion import ESMDAInversionType, _run_batch_update, inversion
+from pyesmda._inversion import (
+    ESMDAInversionType,
+    _check_localization_inversion_compatibility,
+    _run_batch_update,
+    inversion,
+)
 from pyesmda._localization import LocalizationStrategy, NoLocalization
 from pyesmda._utils import (
     NDArrayFloat,
@@ -57,8 +62,8 @@ class ESMDABase(ABC):
         "forward_model_kwargs",
         "_n_assimilations",
         "_assimilation_step",
-        "C_DD_localization",
-        "C_MD_localization",
+        "_C_DD_localization",
+        "_C_MD_localization",
         "save_ensembles_history",
         "rng",
         "is_forecast_for_last_assimilation",
@@ -182,30 +187,9 @@ class ESMDABase(ABC):
 
         self._set_n_assimilations(n_assimilations)
         self._assimilation_step: int = 0
-        # check the localization shape correctness
-        C_DD_localization.check_localization_shape(
-            (self.d_dim, self.d_dim), "C_DD_localization"
-        )
-        C_MD_localization.check_localization_shape(
-            (self.m_dim, self.d_dim), "C_MD_localization"
-        )
-        self.C_DD_localization: LocalizationStrategy = C_DD_localization
-        r"""
-        Localization operator :math:`\rho_{DD}` applied to the predictions
-        empirical auto-covariance matrices; Expected dimensions of the operator are
-        (:math:`N_{obs}`, :math:`N_{obs}`); It can be fixed (defined correlation
-        matrix used for all iterations) or adaptive and even user defined;
-        See implementations of :py:class:`pyesmda.LocalizationStrategy`.
-        """
 
-        self.C_MD_localization: LocalizationStrategy = C_MD_localization
-        r"""
-        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
-        empirical corss-covariance matrices; Expected dimensions of the operator are
-        (:math:`N_{m}`, :math:`N_{obs}`); It can be fixed (defined correlation
-        matrix used for all iterations) or adaptive and even user defined;
-        See implementations of :py:class:`pyesmda.LocalizationStrategy`.
-        """
+        self.C_DD_localization = C_DD_localization
+        self.C_MD_localization = C_MD_localization
 
         self.m_bounds = m_bounds
         if seed is not None:
@@ -388,6 +372,52 @@ class ESMDABase(ABC):
         self._inversion_type: ESMDAInversionType = ESMDAInversionType(
             str(inversion_type)
         )
+        _check_localization_inversion_compatibility(
+            self.inversion_type, self.C_DD_localization
+        )
+
+    @property
+    def C_DD_localization(self) -> LocalizationStrategy:
+        r"""
+        Localization operator :math:`\rho_{DD}` applied to the predictions
+        empirical auto-covariance matrices; Expected dimensions of the operator are
+        (:math:`N_{obs}`, :math:`N_{obs}`); It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined;
+        See implementations of :py:class:`pyesmda.LocalizationStrategy`.
+        """
+        if not hasattr(self, "_CDD_localization"):
+            return NoLocalization()
+        return self._C_DD_localization
+
+    @C_DD_localization.setter
+    def C_DD_localization(self, C_DD_localization: LocalizationStrategy) -> None:
+        """Set the inversion type."""
+        C_DD_localization.check_localization_shape(
+            (self.d_dim, self.d_dim), "C_DD_localization"
+        )
+        _check_localization_inversion_compatibility(
+            self.inversion_type, C_DD_localization
+        )
+        self._C_DD_localization: LocalizationStrategy = C_DD_localization
+
+    @property
+    def C_MD_localization(self) -> LocalizationStrategy:
+        r"""
+        Localization operator :math:`\rho_{DD}` applied to the parameters-predictions
+        empirical corss-covariance matrices; Expected dimensions of the operator are
+        (:math:`N_{m}`, :math:`N_{obs}`); It can be fixed (defined correlation
+        matrix used for all iterations) or adaptive and even user defined;
+        See implementations of :py:class:`pyesmda.LocalizationStrategy`.
+        """
+        return self._C_MD_localization
+
+    @C_MD_localization.setter
+    def C_MD_localization(self, C_MD_localization: LocalizationStrategy) -> None:
+        """Set the inversion type."""
+        C_MD_localization.check_localization_shape(
+            (self.m_dim, self.d_dim), "C_MD_localization"
+        )
+        self._C_MD_localization: LocalizationStrategy = C_MD_localization
 
     @property
     def n_batches(self) -> int:

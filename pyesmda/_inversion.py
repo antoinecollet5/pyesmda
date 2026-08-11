@@ -119,6 +119,23 @@ _INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION = frozenset(
 )
 
 
+def _check_localization_inversion_compatibility(
+    inversion_type: ESMDAInversionType,
+    C_DD_localization: LocalizationStrategy = NoLocalization(),
+):
+    if inversion_type in _INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION and not isinstance(
+        C_DD_localization, NoLocalization
+    ):
+        warnings.warn(
+            f"C_DD_localization is not supported by inversion_type="
+            f"'{inversion_type}' and will be silently ignored. Use "
+            f"inversion_type='naive', 'cholesky', 'lstsq', or 'rescaled' if "
+            f"C_DD localization is required.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+
 def inversion(
     inversion_type: ESMDAInversionType,
     inflation_factor: float,
@@ -193,18 +210,7 @@ def inversion(
         If `inversion_type` is not one of the values in
         :py:class:`ESMDAInversionType`.
     """
-    if inversion_type in _INVERSION_TYPES_IGNORING_C_DD_LOCALIZATION and not isinstance(
-        C_DD_localization, NoLocalization
-    ):
-        warnings.warn(
-            f"C_DD_localization is not supported by inversion_type="
-            f"'{inversion_type}' and will be silently ignored. Use "
-            f"inversion_type='naive', 'cholesky', 'lstsq', or 'rescaled' if "
-            f"C_DD localization is required.",
-            UserWarning,
-            stacklevel=2,
-        )
-
+    _check_localization_inversion_compatibility(inversion_type, C_DD_localization)
     return _INVERSION_DISPATCH[inversion_type](
         inflation_factor=inflation_factor,
         C_D=cov_obs,
