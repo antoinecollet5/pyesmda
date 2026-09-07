@@ -909,7 +909,7 @@ See all use cases in the tutorials section of the `documentation <https://pyesmd
 
 This project is released under the **BSD 3-Clause License**.
 
-Copyright (c) 2023-2026, Antoine COLLET. All rights reserved.
+Copyright (c) 2021-2026, Antoine COLLET. All rights reserved.
 
 For more details, see the `LICENSE <https://github.com/antoinecollet5/pyesmda/blob/master/LICENSE>`_ file included in this repository.
 
