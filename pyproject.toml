@@ -78,7 +78,7 @@ tests = [
     "coverage",
 ]
 examples = ["matplotlib", "Ipykernel", "Ipython", "nested_grid_plotter"]
-lint = ["pre-commit", "pre-commit-hooks", "codespell>=2.1.0", "ruff", "ty"]
+lint = ["pre-commit", "pre-commit-hooks", "codespell>=2.1.0", "ruff", "ty==0.0.78"]
 install = ["pip", "wheel"]
 
 [tool.ruff]

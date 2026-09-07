@@ -343,7 +343,7 @@ Compared to :eq:`eq_analysis_enkf`, empirical covariance matrices must be comput
   \end{aligned}
   `
 
-In this form, there is no inconsistency between states and parameters. ES is also efficient because like PCGA, it avoids an explicit computation and inversion of large covariance matrices (:math:`\mathbf{C}_{\mathrm{prior}}`). It is also easy to implement with any simulator as it becomes a real black-box (this is
+In this form, there is no inconsistency between states and parameters. ES is also efficient because it avoids an explicit computation and inversion of large covariance matrices (:math:`\mathbf{C}_{\mathrm{prior}}`). It is also easy to implement with any simulator as it becomes a real black-box (this is
 not the case with EnKF) and it offers substantial reduction in computational cost compared to EnKF :cite:p:`skjervheimEnsembleSmootherAssisted2011` with a complete parallelization for equivalent results. In addition the \emph{a posteriori} uncertainty in both parameters and predictions can be characterized using the assimilated ensemble
 
 .. math::
