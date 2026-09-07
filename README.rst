@@ -20,13 +20,13 @@ most used iterative form of the ensemble smoother in geoscience applications.
 🚀 Quick start
 ===============
 
-To install `pyesmda`, the easiest way is through `pip`:
+To install ``pyesmda``, the easiest way is through ``pip``:
 
 .. code-block::
 
     pip install pyesmda[examples]
 
-Or alternatively using `conda`
+Or alternatively using ``conda``
 
 .. code-block::
 
@@ -38,7 +38,7 @@ You might also clone the repository and install from source
 
     pip install -e .[examples]
 
-Once the installation is done, the `ESMDA` interface is ready to use. Let's illustrate
+Once the installation is done, the ``ESMDA`` interface is ready to use. Let's illustrate
 how to use the lib with is a simple example where amplitude and change factor parameters
 of n exponential function are estimated:
 
@@ -320,12 +320,13 @@ Which yields:
     INFO:ESMDA-DMC:a = 9.78691 +/- 1.3310E-01
     INFO:ESMDA-DMC:b = -0.00191 +/-  6.493808E-05
 
+See all use cases in the tutorials section of the `documentation <https://pyesmda.readthedocs.io/en/latest/usage.html>`_.
 
 ================
 2D example
 ================
 
-To illustrate more of `pyesmda`, let's use a toy 2D example. The forward is simple static smoohting (non linear but with no time dependance) and is used both to produce a reference field from which observations will be sampled and the inversion.
+To illustrate more of ``pyesmda``, let's use a toy 2D example. The forward is simple static smoohting (non linear but with no time dependance) and is used both to produce a reference field from which observations will be sampled and the inversion.
 
 Import the required modules
 
@@ -358,7 +359,7 @@ Create some **logging.Logger** instances to illustrate how to use them in a comp
     main_logger.info("This is the main logger")
     esmda_logger.info("This is the ESMDA logger")
 
-Let's use an example provided by **covmats**. Here, the prior covariance matrix, :math:`\mathbf{C}_{\mathrm{prior}}` is represented as a sparse factorization of its inverse :math:`\mathbf{C}_{\mathrm{prior}}^{-1}` with :math:`\mathbf{LDL}^{\mathrm{T}} = \mathbf{PC}_{\mathrm{prior}}^{-1}\mathbf{P}^{\mathrm{T}}`. This is wrapped in the **:py:class:`**covmats.CovViaSparsePrecisionCholesky** instance we create:
+Let's use an example provided by ``covmats``. Here, the prior covariance matrix, $\mathbf{C}_{\mathrm{prior}}$ is represented as a sparse factorization of its inverse $\mathbf{C}_{\mathrm{prior}}^{-1}$ with $\mathbf{LDL}^{\mathrm{T}} = \mathbf{PC}_{\mathrm{prior}}^{-1}\mathbf{P}^{\mathrm{T}}$. This is wrapped in the ``covmats``.CovViaSparsePrecisionCholesky` instance we create:
 
 .. code-block:: python
 
@@ -402,7 +403,7 @@ The covariance matrix has shape (4225, 4225) , let's define a square domain (65,
    :width: 90%
    :align: center
 
-The forward is simple static smoohting (non linear but with no time dependance) and is used both to produce a reference field from which observations will be sampled and the inversion. Here, `forward_multiple` is just the generalization to an ensemble of vectors, i.e., in ESMDA, most forward calls for an iteration can be performed in parallel. But it is the responsibility of the user to decide and implement the sequential forward computation (a simple for loop as here) or the parallelized computation (with mpi, multiprocessing, joblib or whatever tool that suits best).
+The forward is simple static smoohting (non linear but with no time dependance) and is used both to produce a reference field from which observations will be sampled and the inversion. Here, ``forward_multiple`` is just the generalization to an ensemble of vectors, i.e., in ESMDA, most forward calls for an iteration can be performed in parallel. But it is the responsibility of the user to decide and implement the sequential forward computation (a simple for loop as here) or the parallelized computation (with mpi, multiprocessing, joblib or whatever tool that suits best).
 
 .. code-block:: python
 
@@ -534,7 +535,7 @@ Perturb the observations to avoid the inverse crime (using the same forward to g
    :width: 50%
    :align: center
 
-The next step is to "factorize" the parameters covariance matrix using an ensemble. For this, we rely on `covmats`. The number of members is set to 200.
+The next step is to "factorize" the parameters covariance matrix using an ensemble. For this, we rely on ``covmats``. The number of members is set to 200.
 
 .. code-block:: python
 
@@ -785,9 +786,109 @@ It is possible to find the variance back from the ensemble (or a sub ensemble). 
    :width: 100%
    :align: center
 
+=============================
+🛠️ Failure Handling in ESMDA
+=============================
 
-See all use cases in the tutorials section of the `documentation <https://pyesmda.readthedocs.io/en/latest/usage.html>`_.
+``ESMDA`` was initially developed in the context of porosity and permeability inversion for reservoir exploitation in oil and gas (ERT, Black-oil Model, reactive transport, ...). It is frequent that some simulations do not converge due to non-convergence issues. This is why ``pyesmda`` is equipped with a mechanism allowing to accept some losses during computation.
 
+Setting the Maximum Failure Fraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When initializing the ESMDA solver, specify the ``max_failure_fraction`` parameter:
+
+.. code-block:: python
+
+    solver = ESMDABase(
+        obs=observations,
+        m_init=initial_parameters,
+        cov_obs=observation_covariance,
+        forward_model=your_forward_model,
+        max_failure_fraction=0.1,  # Allow up to 10% of ensemble members to fail
+        ...
+    )
+
+Parameter values:
+
+  - ``max_failure_fraction`` = 0.0 (default): No failures tolerated — any failed member raises an exception immediately (strict behavior)
+  - ``max_failure_fraction`` = 0.1: Allow up to 10% of the initial ensemble to fail
+  - ``max_failure_fraction`` = 0.5: Allow up to 50% of the initial ensemble to fail
+
+What Constitutes a "Failed" Member
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A member is considered failed if its prediction vector contains at least one NaN value. This typically occurs when:
+
+- The forward model (reservoir simulation) did not converge
+- Physical constraints were violated
+- Numerical instabilities occurred
+
+Monitoring Failed Members
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After running the solver, you can check the failure status:
+
+.. code-block:: python
+
+    # Number of excluded members
+    n_failed = solver.n_excluded_members
+
+    # Indices of failed members (in the original ensemble)
+    failed_indices = solver.excluded_member_indices
+
+    # Current failure fraction
+    current_fraction = solver.failure_fraction
+
+    # Indices of still-active members
+    active_indices = solver.active_member_indices
+
+Automatic Exclusion Behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a member fails:
+
+- It is automatically removed from both m_prior (parameters) and d_pred (predictions)
+- The failed member's original index is recorded in _excluded_member_indices
+- The active members continue the assimilation process
+- If the cumulative failure fraction exceeds max_failure_fraction, an exception is raised and the solver stops
+
+Key Properties
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    solver.active_member_indices      # Returns indices of non-failed members
+    solver.excluded_member_indices    # Returns indices of failed members
+    solver.n_excluded_members         # Returns count of failed members
+    solver.failure_fraction           # Returns fraction of failed members
+    solver.max_failure_fraction       # The tolerance threshold
+
+Example Usage
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    # Initialize with 20% failure tolerance
+    solver = ESMDABase(
+        obs=obs,
+        m_init=m_init,
+        cov_obs=cov_obs,
+        forward_model=forward_model,
+        max_failure_fraction=0.2,  # Allow up to 20% to fail
+        n_assimilations=4,
+        ...
+    )
+
+    # Run the solver
+    solver.solve()
+
+    # Check results
+    print(f"Initial ensemble size: {solver._initial_n_ensemble}")
+    print(f"Failed members: {solver.n_excluded_members}")
+    print(f"Failure fraction: {solver.failure_fraction:.1%}")
+    print(f"Active members: {len(solver.active_member_indices)}")
+
+This mechanism is essential for practical reservoir simulation applications where convergence failures are common and should not halt the entire inversion process.
 
 
 ===================
@@ -796,7 +897,7 @@ See all use cases in the tutorials section of the `documentation <https://pyesmd
 
 Here are some of the cool features that this implementation provides (to the best of our knowledge in 2025).
 
-🏗️ Complete example with supporting paper coming Q1 2026.
+🏗️ Complete example with supporting paper coming Q1 2027.
 
 - TODO:link to correlation matrices building
 - TODO:link to example with localization
