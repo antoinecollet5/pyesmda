@@ -2,16 +2,18 @@
 Changelog
 ==============
 
-1.0.0 (TODO)
+1.0.0 (07/09/2026)
 ------------------
 
-TODO.
-* Inversion algorithm
-* Use of logging
-* Improved example
-* Support for localization
-* Use of covmats lib
-* Improved documentation
+* ENH: Implement exact and subspace inversion algorithms to improve computational efficiency during the analysis step. Provides users with choice between exact matrix inversion and faster subspace-based approaches for large-scale problems.
+* ENH: Add comprehensive structured logging support via Python logging module. Enables debug, info, and warning level logging throughout assimilation runs with configurable handlers and formatters.
+* ENH: Implement ensemble-based covariance localization techniques including distance-based correlation tapering. Improves filter stability and reduces spurious long-range correlations in high-dimensional problems.
+* ENH: Integrate covmats library for optimized covariance matrix operations. Provides specialized handling of large covariance matrices with reduced memory footprint and improved numerical stability.
+* DOC: Add comprehensive tutorials and examples covering basic usage, advanced features, and real-world applications. Includes Jupyter notebooks demonstrating various ESMDA configurations and best practices.
+* DOC: Improve API documentation with complete parameter descriptions, return value specifications, and usage examples for all public classes and functions.
+* FIX: Improve numerical stability of covariance matrix operations and add safeguards against singular matrices.
+* STYLE: Enforce consistent code formatting and type hints across the entire codebase using black and mypy.
+* **MAJOR**: This release represents the transition to a stable v1.0.0 API. The API is now considered stable and backward compatibility will be maintained for future 1.x releases.
 
 0.4.3 (2023-08-03)
 ------------------
