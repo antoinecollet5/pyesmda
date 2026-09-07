@@ -229,9 +229,9 @@ class ESMDA_DMC(ESMDABase):
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA-RS algorithm."""
         if self.save_ensembles_history:
-            self.m_history.append(self.m_prior)  # save m_init
+            self.m_history.append(self.m_posterior)  # save m_init
 
-        m_pred = self.m_prior
+        m_pred = self.m_posterior
         while not is_unity_reached(self.cov_obs_inflation_factors):
             self._assimilation_step += 1
             self.loginfo(f"Assimilation # {self._assimilation_step}")
@@ -272,7 +272,7 @@ class ESMDA_DMC(ESMDABase):
                 )
 
             # Update the prior parameter for next iteration
-            self.m_prior = m_pred
+            self.m_posterior = m_pred
             # Saving the parameters history
             if self.save_ensembles_history:
                 self.m_history.append(m_pred)

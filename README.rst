@@ -170,7 +170,7 @@ The optimal solution (a, b) can be found following:
         m_bounds=m_bounds,
         save_ensembles_history=True,
         inversion_type=ESMDAInversionType.CHOLESKY,
-        seed=seed,
+        random_state=seed,
         truncation=0.99,
         logger=logging.getLogger("ESMDA"),
     )
@@ -178,10 +178,10 @@ The optimal solution (a, b) can be found following:
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
-    assert np.isclose(np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2).all()
+    assert np.isclose(np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=5e-2).all()
 
     # Get the approximated parameters
-    a_approx, b_approx = np.average(solver.m_prior, axis=1)
+    a_approx, b_approx = np.average(solver.m_posterior, axis=1)
 
     # Get the uncertainty on the parameters
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
@@ -238,10 +238,10 @@ variant [4] through `ESMDA_DMC`:
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
-    assert np.isclose(np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=1e-1).all()
+    assert np.isclose(np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=1e-1).all()
 
     # Get the approximated parameters
-    a_approx, b_approx = np.average(solver.m_prior, axis=1)
+    a_approx, b_approx = np.average(solver.m_posterior, axis=1)
 
     # Get the uncertainty on the parameters
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
@@ -293,10 +293,10 @@ And here is how to use `ESMDA_DMC`:
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
-    assert np.isclose(np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2).all()
+    assert np.isclose(np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=5e-2).all()
 
     # Get the approximated parameters
-    a_approx, b_approx = np.average(solver.m_prior, axis=1)
+    a_approx, b_approx = np.average(solver.m_posterior, axis=1)
 
     # Get the uncertainty on the parameters
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
@@ -589,7 +589,7 @@ The solver produces the a posterori ensemble which we can compute the mean => Pl
         plotter.axes,
         data={
             "Reference": s_ref.T,
-            "Mean Post inv": solver.m_prior.mean(-1).reshape(nx, ny, order="F").T,
+            "Mean Post inv": solver.m_posterior.mean(-1).reshape(nx, ny, order="F").T,
         },
         fig=plotter.fig,
         imshow_kwargs=dict(
@@ -611,7 +611,7 @@ This posterior ensemble also allows obtaining a low-rank approximation of the po
 
 .. code-block:: python
 
-    post_cov_ens = covmats.CovViaEnsemble(solver.m_prior.T)
+    post_cov_ens = covmats.CovViaEnsemble(solver.m_posterior.T)
     post_cov_dense = post_cov_ens.todense()
     post_cov_50_pc = covmats.eigen_factorize_cov_mat(post_cov_ens, n_pc=50)
     post_cov_100_pc = covmats.eigen_factorize_cov_mat(post_cov_ens, n_pc=100)
@@ -675,7 +675,7 @@ With ESMDA, the final (posterior) ensemble already allows estimating the estimat
     ngp.multi_imshow(
         plotter.axes,
         data={
-            f"r#{i}": solver.m_prior[:, i].reshape(nx, ny, order="F").T
+            f"r#{i}": solver.m_posterior[:, i].reshape(nx, ny, order="F").T
             for i in range(nrows * ncols)
         },
         fig=plotter.fig,
@@ -699,7 +699,7 @@ But it should be noted that the interest of having the posterior covariance matr
 
     # make 200 posterior realizations => we sample from post_cov_ens
     post_samples_200 = (
-        solver.m_prior.mean(-1).T
+        solver.m_posterior.mean(-1).T
         + post_cov_ens.sample_mvnormal(shape=(200,), random_state=solver.rng)
     ).T
     post_samples_200.shape
@@ -847,7 +847,7 @@ Automatic Exclusion Behavior
 
 When a member fails:
 
-- It is automatically removed from both m_prior (parameters) and d_pred (predictions)
+- It is automatically removed from both m_posterior (parameters) and d_pred (predictions)
 - The failed member's original index is recorded in _excluded_member_indices
 - The active members continue the assimilation process
 - If the cumulative failure fraction exceeds max_failure_fraction, an exception is raised and the solver stops
@@ -889,7 +889,6 @@ Example Usage
     print(f"Active members: {len(solver.active_member_indices)}")
 
 This mechanism is essential for practical reservoir simulation applications where convergence failures are common and should not halt the entire inversion process.
-
 
 ===================
 🛠️ Localization

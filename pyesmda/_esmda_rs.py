@@ -203,7 +203,7 @@ class ESMDA_RS(ESMDABase):
             self.std_m_prior: npt.NDArray[np.float64] = std_m_prior
         else:
             # otherwise, it is inffered from the inflated ensemble
-            self.std_m_prior = np.std(self.m_prior, axis=1, ddof=1)
+            self.std_m_prior = np.std(self.m_posterior, axis=1, ddof=1)
 
     @property
     def n_assimilations(self) -> int:
@@ -236,10 +236,10 @@ class ESMDA_RS(ESMDABase):
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA-RS algorithm."""
         if self.save_ensembles_history:
-            self.m_history.append(self.m_prior)  # save m_init
+            self.m_history.append(self.m_posterior)  # save m_init
 
         current_inflation_factor: float = 10.0  # to initiate the while
-        m_pred = self.m_prior
+        m_pred = self.m_posterior
         while not self._is_unity_reached(current_inflation_factor):
             self._assimilation_step += 1
             self.loginfo(f"Assimilation # {self._assimilation_step}")
@@ -275,7 +275,7 @@ class ESMDA_RS(ESMDABase):
             self.loginfo(f"- Inflation factor = {current_inflation_factor:.3f}")
 
             # Update the prior parameter for next iteration
-            self.m_prior = m_pred
+            self.m_posterior = m_pred
             # Saving the parameters history
             if self.save_ensembles_history:
                 self.m_history.append(m_pred)
@@ -329,4 +329,4 @@ class ESMDA_RS(ESMDABase):
         def is_lower(residuals: NDArrayFloat) -> bool:
             return bool(np.all(residuals < 2 * self.std_m_prior))
 
-        return bool(np.all(list(map(is_lower, np.abs(m_pred - self.m_prior).T))))
+        return bool(np.all(list(map(is_lower, np.abs(m_pred - self.m_posterior).T))))

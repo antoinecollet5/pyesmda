@@ -7,6 +7,7 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 @author: acollet
 """
 
+import re
 from contextlib import contextmanager
 
 import covmats
@@ -389,6 +390,23 @@ def test_constructor(args, kwargs, expected_exception) -> None:
             assert _sum == 1.0
 
 
+def test_seed_deprecation() -> None:
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            r"The keyword `seed` is now replaced by `random_state` "
+            r"and has been dropped since version 0.4.3."
+        ),
+    ):
+        ESMDA(
+            obs=np.zeros(20),
+            m_init=np.zeros((10, 8)),
+            cov_obs=covmats.CovViaDiagonal(np.ones(20)),
+            forward_model=empty_forward_model,  # ty: ignore[invalid-argument-type]
+            seed=12,
+        )
+
+
 def exponential(p, x) -> NDArrayFloat:
     """
     Simple exponential function with an amplitude and change factor.
@@ -434,6 +452,87 @@ def forward_model(m_ensemble, x):
     for j in range(m_ensemble.shape[1]):
         # Calling the forward model for each member of the ensemble
         d_pred[:, j] = exponential(m_ensemble[:, j], x)
+    return d_pred
+
+
+def forward_model_with_failure(m_ensemble, x):
+    """
+    Wrap the non-linear observation model (forward model) with 5% failure for the
+    first call only.
+
+    Function calling the non-linear observation model (forward model).
+    for all ensemble members and returning the predicted data for
+    each ensemble member.
+
+    Parameters
+    ----------
+    m_ensemble : np.array
+        Initial ensemble of N_{e} parameters vector..
+    x : np.array
+        Independent variable (e.g. time).
+
+    Returns
+    -------
+    d_pred: np.array
+        Predicted data for each ensemble member.
+    """
+    d_pred = forward_model(m_ensemble, x)
+
+    if m_ensemble.shape[1] == 100:
+        failure_step = int(np.ceil(m_ensemble.shape[1] / (m_ensemble.shape[1] * 0.05)))
+        d_pred[:, ::failure_step] = np.nan
+    return d_pred
+
+
+def forward_model_with_failure2(m_ensemble, x):
+    """
+    Wrap the non-linear observation model (forward model) with 1 failure
+
+    Function calling the non-linear observation model (forward model).
+    for all ensemble members and returning the predicted data for
+    each ensemble member.
+
+    Parameters
+    ----------
+    m_ensemble : np.array
+        Initial ensemble of N_{e} parameters vector..
+    x : np.array
+        Independent variable (e.g. time).
+
+    Returns
+    -------
+    d_pred: np.array
+        Predicted data for each ensemble member.
+    """
+    # Initiate an array of predicted results.
+    d_pred = forward_model(m_ensemble, x)
+    d_pred[:, 0] = np.nan
+    return d_pred
+
+
+def forward_model_with_failure3(m_ensemble, x):
+    """
+    Wrap the non-linear observation model (forward model) with 48 failures
+
+    Function calling the non-linear observation model (forward model).
+    for all ensemble members and returning the predicted data for
+    each ensemble member.
+
+    Parameters
+    ----------
+    m_ensemble : np.array
+        Initial ensemble of N_{e} parameters vector..
+    x : np.array
+        Independent variable (e.g. time).
+
+    Returns
+    -------
+    d_pred: np.array
+        Predicted data for each ensemble member.
+    """
+    # Initiate an array of predicted results.
+    d_pred = forward_model(m_ensemble, x)
+    d_pred[:, :49] = np.nan
     return d_pred
 
 
@@ -540,9 +639,12 @@ def test_esmda_exponential_case(
     # Call the ES-MDA solver
     solver.solve()
 
+    # Access propertues
+    solver.C_DD_localization, solver.C_MD_localization
+
     # Assert that the parameters are found with a 10% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=5e-2
     ).all()
 
     # Get the uncertainty on the parameters
@@ -664,17 +766,23 @@ def test_esmda_exponential_case_batch(
 
     assert solver.n_batches == expected_n_batches
 
+    assert solver.C_DD_localization is not None
+    assert solver.C_MD_localization is not None
+
+    # Test setter => check compatibility with solver.CDD_localization
+    solver.inversion_type = ESMDAInversionType.WOODBURY
+
     # Call the ES-MDA solver
     # with pytest.warns(UserWarning):
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=5e-2
     ).all()
 
     # Get the approximated parameters
-    a_approx, b_approx = np.average(solver.m_prior, axis=1)
+    a_approx, b_approx = np.average(solver.m_posterior, axis=1)
 
     # Get the uncertainty on the parameters
     a_std, b_std = np.sqrt(np.diagonal(solver.cov_mm))
@@ -684,7 +792,7 @@ def test_esmda_exponential_case_batch(
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=1e-1
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=1e-1
     ).all()
 
     # Get the uncertainty on the parameters
@@ -698,3 +806,170 @@ def test_esmda_exponential_case_batch(
     np.testing.assert_almost_equal(
         np.sum(1 / np.array(solver.cov_obs_inflation_factors)), 1.0
     )
+
+
+def test_ensemble_failure():
+    """Test the ES-MDA on a simple synthetic case with two parameters."""
+    seed = 2387
+    rng = np.random.default_rng(seed=seed)
+
+    a = 10.0
+    b = -0.0020
+
+    # timesteps
+    x = np.arange(500)
+    obs = exponential((a, b), x) + rng.normal(0.0, 1.0, 500)
+    # Initiate an ensemble of (a, b) parameters
+    n_ensemble = 100  # size of the ensemble
+    # Uniform law for the parameter a ensemble
+    ma = rng.uniform(low=-10.0, high=50.0, size=n_ensemble)
+    # Uniform law for the parameter b ensemble
+    mb = rng.uniform(low=-0.001, high=0.01, size=n_ensemble)
+    # Prior ensemble
+    m_ensemble = np.stack((ma, mb), axis=0)
+
+    cov_obs = covmats.CovViaCholesky(
+        sp.linalg.cholesky(
+            np.diag(
+                np.ones(
+                    obs.size,
+                )
+            ),
+            lower=True,
+        )
+    )
+
+    # Bounds on parameters (size m * 2)
+    m_bounds = np.array([[0.0, 50.0], [-1.0, 1.0]])
+
+    # Number of assimilations
+    n_assimilations = 3
+
+    # Use a geometric suite (see procedure un evensen 2018) to compte alphas.
+    # Also explained in Torrado 2021 (see her PhD manuscript.)
+    cov_obs_inflation_geo = 1.2
+    cov_obs_inflation_factors: list[float] = [1.1]
+    for step in range(1, n_assimilations):
+        cov_obs_inflation_factors.append(
+            cov_obs_inflation_factors[step - 1] / cov_obs_inflation_geo
+        )
+    scaling_factor: float = np.sum(1 / np.array(cov_obs_inflation_factors))
+    cov_obs_inflation_factors = [
+        alpha * scaling_factor for alpha in cov_obs_inflation_factors
+    ]
+
+    solver = ESMDA(
+        obs,
+        m_ensemble,
+        cov_obs,
+        forward_model_with_failure,
+        forward_model_args=(x,),
+        forward_model_kwargs={},
+        n_assimilations=n_assimilations,
+        m_bounds=m_bounds,
+        save_ensembles_history=True,
+        inversion_type=ESMDAInversionType.CHOLESKY,
+        random_state=seed,
+        truncation=0.99,
+    )
+
+    # Call the ES-MDA solver
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            r"Something went wrong with the initial ensemble predictions "
+            r" -> NaN values are found in predictions for members [0, 20, 40, 60, 80] !"
+        ),
+    ):
+        solver.solve()
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"max_failure_fraction should be in [0, 1[! Got {-0.1}."),
+    ):
+        solver.max_failure_fraction = -0.1
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"max_failure_fraction should be in [0, 1[! Got {1.01}."),
+    ):
+        solver.max_failure_fraction = 1.01
+
+    # Increase the threshold for failure
+    solver.max_failure_fraction = 0.05
+
+    # Solve again => no error this time
+    solver.solve()
+
+    # Assert that the parameters are found with a 5% accuracy.
+    np.testing.assert_allclose(
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=1e-1, atol=1e-2
+    )
+
+    assert solver.m_prior.shape == (2, 100)
+    assert solver.m_posterior.shape == (2, 95)
+
+    # Assertfailed members
+    assert solver.n_excluded_members == 5
+    assert solver.excluded_member_indices == [0, 20, 40, 60, 80]
+    assert solver.failure_fraction == 0.05
+    np.testing.assert_equal(
+        solver.active_member_indices,
+        [k for k in range(100) if k not in solver.excluded_member_indices],
+    )
+
+    # Cumulative max failure
+    solver = ESMDA(
+        obs,
+        m_ensemble,
+        cov_obs,
+        forward_model_with_failure2,
+        forward_model_args=(x,),
+        forward_model_kwargs={},
+        n_assimilations=n_assimilations,
+        m_bounds=m_bounds,
+        save_ensembles_history=True,
+        inversion_type=ESMDAInversionType.CHOLESKY,
+        random_state=seed,
+        truncation=0.99,
+        max_failure_fraction=0.02,
+    )
+
+    # Call the ES-MDA solver
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            r"Something went wrong after assimilation step 2 -> "
+            "NaN values are found in predictions for members [2] ! This brings the "
+            "cumulative failure fraction"
+            " to 3.00%, which exceeds the allowed max_failure_fraction of 2.00%."
+        ),
+    ):
+        solver.solve()
+
+    # Less than 2 members in the ensemble
+    solver = ESMDA(
+        obs,
+        m_ensemble[:, :99],
+        cov_obs,
+        forward_model_with_failure3,
+        forward_model_args=(x,),
+        forward_model_kwargs={},
+        n_assimilations=n_assimilations,
+        m_bounds=m_bounds,
+        save_ensembles_history=True,
+        inversion_type=ESMDAInversionType.CHOLESKY,
+        random_state=seed,
+        truncation=0.99,
+        max_failure_fraction=0.99,
+    )
+
+    # Call the ES-MDA solver
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            r"Too many ensemble members have failed: fewer than 2 members remain, "
+            "which is not enough to estimate covariances and continue the assimilation."
+        ),
+    ):
+        solver.solve()

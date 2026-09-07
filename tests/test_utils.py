@@ -240,7 +240,7 @@ def test_inflate_ensemble_around_its_mean_random() -> None:
             ).T,
             0,
             pytest.raises(
-                Exception,
+                RuntimeError,
                 match=(
                     r"Something went wrong with the initial ensemble predictions  "
                     r"-> NaN values are found in predictions for members \[0, 2\] !"
@@ -251,7 +251,7 @@ def test_inflate_ensemble_around_its_mean_random() -> None:
             np.array([[0.2, 0.2, 0.2, np.nan]]).T,
             0,
             pytest.raises(
-                Exception,
+                RuntimeError,
                 match=(
                     r"Something went wrong with the initial ensemble predictions  "
                     r"-> NaN values are found in predictions for members \[0\] !"
@@ -264,7 +264,7 @@ def test_inflate_ensemble_around_its_mean_random() -> None:
             ).T,
             2,
             pytest.raises(
-                Exception,
+                RuntimeError,
                 match=(
                     r"Something went wrong  after assimilation step 2 -> "
                     r"NaN values are found in predictions for members \[0, 2\] !"

@@ -8,7 +8,6 @@ Implement a base class for the ES-MDA algorithms and variants.
 """
 
 import logging
-import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
@@ -34,6 +33,8 @@ from pyesmda._utils import (
     inflate_ensemble_around_its_mean,
 )
 
+DEFAULT_INVERSION_TYPE = ESMDAInversionType.SUBSPACE_RESCALED
+
 
 class ESMDABase(ABC):
     r"""
@@ -52,6 +53,7 @@ class ESMDABase(ABC):
         "d_pred",
         "d_history",
         "m_prior",
+        "m_posterior",
         "_m_bounds",
         "m_history",
         "_inversion_type",
@@ -86,9 +88,7 @@ class ESMDABase(ABC):
         forward_model_args: Sequence[Any] = (),
         forward_model_kwargs: Optional[Dict[str, Any]] = None,
         n_assimilations: int = 4,
-        inversion_type: Union[
-            ESMDAInversionType, str
-        ] = ESMDAInversionType.SUBSPACE_RESCALED,
+        inversion_type: Union[ESMDAInversionType, str] = DEFAULT_INVERSION_TYPE,
         cov_mm_inflation_factor: float = 1.0,
         C_DD_localization: LocalizationStrategy = NoLocalization(),
         C_MD_localization: LocalizationStrategy = NoLocalization(),
@@ -112,6 +112,12 @@ class ESMDABase(ABC):
         r"""Obsevrations vector with dimensions (:math:`N_{\mathrm{obs}}`)."""
 
         self.m_prior: NDArrayFloat = m_init
+        r"""
+        Vectors of parameter values (one vector for each ensemble member) used in the
+        first assimilation step; Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
+        """
+
+        self.m_posterior: NDArrayFloat = m_init
         r"""
         Vectors of parameter values (one vector for each ensemble member) used in the
         last assimilation step; Dimensions are (:math:`N_{m}`, :math:`N_{e}`).
@@ -141,7 +147,7 @@ class ESMDABase(ABC):
         """
 
         self.m_history: list[NDArrayFloat] = []
-        """List of successive :py:attr:`m_prior`."""
+        """List of successive :py:attr:`m_posterior`."""
 
         self.d_history: list[NDArrayFloat] = []
         """List of vectors of predicted values obtained at each assimilation step."""
@@ -174,8 +180,6 @@ class ESMDABase(ABC):
         self.forward_model_args: Sequence[Any] = forward_model_args
         """Additional args for the callable forward_model."""
 
-        self.inversion_type = inversion_type
-
         if forward_model_kwargs is None:
             forward_model_kwargs = {}
         self.forward_model_kwargs: Dict[str, Any] = forward_model_kwargs
@@ -188,17 +192,19 @@ class ESMDABase(ABC):
         self._set_n_assimilations(n_assimilations)
         self._assimilation_step: int = 0
 
+        self.inversion_type = inversion_type
+
         self.C_DD_localization = C_DD_localization
         self.C_MD_localization = C_MD_localization
 
         self.m_bounds = m_bounds
+
         if seed is not None:
-            warnings.warn(
-                DeprecationWarning(
-                    "The keyword `seed` is now replaced by `random_state` "
-                    "and has been dropped since version 0.4.3."
-                )
+            raise ValueError(
+                "The keyword `seed` is now replaced by `random_state` "
+                "and has been dropped since version 0.4.3."
             )
+
         self.rng: np.random.RandomState = check_random_state(random_state)
         """The random number generator used in the predictions perturbation step."""
 
@@ -234,7 +240,7 @@ class ESMDABase(ABC):
 
         # Inflate the initial ensemble respecting the given bounds
         if cov_mm_inflation_factor != 1.0:
-            self.m_prior = self._apply_bounds(
+            self.m_posterior = self._apply_bounds(
                 inflate_ensemble_around_its_mean(
                     m_init, inflation_factor=cov_mm_inflation_factor
                 )
@@ -263,13 +269,13 @@ class ESMDABase(ABC):
 
     @property
     def n_ensemble(self) -> int:
-        """Return the number of ensemble members."""
-        return self.m_prior.shape[1]
+        """Return the number of ensemble members (in the posterior ensemble)."""
+        return self.m_posterior.shape[1]
 
     @property
     def m_dim(self) -> int:
         """Return the length of the parameters vector."""
-        return self.m_prior.shape[0]
+        return self.m_posterior.shape[0]
 
     @property
     def d_dim(self) -> int:
@@ -314,7 +320,7 @@ class ESMDABase(ABC):
                 \bm{A} = \bm{X}\left(\bm{I_{N_{e}}} - \dfrac{1}{N_{e}} \bm{11}^{T}
                 \right) / \sqrt{N_{e}-1}.
         """
-        return get_anomaly_matrix(self.m_prior)
+        return get_anomaly_matrix(self.m_posterior)
 
     @property
     def cov_mm(self) -> NDArrayFloat:
@@ -372,9 +378,10 @@ class ESMDABase(ABC):
         self._inversion_type: ESMDAInversionType = ESMDAInversionType(
             str(inversion_type)
         )
-        _check_localization_inversion_compatibility(
-            self.inversion_type, self.C_DD_localization
-        )
+        if hasattr(self, "_CDD_localization"):
+            _check_localization_inversion_compatibility(
+                self.inversion_type, self.C_DD_localization
+            )  # pragma: no cover
 
     @property
     def C_DD_localization(self) -> LocalizationStrategy:
@@ -385,8 +392,6 @@ class ESMDABase(ABC):
         matrix used for all iterations) or adaptive and even user defined;
         See implementations of :py:class:`pyesmda.LocalizationStrategy`.
         """
-        if not hasattr(self, "_CDD_localization"):
-            return NoLocalization()
         return self._C_DD_localization
 
     @C_DD_localization.setter
@@ -395,10 +400,13 @@ class ESMDABase(ABC):
         C_DD_localization.check_localization_shape(
             (self.d_dim, self.d_dim), "C_DD_localization"
         )
-        _check_localization_inversion_compatibility(
-            self.inversion_type, C_DD_localization
-        )
         self._C_DD_localization: LocalizationStrategy = C_DD_localization
+        # Needed because CDD_localization setter uses inversion_type and
+        # vice versa => safeguard needed
+        if hasattr(self, "_inversion_type"):
+            _check_localization_inversion_compatibility(
+                self.inversion_type, C_DD_localization
+            )
 
     @property
     def C_MD_localization(self) -> LocalizationStrategy:
@@ -519,7 +527,7 @@ class ESMDABase(ABC):
         history.
         """
         self.d_pred = self.forward_model(
-            self.m_prior, *self.forward_model_args, **self.forward_model_kwargs
+            self.m_posterior, *self.forward_model_args, **self.forward_model_kwargs
         )
 
         # Handle members for which the forward model failed (NaN predictions):
@@ -537,8 +545,8 @@ class ESMDABase(ABC):
         one NaN value (typically because the forward/reservoir simulation did not
         converge). If ``max_failure_fraction`` is 0.0 (the default), any failure
         immediately raises an exception (the historical, strict behavior). Otherwise,
-        failed members are dropped from :py:attr:`m_prior` and :py:attr:`d_pred` (and
-        thus excluded from the analysis/inversion step and from subsequent
+        failed members are dropped from :py:attr:`m_posterior` and :py:attr:`d_pred`
+        (and thus excluded from the analysis/inversion step and from subsequent
         assimilations), as long as the cumulative fraction of failed members
         (relative to the initial ensemble size) does not exceed
         ``max_failure_fraction``. If it does, an exception is raised.
@@ -559,7 +567,7 @@ class ESMDABase(ABC):
         new_failure_fraction = total_n_failed / self._initial_n_ensemble
 
         if new_failure_fraction > self.max_failure_fraction:
-            raise Exception(
+            raise RuntimeError(
                 f"Something went wrong after assimilation step "
                 f"{self._assimilation_step} -> NaN values are found in "
                 "predictions for members "
@@ -585,11 +593,11 @@ class ESMDABase(ABC):
             int(i) for i in new_failed_original_indices
         )
         self._active_member_indices = self._active_member_indices[active_mask]
-        self.m_prior = self.m_prior[:, active_mask]
+        self.m_posterior = self.m_posterior[:, active_mask]
         self.d_pred = self.d_pred[:, active_mask]
 
         if self.n_ensemble < 2:
-            raise Exception(
+            raise RuntimeError(
                 "Too many ensemble members have failed: fewer than 2 members "
                 "remain, which is not enough to estimate covariances and "
                 "continue the assimilation."
@@ -645,14 +653,14 @@ class ESMDABase(ABC):
 
         """
         # predicted parameters
-        return self.m_prior + (
+        return self.m_posterior + (
             inversion(
                 self.inversion_type,
                 inflation_factor,
                 self.cov_obs,
                 self.d_obs_uc,
                 self.d_pred,
-                self.m_prior,
+                self.m_posterior,
                 C_DD_localization=self.C_DD_localization,
                 C_MD_localization=self.C_MD_localization,
                 truncation=self.truncation,
@@ -679,13 +687,13 @@ class ESMDABase(ABC):
         which is equivalent to solve :math:`Ax = b`.
 
         """
-        m_pred: NDArrayFloat = np.zeros(self.m_prior.shape)
+        m_pred: NDArrayFloat = np.zeros(self.m_posterior.shape)
         worker = partial(
             _run_batch_update,
             inflation_factor=inflation_factor,
             batch_size=self.batch_size,
             m_dim=self.m_dim,
-            m_prior=self.m_prior,
+            m_posterior=self.m_posterior,
             inversion_type=self.inversion_type,
             cov_obs=self.cov_obs,
             d_obs_uc=self.d_obs_uc,

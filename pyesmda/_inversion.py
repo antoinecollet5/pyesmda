@@ -229,7 +229,7 @@ def _run_batch_update(
     inflation_factor: float,
     batch_size: int,
     m_dim: int,
-    m_prior: NDArrayFloat,
+    m_posterior: NDArrayFloat,
     inversion_type: ESMDAInversionType,
     cov_obs: covmats.CovarianceMatrix,
     d_obs_uc: NDArrayFloat,
@@ -238,7 +238,7 @@ def _run_batch_update(
     C_MD_localization: LocalizationStrategy,
 ) -> NDArrayFloat:
     """
-    Compute the updated parameters for a single batch of rows of `m_prior`.
+    Compute the updated parameters for a single batch of rows of `m_posterior`.
 
     This is the function dispatched to worker processes (via
     ``functools.partial``) by ``ESMDABase._local_analyse`` when
@@ -254,11 +254,11 @@ def _run_batch_update(
         Inflation factor :math:`\\alpha` for `cov_obs` at the current
         assimilation step.
     batch_size : int
-        Number of parameters (rows of `m_prior`) processed per batch.
+        Number of parameters (rows of `m_posterior`) processed per batch.
     m_dim : int
-        Total number of parameters (rows of `m_prior`), used to clip the
+        Total number of parameters (rows of `m_posterior`), used to clip the
         last batch to the correct size.
-    m_prior : NDArrayFloat
+    m_posterior : NDArrayFloat
         Full, unsliced ensemble of prior parameters, with dimensions
         (:math:`N_{m}`, :math:`N_{e}`). Only the rows selected by this
         batch's slice are updated and returned.
@@ -285,14 +285,14 @@ def _run_batch_update(
         (batch rows, :math:`N_{e}`).
     """
     _slice = slice(index * batch_size, min((index + 1) * batch_size, m_dim))
-    return m_prior[_slice, :] + (
+    return m_posterior[_slice, :] + (
         inversion(
             inversion_type,
             inflation_factor,
             cov_obs,
             d_obs_uc,
             d_pred,
-            m_prior[_slice, :].reshape(-1, m_prior.shape[-1]),
+            m_posterior[_slice, :].reshape(-1, m_posterior.shape[-1]),
             C_DD_localization=C_DD_localization,
             C_MD_localization=C_MD_localization,
             truncation=1.0,

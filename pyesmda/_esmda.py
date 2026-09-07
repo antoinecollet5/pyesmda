@@ -226,7 +226,7 @@ class ESMDA(ESMDABase):
     def solve(self) -> None:
         """Solve the optimization problem with ES-MDA algorithm."""
         if self.save_ensembles_history:
-            self.m_history.append(self.m_prior)  # save m_init
+            self.m_history.append(self.m_posterior)  # save m_init
         for self._assimilation_step in range(self.n_assimilations):
             self.loginfo(f"Assimilation # {self._assimilation_step + 1}")
             # inflating the covariance
@@ -235,21 +235,21 @@ class ESMDA(ESMDABase):
 
             if self.n_batches == 1:
                 # Update the prior parameter for next iteration
-                self.m_prior = self._apply_bounds(
+                self.m_posterior = self._apply_bounds(
                     self._analyse(
                         self.cov_obs_inflation_factors[self._assimilation_step]
                     )
                 )
             else:
                 # Update the prior parameter for next iteration
-                self.m_prior = self._apply_bounds(
+                self.m_posterior = self._apply_bounds(
                     self._local_analyse(
                         self.cov_obs_inflation_factors[self._assimilation_step]
                     )
                 )
             # Saving the parameters history
             if self.save_ensembles_history:
-                self.m_history.append(self.m_prior)
+                self.m_history.append(self.m_posterior)
 
         if self.is_forecast_for_last_assimilation:
             self.loginfo("Forecast for the final ensemble")

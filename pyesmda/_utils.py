@@ -307,7 +307,7 @@ def check_nans_in_predictions(d_pred: NDArrayFloat, assimilation_step: int) -> N
 
     Raises
     ------
-    Exception
+    RuntimeError
         Raised if NaNs are found. It indicates which ensemble members have incorrect
         predictions, and at which assimilaiton step.
     """
@@ -319,7 +319,7 @@ def check_nans_in_predictions(d_pred: NDArrayFloat, assimilation_step: int) -> N
         msg: str = "with the initial ensemble predictions "
     else:
         msg = f" after assimilation step {assimilation_step}"
-    raise Exception(
+    raise RuntimeError(
         f"Something went wrong {msg} -> NaN values"
         f" are found in predictions for members {[int(e) for e in error_indices]} !"
     )

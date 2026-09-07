@@ -7,6 +7,7 @@ General test for the Ensemble-Smoother with Multiple Data Assimilation.
 @author: acollet
 """
 
+import logging
 from typing import List
 
 import covmats
@@ -73,13 +74,15 @@ def test_esmda_rs_exponential_case(
         save_ensembles_history=True,
         std_m_prior=std_m_prior,
         random_state=123,
+        logger=logging.getLogger("ESMDA"),
     )
+
     # Call the ES-MDA solver
     solver.solve()
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=1e-1
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=1e-1
     ).all()
 
     # Get the uncertainty on the parameters
@@ -163,7 +166,7 @@ def test_esmda_exponential_case_batch(
 
     # Assert that the parameters are found with a 5% accuracy.
     assert np.isclose(
-        np.average(solver.m_prior, axis=1), np.array([a, b]), rtol=5e-2
+        np.average(solver.m_posterior, axis=1), np.array([a, b]), rtol=5e-2
     ).all()
 
     # Get the uncertainty on the parameters
